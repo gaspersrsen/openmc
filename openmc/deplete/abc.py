@@ -830,6 +830,65 @@ class Integrator(ABC):
 
         self.operator.finalize()
 
+    def custom_integrate(
+            self,
+            model_builder = None,
+            model_args = None,
+            final_step: bool = True,
+            output: bool = True,
+            path: PathLike = 'depletion_results.h5'
+        ):
+
+        with change_directory(self.operator.output_dir):
+            n = self.operator.initial_condition()
+            t, self._i_res = self._get_start_data()
+
+            for i, (dt, source_rate) in enumerate(self):
+                if output and comm.rank == 0:
+                    print(f"[openmc.deplete] t={t} s, dt={dt} s, source={source_rate}")
+                
+                # Rebuild the model
+                if model_builder != None:
+                    self.operator.model = model_builder(t,**model_args)
+                    
+                # Solve transport equation (or obtain result from restart)
+                if i > 0 or self.operator.prev_res is None:
+                    n, res = self._get_bos_data_from_operator(i, source_rate, n)
+                else:
+                    n, res = self._get_bos_data_from_restart(source_rate, n)
+
+                # Solve Bateman equations over time interval
+                proc_time, n_list, res_list = self(n, res.rates, dt, source_rate, i)
+
+                # Insert BOS concentration, transport results
+                n_list.insert(0, n)
+                res_list.insert(0, res)
+
+                # Remove actual EOS concentration for next step
+                n = n_list.pop()
+
+                StepResult.save(self.operator, n_list, res_list, [t, t + dt],
+                                source_rate, self._i_res + i, proc_time, path)
+                t += dt
+
+            # Final simulation -- in the case that final_step is False, a zero
+            # source rate is passed to the transport operator (which knows to
+            # just return zero reaction rates without actually doing a transport
+            # solve)
+            
+            if output and final_step and comm.rank == 0:
+                print(f"[openmc.deplete] t={t} (final operator evaluation)")
+                # Rebuild the model
+                if model_builder != None:
+                    self.operator.model = model_builder(t,**model_args)
+
+            res_list = [self.operator(n, source_rate if final_step else 0.0)]
+            StepResult.save(self.operator, [n], res_list, [t, t],
+                         source_rate, self._i_res + len(self), proc_time, path)
+            self.operator.write_bos_data(len(self) + self._i_res)
+
+        self.operator.finalize()
+    
     def add_transfer_rate(
             self,
             material: Union[str, int, Material],
