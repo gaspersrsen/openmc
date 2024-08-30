@@ -66,13 +66,13 @@ ENV LD_LIBRARY_PATH=${DAGMC_INSTALL_DIR}/lib:$LD_LIBRARY_PATH \
     DEBIAN_FRONTEND=noninteractive
 
 # Install and update dependencies from Debian package manager
-# RUN apt-get update -y && \
-#     apt-get upgrade -y && \
-#     apt-get install -y \
-#         python3-pip python-is-python3 wget git build-essential cmake \
-#         mpich libmpich-dev libhdf5-serial-dev libhdf5-mpich-dev \
-#         libpng-dev python3-venv && \
-#     apt-get autoremove
+RUN apt-get update -y && \
+    apt-get upgrade -y && \
+    apt-get install -y \
+        python3-pip python-is-python3 wget git build-essential cmake \
+        mpich libmpich-dev libhdf5-serial-dev libhdf5-mpich-dev \
+        libpng-dev python3-venv && \
+    apt-get autoremove
 
 # create virtual enviroment to avoid externally managed environment error
 RUN python3 -m venv openmc_venv
