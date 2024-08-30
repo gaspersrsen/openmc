@@ -833,7 +833,6 @@ class Integrator(ABC):
     def custom_integrate(
             self,
             model_builder = None,
-            model_args = None,
             final_step: bool = True,
             output: bool = True,
             path: PathLike = 'depletion_results.h5'
@@ -849,7 +848,7 @@ class Integrator(ABC):
                 
                 # Rebuild the model
                 if model_builder != None:
-                    self.operator.model = model_builder(t,**model_args)
+                    self.operator.model = model_builder(t)
                     
                 # Solve transport equation (or obtain result from restart)
                 if i > 0 or self.operator.prev_res is None:
