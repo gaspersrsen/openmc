@@ -81,6 +81,7 @@ ENV PATH=/openmc_venv/bin:$PATH
 # Update system-provided pip
 RUN pip install --upgrade pip
 
+ARG CACHEBUST=1
 # Clone and install NJOY2016
 RUN cd $HOME \
     && git clone --single-branch --depth 1 ${NJOY_REPO} \
