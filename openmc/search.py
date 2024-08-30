@@ -56,7 +56,7 @@ def _search_keff(guess, target, model_builder, model_args, print_iterations,
       with openmc.StatePoint(sp_filepath) as sp:
           keff = sp.keff
     except:
-      keff = 0
+      keff.n = 0
 
     # Record the history
     guesses.append(guess)
