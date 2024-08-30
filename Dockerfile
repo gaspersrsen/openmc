@@ -182,7 +182,7 @@ FROM dependencies AS build
 
 ENV HOME=/root
 
-ARG openmc_branch=master
+ARG openmc_branch=develop
 ENV OPENMC_REPO='https://github.com/gaspersrsen/openmc.git'
 
 ARG compile_cores
