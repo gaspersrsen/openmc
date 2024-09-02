@@ -312,7 +312,7 @@ def custom_search_for_keff(model_builder, initial_guess=None, target=1.0,
         # Generate our arguments
         args = {'f': search_function, 'bracket': bracket}
         if tol is not None:
-            args['rtol'] = tol
+            args['tol'] = tol
         if initial_guess is not None:
             args[x0] = initial_guess
 
