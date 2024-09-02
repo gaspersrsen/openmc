@@ -847,7 +847,7 @@ class Integrator(ABC):
                     print(f"[openmc.deplete] t={t} s, dt={dt} s, source={source_rate}")
                 
                 # Rebuild the model
-                if model_builder != None:
+                if model_builder is not None:
                     self.operator.model = model_builder(t)
                     
                 # Solve transport equation (or obtain result from restart)
@@ -878,7 +878,7 @@ class Integrator(ABC):
             if output and final_step and comm.rank == 0:
                 print(f"[openmc.deplete] t={t} (final operator evaluation)")
                 # Rebuild the model
-                if model_builder != None:
+                if model_builder is not None:
                     self.operator.model = model_builder(t,**model_args)
 
             res_list = [self.operator(n, source_rate if final_step else 0.0)]
