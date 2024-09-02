@@ -204,11 +204,14 @@ def search_for_keff(model_builder, initial_guess=None, target=1.0,
     return zero_value, guesses, results
 
 
-def custom_root_finder(f, x0, bracket, tol=1e-3, args=None, max_iter=50):
+def custom_root_finder(f, x0, bracket, tol=1e-3, args=(), max_iter=50):
     #Default search to within 100pcm, root finder assumes linear constantly increasing/decreasing function
+    if not isinstance(args, tuple):
+    args = (args,)
     cv.check_iterable_type('bracket', bracket, Real)
     cv.check_length('bracket', bracket, 2)
     cv.check_less_than('bracket values', bracket[0], bracket[1])
+  
     #(target, model_builder, args, print_iterations, run_args, guesses, results)
     start0=f(x0, args)
     if np.abs(start) < tol:
@@ -314,7 +317,7 @@ def custom_search_for_keff(model_builder, initial_guess=None, target=1.0,
         if tol is not None:
             args['tol'] = tol
         if initial_guess is not None:
-            args[x0] = initial_guess
+            args['x0'] = initial_guess
         else:
             raise ValueError("'initial_guess' parameter must be set")
 
@@ -329,6 +332,6 @@ def custom_search_for_keff(model_builder, initial_guess=None, target=1.0,
     args.update(kwargs)
 
     # Perform the search
-    zero_value = custom_root_finder(**args)
+    zero_value = custom_root_finder(_search_keff,initial_guess,)
 
     return zero_value, guesses, results
