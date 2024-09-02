@@ -317,7 +317,7 @@ def custom_search_for_keff(model_builder, initial_guess=None, target=1.0,
             args[x0] = initial_guess
 
     else:
-        raise ValueError("Either the 'bracket' parameter must be set")
+        raise ValueError("'bracket' parameter must be set")
 
     # Add information to be passed to the searching function
     args['args'] = (target, model_builder, model_args, print_iterations,
