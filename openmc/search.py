@@ -51,12 +51,9 @@ def _search_keff(guess, target, model_builder, model_args, print_iterations,
     model = model_builder(guess, **model_args)
 
     # Run the model and obtain keff
-    try:
-      sp_filepath = model.run(**run_args)
-      with openmc.StatePoint(sp_filepath) as sp:
-          keff = sp.keff
-    except:
-      keff.n = 0
+    sp_filepath = model.run(**run_args)
+    with openmc.StatePoint(sp_filepath) as sp:
+        keff = sp.keff
 
     # Record the history
     guesses.append(guess)
@@ -203,5 +200,133 @@ def search_for_keff(model_builder, initial_guess=None, target=1.0,
 
     # Perform the search
     zero_value = root_finder(**args)
+
+    return zero_value, guesses, results
+
+
+def custom_root_finder(f, x0, bracket, tol=1e-3, model_args=None, max_iter=50):
+    #Default search to within 100pcm, root finder assumes linear constantly increasing/decreasing function
+    cv.check_iterable_type('bracket', bracket, Real)
+    cv.check_length('bracket', bracket, 2)
+    cv.check_less_than('bracket values', bracket[0], bracket[1])
+    #(target, model_builder, model_args, print_iterations, run_args, guesses, results)
+    start0=f(x0, model_args)
+    if np.abs(start) < tol:
+        return x0
+    start_left=f(bracket[0],model_args)
+    if np.abs(start0) < tol:
+        return bracket[0]
+    if start0 < start_left:
+        left.guess=x0
+        left.value=start0
+        right.guess=bracket[0]
+        right.value=start_left
+    else:
+        right.guess=x0
+        right.value=start0
+        left.guess=bracket[0]
+        left.value=start_left
+    if bool((np.sign(left.value)*np.sign(right.value)+1)/2):
+        start_right==f(bracket[1],model_args)
+        if np.abs(start_right) < tol:
+            return bracket[1]
+        next.guess=bracket[1]
+        next.value=start_right
+
+        if not bool((np.sign(left.value)*np.sign(next.value)+1)/2):
+            right.guess=next.guess
+            right.value=next.value
+        elif not bool((np.sign(next.value)*np.sign(right.value)+1)/2):
+            left.guess=next.guess
+            left.value=next.value
+        else:
+            give= left
+            if np.abs(right.value)<np.abs(give.value):give=right
+            if np.abs(x0.value)<np.abs(give.value):give=x0
+            print(f"This range does not contain the root, returning closest value: f({give.guess})={give.value}")
+            return give.guess
+        
+    for i in range(max_iter):
+        next.guess=(left.guess*right.value+right.guess*left.value)/(left.value+right.value)
+        next.value=f(next.guess,model_args)
+        if np.abs(next.value) < tol:
+            return bracket[1]
+        
+        if not bool((np.sign(left.value)*np.sign(next.value)+1)/2):
+            right.guess=next.guess
+            right.value=next.value
+        elif not bool((np.sign(next.value)*np.sign(right.value)+1)/2):
+            left.guess=next.guess
+            left.value=next.value
+        else:
+            give= left
+            if np.abs(right.value)<np.abs(give.value):give=right
+            if np.abs(next.value)<np.abs(give.value):give=next
+            print(f"It seems the function in not strictly increasing/decreasing, returning closest value: f({give.guess})={give.value}")
+            return give.guess
+        
+        
+  
+  
+
+def custom_search_for_keff(model_builder, initial_guess=None, target=1.0,
+                    bracket=None, model_args=None, tol=None, print_iterations=False,
+                    run_args=None, **kwargs):
+
+    if initial_guess is not None:
+        cv.check_type('initial_guess', initial_guess, Real)
+    if bracket is not None:
+        cv.check_iterable_type('bracket', bracket, Real)
+        cv.check_length('bracket', bracket, 2)
+        cv.check_less_than('bracket values', bracket[0], bracket[1])
+    if model_args is None:
+        model_args = {}
+    else:
+        cv.check_type('model_args', model_args, dict)
+    cv.check_type('target', target, Real)
+    cv.check_type('tol', tol, Real)
+    cv.check_type('print_iterations', print_iterations, bool)
+    if run_args is None:
+        run_args = {}
+    else:
+        cv.check_type('run_args', run_args, dict)
+    cv.check_type('model_builder', model_builder, Callable)
+
+    # Run the model builder function once to make sure it provides the correct
+    # output type
+    if bracket is not None:
+        model = model_builder(bracket[0], **model_args)
+    elif initial_guess is not None:
+        model = model_builder(initial_guess, **model_args)
+    cv.check_type('model_builder return', model, openmc.model.Model)
+
+    # Set the iteration data storage variables
+    guesses = []
+    results = []
+
+    # Set the searching function (for easy replacement should a later
+    # generic function be added.
+    search_function = _search_keff
+
+    if bracket is not None:
+        # Generate our arguments
+        args = {'f': search_function, 'bracket': bracket}
+        if tol is not None:
+            args['rtol'] = tol
+        if initial_guess is not None:
+            args[x0] = initial_guess
+
+    else:
+        raise ValueError("Either the 'bracket' parameter must be set")
+
+    # Add information to be passed to the searching function
+    args['args'] = (target, model_builder, model_args, print_iterations,
+                    run_args, guesses, results)
+
+    # Create a new dictionary with the arguments from args and kwargs
+    args.update(kwargs)
+
+    # Perform the search
+    zero_value = custom_root_finder(**args)
 
     return zero_value, guesses, results
