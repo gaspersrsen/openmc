@@ -81,8 +81,6 @@ ENV PATH=/openmc_venv/bin:$PATH
 # Update system-provided pip
 RUN pip install --upgrade pip
 
-ARG CACHEBUST=1
-RUN echo "$CACHEBUST"
 # Clone and install NJOY2016
 RUN cd $HOME \
     && git clone --single-branch --depth 1 ${NJOY_REPO} \
@@ -193,6 +191,8 @@ ARG build_libmesh
 
 ENV DAGMC_INSTALL_DIR=$HOME/DAGMC/
 ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH
+ARG CACHEBUST=1
+RUN echo "$CACHEBUST"
 
 # clone and install openmc
 RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
