@@ -247,7 +247,7 @@ def custom_root_finder(f, x0, bracket, tol=1e-3, model_args=None, max_iter=50):
             return give.guess
         
     for i in range(max_iter):
-        next.guess=(left.guess*right.value+right.guess*left.value)/(left.value+right.value)
+        next.guess=left.guess+(right.guess-left.guess)*np.abs(left.value)/(np.abs(left.value)+np.abs(right.value))
         next.value=f(next.guess,model_args)
         if np.abs(next.value) < tol:
             return bracket[1]
