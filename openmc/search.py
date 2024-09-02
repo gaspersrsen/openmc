@@ -204,16 +204,16 @@ def search_for_keff(model_builder, initial_guess=None, target=1.0,
     return zero_value, guesses, results
 
 
-def custom_root_finder(f, x0, bracket, tol=1e-3, model_args=None, max_iter=50):
+def custom_root_finder(f, x0, bracket, tol=1e-3, args=None, max_iter=50):
     #Default search to within 100pcm, root finder assumes linear constantly increasing/decreasing function
     cv.check_iterable_type('bracket', bracket, Real)
     cv.check_length('bracket', bracket, 2)
     cv.check_less_than('bracket values', bracket[0], bracket[1])
-    #(target, model_builder, model_args, print_iterations, run_args, guesses, results)
-    start0=f(x0, model_args)
+    #(target, model_builder, args, print_iterations, run_args, guesses, results)
+    start0=f(x0, args)
     if np.abs(start) < tol:
         return x0
-    start_left=f(bracket[0],model_args)
+    start_left=f(bracket[0],args)
     if np.abs(start0) < tol:
         return bracket[0]
     if start0 < start_left:
@@ -227,7 +227,7 @@ def custom_root_finder(f, x0, bracket, tol=1e-3, model_args=None, max_iter=50):
         left.guess=bracket[0]
         left.value=start_left
     if bool((np.sign(left.value)*np.sign(right.value)+1)/2):
-        start_right==f(bracket[1],model_args)
+        start_right==f(bracket[1],args)
         if np.abs(start_right) < tol:
             return bracket[1]
         next.guess=bracket[1]
@@ -248,7 +248,7 @@ def custom_root_finder(f, x0, bracket, tol=1e-3, model_args=None, max_iter=50):
         
     for i in range(max_iter):
         next.guess=left.guess+(right.guess-left.guess)*np.abs(left.value)/(np.abs(left.value)+np.abs(right.value))
-        next.value=f(next.guess,model_args)
+        next.value=f(next.guess,args)
         if np.abs(next.value) < tol:
             return bracket[1]
         
@@ -315,6 +315,8 @@ def custom_search_for_keff(model_builder, initial_guess=None, target=1.0,
             args['tol'] = tol
         if initial_guess is not None:
             args[x0] = initial_guess
+        else:
+            raise ValueError("'initial_guess' parameter must be set")
 
     else:
         raise ValueError("'bracket' parameter must be set")
