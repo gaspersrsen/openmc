@@ -332,6 +332,6 @@ def custom_search_for_keff(model_builder, initial_guess=None, target=1.0,
     args.update(kwargs)
 
     # Perform the search
-    zero_value = custom_root_finder(_search_keff,initial_guess,)
+    zero_value = custom_root_finder(**args)
 
     return zero_value, guesses, results
