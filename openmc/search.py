@@ -211,7 +211,7 @@ def custom_root_finder(f, x0, bracket, tol=1e-3, args=(), max_iter=50):
     cv.check_less_than('bracket values', bracket[0], bracket[1])
   
     #(target, model_builder, args, print_iterations, run_args, guesses, results)
-    start0=f(x0, args)
+    start0=f(x0, **args)
     if np.abs(start) < tol:
         return x0
     start_left=f(bracket[0],**args)
