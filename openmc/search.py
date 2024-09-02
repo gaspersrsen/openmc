@@ -214,7 +214,7 @@ def custom_root_finder(f, x0, bracket, tol=1e-3, args=(), max_iter=50):
     start0=f(x0, args)
     if np.abs(start) < tol:
         return x0
-    start_left=f(bracket[0],args)
+    start_left=f(bracket[0],**args)
     if np.abs(start0) < tol:
         return bracket[0]
     if start0 < start_left:
@@ -228,7 +228,7 @@ def custom_root_finder(f, x0, bracket, tol=1e-3, args=(), max_iter=50):
         left.guess=bracket[0]
         left.value=start_left
     if bool((np.sign(left.value)*np.sign(right.value)+1)/2):
-        start_right==f(bracket[1],args)
+        start_right==f(bracket[1],**args)
         if np.abs(start_right) < tol:
             return bracket[1]
         next.guess=bracket[1]
@@ -249,7 +249,7 @@ def custom_root_finder(f, x0, bracket, tol=1e-3, args=(), max_iter=50):
         
     for i in range(max_iter):
         next.guess=left.guess+(right.guess-left.guess)*np.abs(left.value)/(np.abs(left.value)+np.abs(right.value))
-        next.value=f(next.guess,args)
+        next.value=f(next.guess,**args)
         if np.abs(next.value) < tol:
             return bracket[1]
         
