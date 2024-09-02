@@ -206,8 +206,6 @@ def search_for_keff(model_builder, initial_guess=None, target=1.0,
 
 def custom_root_finder(f, x0, bracket, tol=1e-3, args=(), max_iter=50):
     #Default search to within 100pcm, root finder assumes linear constantly increasing/decreasing function
-    if not isinstance(args, tuple):
-    args = (args,)
     cv.check_iterable_type('bracket', bracket, Real)
     cv.check_length('bracket', bracket, 2)
     cv.check_less_than('bracket values', bracket[0], bracket[1])
