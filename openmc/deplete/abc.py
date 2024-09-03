@@ -849,7 +849,7 @@ class Integrator(ABC):
                 
                 # Rebuild the model
                 if model_builder is not None:
-                    self.operator.model = model_builder(t)
+                    self.operator.model = model_builder(t, **model_args)
                     
                 # Solve transport equation (or obtain result from restart)
                 if i > 0 or self.operator.prev_res is None:
