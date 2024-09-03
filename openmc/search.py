@@ -251,7 +251,7 @@ def custom_root_finder(f, x0, bracket, tol=1e-3, args=(), max_iter=50):
         else:
             give= left
             if np.abs(right.value)<np.abs(give.value):give=right
-            if np.abs(right.value)<np.abs(give.value):give=x0
+            if np.abs(next.value)<np.abs(give.value):give=next
             print(f"This range does not contain the root, returning closest value: f({give.guess})={give.value}")
             return give.guess
         
