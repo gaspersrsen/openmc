@@ -2,6 +2,7 @@ from collections.abc import Callable
 from numbers import Real
 
 import scipy.optimize as sopt
+import numpy as np
 
 import openmc
 import openmc.model
