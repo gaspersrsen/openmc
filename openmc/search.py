@@ -213,10 +213,10 @@ def custom_root_finder(f, x0, bracket, tol=1e-3, args=(), max_iter=50):
   
     #(target, model_builder, args, print_iterations, run_args, guesses, results)
     start0=f(x0,*args)
-    if np.abs(start) < tol:
+    if np.abs(start0) < tol:
         return x0
     start_left=f(bracket[0],*args)
-    if np.abs(start0) < tol:
+    if np.abs(start_left) < tol:
         return bracket[0]
     if start0 < start_left:
         left.guess=x0
