@@ -236,7 +236,7 @@ def custom_root_finder(f, x0, bracket, tol=1e-3, args=(), max_iter=50):
         left.guess=bracket[0]
         left.value=start_left
     if bool((np.sign(left.value)*np.sign(right.value)+1)/2):
-        start_right==f(bracket[1],*args)
+        start_right=f(bracket[1],*args)
         if np.abs(start_right) < tol:
             return bracket[1]
         next.guess=bracket[1]
