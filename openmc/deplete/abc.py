@@ -877,8 +877,8 @@ class Integrator(ABC):
                     self.operator.model = model_builder(self.operator.model, **model_args)
                     res2 = self.operator(n, source_rate)
                     print(f"[openmc.deplete] model k, updated after depletion step:{i} from k_deplete:{res_list[0].k} to k_model: {res2.k}")
-                    print(res_list[1])
-                    res_list[1].k=res2.k
+                    print(res_list[1],res2)
+                    #res_list[1][0]=res2.k
 
                 StepResult.save(self.operator, n_list, res_list, [t, t + dt],
                                 source_rate, self._i_res + i, proc_time, path)
