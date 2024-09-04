@@ -835,23 +835,27 @@ class Integrator(ABC):
             model_builder = None,
             model_args = {},
             final_step: bool = True,
+            first_step: bool = True,
             output: bool = True,
+            correct_k_after_each_step: bool = False,
             path: PathLike = 'depletion_results.h5'
         ):
 
         with change_directory(self.operator.output_dir):
+            # Rebuild the model if neccessary
+            if model_builder is not None and first_step:
+                self.operator.model = model_builder(self.operator.model, **model_args)
             n = self.operator.initial_condition()
             t, self._i_res = self._get_start_data()
 
             for i, (dt, source_rate) in enumerate(self):
                 if output and comm.rank == 0:
                     print(f"[openmc.deplete] t={t} s, dt={dt} s, source={source_rate}")
+
+                # Update the model, if not already corrected in the previous step
+                if ((model_builder is not None) and (i>0)) and (not correct_k_after_each_step):
+                    self.operator.model = model_builder(self.operator.model, **model_args)
                 
-                # Rebuild the model
-                if model_builder is not None:
-                    self.operator.model = model_builder(t, **model_args)
-                    print(f"[openmc.deplete] prev res_exist: {self.operator.prev_res is not None}")
-                    
                 # Solve transport equation (or obtain result from restart)
                 if i > 0 or self.operator.prev_res is None:
                     n, res = self._get_bos_data_from_operator(i, source_rate, n)
@@ -860,6 +864,13 @@ class Integrator(ABC):
 
                 # Solve Bateman equations over time interval
                 proc_time, n_list, res_list = self(n, res.rates, dt, source_rate, i)
+
+                # Update the model and correct the result k, i
+                if (model_builder is not None) and (correct_k_after_each_step):
+                    self.operator.model = model_builder(self.operator.model, **model_args)
+                    res2 = self.operator(res_rates, source_rate)
+                    print(f"[openmc.deplete] model k, updated after depletion step:{i} from k_deplete:{res_list[0].k} to k_model: {res_2.k}")
+                    res_list[0].k=res2.k
 
                 # Insert BOS concentration, transport results
                 n_list.insert(0, n)
@@ -880,8 +891,8 @@ class Integrator(ABC):
             if output and final_step and comm.rank == 0:
                 print(f"[openmc.deplete] t={t} (final operator evaluation)")
                 # Rebuild the model
-                if model_builder is not None:
-                    self.operator.model = model_builder(t,**model_args)
+                if (model_builder is not None) and (correct_k_after_each_step):
+                    self.operator.model = model_builder(self.operator.model,**model_args)
 
             res_list = [self.operator(n, source_rate if final_step else 0.0)]
             StepResult.save(self.operator, [n], res_list, [t, t],
