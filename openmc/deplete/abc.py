@@ -865,19 +865,19 @@ class Integrator(ABC):
                 # Solve Bateman equations over time interval
                 proc_time, n_list, res_list = self(n, res.rates, dt, source_rate, i)
 
-                # Update the model and correct the result k, i
-                if (model_builder is not None) and (correct_k_after_each_step):
-                    self.operator.model = model_builder(self.operator.model, **model_args)
-                    res2 = self.operator(res_rates, source_rate)
-                    print(f"[openmc.deplete] model k, updated after depletion step:{i} from k_deplete:{res_list[0].k} to k_model: {res_2.k}")
-                    res_list[0].k=res2.k
-
                 # Insert BOS concentration, transport results
                 n_list.insert(0, n)
                 res_list.insert(0, res)
 
                 # Remove actual EOS concentration for next step
                 n = n_list.pop()
+
+                # Update the model and correct the result k, i
+                if (model_builder is not None) and (correct_k_after_each_step):
+                    self.operator.model = model_builder(self.operator.model, **model_args)
+                    res2 = self.operator(n, source_rate)
+                    print(f"[openmc.deplete] model k, updated after depletion step:{i} from k_deplete:{res_list[0].k} to k_model: {res_2.k}")
+                    res_list[0].k=res2.k
 
                 StepResult.save(self.operator, n_list, res_list, [t, t + dt],
                                 source_rate, self._i_res + i, proc_time, path)
