@@ -500,9 +500,10 @@ class CoupledOperator(OpenMCOperator):
                                 number_i[mat, nuc] = 0.0
                         
                         #Update density on Python API side:
-                        self.model.materials[int(mat)].remove_nuclide(nuc)
-                        if val < 0: val=0
-                        self.model.materials[int(mat)].add_nuclide(nuc,val)
+                        if self.model.materials[int(mat)].depletable:
+                            self.model.materials[int(mat)].remove_nuclide(nuc)
+                            if val < 0: val=0
+                            self.model.materials[int(mat)].add_nuclide(nuc,val)
                 
                 # Update densities on C API side
                 mat_internal = openmc.lib.materials[int(mat)]
