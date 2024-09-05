@@ -512,7 +512,7 @@ class CoupledOperator(OpenMCOperator):
                 # TODO Update densities on the Python side, otherwise the
                 # summary.h5 file contains densities at the first time step
         self.model.materials.export_to_xml()
-        self.model.export_to_xml()
+        #self.model.export_to_xml()
 
     @staticmethod
     def write_bos_data(step):
