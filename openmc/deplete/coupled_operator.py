@@ -498,7 +498,12 @@ class CoupledOperator(OpenMCOperator):
                                       ' atom/b-cm)')
 
                                 number_i[mat, nuc] = 0.0
-
+                        
+                        #Update density on Python API side:
+                        self.model.materials[mat].remove_nuclide(nuc)
+                        if val < 0: val=0
+                        self.model.materials[mat].add_nuclide(nuc,val)
+                self.model.materials.export_to_xml()
                 # Update densities on C API side
                 mat_internal = openmc.lib.materials[int(mat)]
                 mat_internal.set_densities(nuclides, densities)
