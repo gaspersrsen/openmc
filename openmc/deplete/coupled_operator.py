@@ -500,16 +500,17 @@ class CoupledOperator(OpenMCOperator):
                                 number_i[mat, nuc] = 0.0
                         
                         #Update density on Python API side:
-                        self.model.materials[mat].remove_nuclide(nuc)
+                        self.model.materials[int(mat)].remove_nuclide(nuc)
                         if val < 0: val=0
-                        self.model.materials[mat].add_nuclide(nuc,val)
-                self.model.materials.export_to_xml()
+                        self.model.materials[int(mat)].add_nuclide(nuc,val)
+                
                 # Update densities on C API side
                 mat_internal = openmc.lib.materials[int(mat)]
                 mat_internal.set_densities(nuclides, densities)
 
                 # TODO Update densities on the Python side, otherwise the
                 # summary.h5 file contains densities at the first time step
+        self.model.materials.export_to_xml()
 
     @staticmethod
     def write_bos_data(step):
