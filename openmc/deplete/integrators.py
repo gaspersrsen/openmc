@@ -220,7 +220,7 @@ class CELIIntegrator(Integrator):
     """
     _num_stages = 2
 
-    def __call__(self, n_bos, rates, dt, source_rate, _i=None):
+    def __call__(self, n_bos, rates, dt, source_rate, _i=None, model_builder=None, model_args={}):
         """Perform the integration across one time step
 
         Parameters
@@ -250,7 +250,7 @@ class CELIIntegrator(Integrator):
         """
         # deplete to end using BOS rates
         proc_time, n_ce = self._timed_deplete(n_bos, rates, dt)
-        res_ce = self.operator(n_ce, source_rate)
+        res_ce = self.operator(n_ce, source_rate, model_builder, model_args)
 
         # deplete using two matrix exponentials
         list_rates = list(zip(rates, res_ce.rates))
@@ -400,7 +400,7 @@ class LEQIIntegrator(Integrator):
             if self._i_res < 1:  # need at least previous transport solution
                 self._prev_rates = bos_rates
                 return CELIIntegrator.__call__(
-                    self, n_bos, bos_rates, dt, source_rate, i)
+                    self, n_bos, bos_rates, dt, source_rate, i, model_builder, model_args)
             prev_res = self.operator.prev_res[-2]
             prev_dt = self.timesteps[i] - prev_res.time[0]
             self._prev_rates = prev_res.rates[0]
