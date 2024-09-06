@@ -857,13 +857,13 @@ class Integrator(ABC):
                 if ((model_builder is not None) and (i>0)) and (not correct_k_after_each_step):
                     self.operator.model = model_builder(self.operator.model, **model_args)
                 else:
-                    
                     # Solve transport equation (or obtain result from restart)
                     openmc.lib.reset()
                     if self._n_calls > 0:
                         openmc.lib.reset_timers()
             
                     self._update_materials_and_nuclides(vec)
+                    self.operator.model = model_builder(self.operator.model, **model_args)
             
                     # If the source rate is zero, return zero reaction rates without running
                     # a transport solve
@@ -895,14 +895,13 @@ class Integrator(ABC):
 
                 # Remove actual EOS concentration for next step
                 n = n_list.pop()
-
+                res_list.insert(0, res)
                 # Update the model and correct the result k, i
                 if (model_builder is not None) and (correct_k_after_each_step):
                     # Solve transport equation (or obtain result from restart)
                     openmc.lib.reset()
                     if self._n_calls > 0:
                         openmc.lib.reset_timers()
-            
                     self._update_materials_and_nuclides(vec)
                     self.operator.model = model_builder(self.operator.model, **model_args)
                     # If the source rate is zero, return zero reaction rates without running
@@ -920,13 +919,13 @@ class Integrator(ABC):
                         keff = ufloat(*openmc.lib.keff())
                         res = OperatorResult(keff, rates)
                         self.operator._n_calls += 1
-                        res2 = self.operator(n, source_rate)
+                        res = self.operator(n, source_rate)
                         print(f"[openmc.deplete] k, updated at depletion step {i}: 
                             from k(t={t}):{res_list[0].k} to k_model: {res2.k}")
-                        res=res2
+                        res_list[1]=res
                     #print(res_list)
                     #res_list[1][0]=res2.k
-                res_list.insert(0, res)
+                
                 StepResult.save(self.operator, n_list, res_list, [t, t + dt],
                                 source_rate, self._i_res + i, proc_time, path)
                 t += dt
