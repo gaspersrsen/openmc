@@ -446,7 +446,7 @@ class CoupledOperator(OpenMCOperator):
 
         self._update_materials_and_nuclides(vec)
         if model_builder is not None:
-            self.model = model_builder(self.operator.model, **model_args)
+            self.model = model_builder(self.model, **model_args)
             self.model.export_to_xml()
 
         # If the source rate is zero, return zero reaction rates without running
