@@ -19,7 +19,6 @@ import numpy as np
 from uncertainties import ufloat
 
 from openmc.checkvalue import check_type, check_greater_than, PathLike
-import openmc.lib
 from openmc.mpi import comm
 from openmc.utility_funcs import change_directory
 from openmc import Material
