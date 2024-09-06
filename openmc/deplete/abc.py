@@ -877,8 +877,9 @@ class Integrator(ABC):
                     # Solve transport equation
                     res2 = self.operator.run_with_model(model_builder, model_args)
                     print(f"[openmc.deplete] k, updated at depletion step {i}: 
-                        from k(t={t}):{res_list[0].k} to k_model: {res2.k}")
+                        from k(t={t}):{res_list[1].k} to k_model: {res2.k}")
                     res_list[1]=res
+                    res=res2
                     #print(res_list)
                     #res_list[1][0]=res2.k
                 
