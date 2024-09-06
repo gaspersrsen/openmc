@@ -463,6 +463,65 @@ class CoupledOperator(OpenMCOperator):
 
         return copy.deepcopy(op_result)
 
+def run_with_model(self, model_builder, model_args={}):
+        """Runs a simulation using a callable model builder
+
+        Simulation will abort under the following circumstances:
+
+            1) No energy is computed using OpenMC tallies.
+
+        Parameters
+        ----------
+        model_builder : callable function
+            Takes a model as it's first parameter, performs
+            modifications on it and returns the updated model
+        model_args : dict
+            Other arguments passed to the model builder
+
+        Returns
+        -------
+        openmc.deplete.OperatorResult
+            Eigenvalue and reaction rates resulting from transport operator
+
+        """
+        # Reset results in OpenMC
+        openmc.lib.reset()
+
+        # The timers are reset only if the operator has been called before.
+        # This is because we call this method after loading cross sections, and
+        # no transport has taken place yet. As a result, we only reset the
+        # timers after the first step so as to correctly report the time spent
+        # reading cross sections in the first depletion step, and from there
+        # correctly report all particle tracking rates in multistep depletion
+        # solvers.
+        if self._n_calls > 0:
+            openmc.lib.reset_timers()
+
+        self._update_materials_and_nuclides(vec)
+        self.model = model_builder(self.operator.model, **model_args)
+        self.model.export_to_xml()
+        # If the source rate is zero, return zero reaction rates without running
+        # a transport solve
+        if source_rate == 0.0:
+            rates = self.reaction_rates.copy()
+            rates.fill(0.0)
+            return OperatorResult(ufloat(0.0, 0.0), rates)
+
+        # Run OpenMC
+        openmc.lib.run()
+
+        # Extract results
+        rates = self._calculate_reaction_rates(source_rate)
+
+        # Get k and uncertainty
+        keff = ufloat(*openmc.lib.keff())
+
+        op_result = OperatorResult(keff, rates)
+
+        self._n_calls += 1
+
+        return copy.deepcopy(op_result)
+    
     def _update_materials(self):
         """Updates material compositions in OpenMC on all processes."""
 
