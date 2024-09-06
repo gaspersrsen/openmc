@@ -368,7 +368,7 @@ class LEQIIntegrator(Integrator):
     """
     _num_stages = 2
 
-    def __call__(self, n_bos, bos_rates, dt, source_rate, i):
+    def __call__(self, n_bos, bos_rates, dt, source_rate, i, model_builder=None, model_args={}):
         """Perform the integration across one time step
 
         Parameters
@@ -408,7 +408,7 @@ class LEQIIntegrator(Integrator):
             prev_dt = self.timesteps[i - 1]
 
         # Remaining LE/QI
-        bos_res = self.operator(n_bos, source_rate)
+        bos_res = self.operator(n_bos, source_rate, model_builder, model_args)
 
         le_inputs = list(zip(
             self._prev_rates, bos_res.rates, repeat(prev_dt), repeat(dt)))
@@ -418,7 +418,7 @@ class LEQIIntegrator(Integrator):
         time2, n_eos0 = self._timed_deplete(
             n_inter, le_inputs, dt, matrix_func=leqi_f2)
 
-        res_inter = self.operator(n_eos0, source_rate)
+        res_inter = self.operator(n_eos0, source_rate, model_builder, model_args)
 
         qi_inputs = list(zip(
             self._prev_rates, bos_res.rates, res_inter.rates,
