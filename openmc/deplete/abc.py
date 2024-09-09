@@ -854,8 +854,16 @@ class Integrator(ABC):
                     if model_builder is not None and first_step:
                         self.operator.model = model_builder(self.operator.model, **model_args)
                     res = self.operator(n, source_rate)
-                elif (i > 0) and (not correct_k_after_each_step):
+                    self.operator.write_bos_data(i + self._i_res)
+                elif (i > 0) :
+                    if model_builder is not None and (not correct_k_after_each_step):
+                        self.operator.model = model_builder(self.operator.model, **model_args)
                     res = self.operator(n, source_rate, model_builder, model_args)
+                    self.operator.write_bos_data(i + self._i_res)
+                # if i > 0 or self.operator.prev_res is None:
+                #     n, res = self._get_bos_data_from_operator(i, source_rate, n)
+                # else:
+                #     n, res = self._get_bos_data_from_restart(source_rate, n)
 
                 # Solve Bateman equations over time interval
                 proc_time, n_list, res_list = self(n, res.rates, dt, source_rate, i)
@@ -873,6 +881,7 @@ class Integrator(ABC):
                     print(f"[openmc.deplete] k, updated at depletion step {i}: from k(t={t}):{res_list[1].k} to k_model: {res2.k}")
                     res_list[1] = res
                     res = res2
+                    self.operator.write_bos_data(i+1 + self._i_res)
                 
                 StepResult.save(self.operator, n_list, res_list, [t, t + dt],
                                 source_rate, self._i_res + i, proc_time, path)
