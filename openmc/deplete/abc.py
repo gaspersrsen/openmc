@@ -856,31 +856,23 @@ class Integrator(ABC):
                     res = self.operator(n, source_rate)
                 elif (i>0) and (not correct_k_after_each_step):
                     res = self.operator(n, source_rate, model_builder, model_args)
-                
-                # if i > 0 or self.operator.prev_res is None:
-                #     n, res = self._get_bos_data_from_operator(i, source_rate, n)
-                # else:
-                #     n, res = self._get_bos_data_from_restart(source_rate, n)
 
                 # Solve Bateman equations over time interval
                 proc_time, n_list, res_list = self(n, res.rates, dt, source_rate, i)
 
                 # Insert BOS concentration, transport results
                 n_list.insert(0, n)
-                
 
                 # Remove actual EOS concentration for next step
                 n = n_list.pop()
                 res_list.insert(0, res)
-                # Update the model and correct the result k, i
+                # Update the model and correct the result k
                 if (model_builder is not None) and (correct_k_after_each_step):
                     # Solve transport equation
                     res2 = self.operator(n, source_rate, model_builder, model_args)
                     print(f"[openmc.deplete] k, updated at depletion step {i}: from k(t={t}):{res_list[1].k} to k_model: {res2.k}")
                     res_list[1]=res
                     res=res2
-                    #print(res_list)
-                    #res_list[1][0]=res2.k
                 
                 StepResult.save(self.operator, n_list, res_list, [t, t + dt],
                                 source_rate, self._i_res + i, proc_time, path)
