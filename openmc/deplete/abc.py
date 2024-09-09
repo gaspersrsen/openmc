@@ -850,11 +850,11 @@ class Integrator(ABC):
                     print(f"[openmc.deplete] t={t} s, dt={dt} s, source={source_rate}")
 
                 # Update the model and run transport unless already corrected at the end of prevoius step
-                if i==0:
+                if i == 0:
                     if model_builder is not None and first_step:
                         self.operator.model = model_builder(self.operator.model, **model_args)
                     res = self.operator(n, source_rate)
-                elif (i>0) and (not correct_k_after_each_step):
+                elif (i > 0) and (not correct_k_after_each_step):
                     res = self.operator(n, source_rate, model_builder, model_args)
 
                 # Solve Bateman equations over time interval
@@ -871,8 +871,8 @@ class Integrator(ABC):
                     # Solve transport equation
                     res2 = self.operator(n, source_rate, model_builder, model_args)
                     print(f"[openmc.deplete] k, updated at depletion step {i}: from k(t={t}):{res_list[1].k} to k_model: {res2.k}")
-                    res_list[1]=res
-                    res=res2
+                    res_list[1] = res
+                    res = res2
                 
                 StepResult.save(self.operator, n_list, res_list, [t, t + dt],
                                 source_rate, self._i_res + i, proc_time, path)
