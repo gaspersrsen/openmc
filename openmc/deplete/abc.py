@@ -842,9 +842,6 @@ class Integrator(ABC):
         ):
 
         with change_directory(self.operator.output_dir):
-            # Rebuild the model if neccessary
-            if model_builder is not None and first_step:
-                self.operator.model = model_builder(self.operator.model, **model_args)
             n = self.operator.initial_condition()
             t, self._i_res = self._get_start_data()
 
@@ -853,8 +850,11 @@ class Integrator(ABC):
                     print(f"[openmc.deplete] t={t} s, dt={dt} s, source={source_rate}")
 
                 # Update the model and run transport
-                if i ==0:
-                    res = self.operator(n, source_rate, model_builder, model_args)
+                if i==0:
+                    if model_builder is not None and first_step:
+                        self.operator.model = model_builder(self.operator.model, **model_args)
+                    else:
+                        res = self.operator(n, source_rate)
                 elif (i>0) and (not correct_k_after_each_step):
                     res = self.operator(n, source_rate, model_builder, model_args)
                 
