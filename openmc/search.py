@@ -207,6 +207,7 @@ def search_for_keff(model_builder, initial_guess=None, target=1.0,
 
 def custom_root_finder(f, x0, bracket, tol=1e-3, args=(), max_iter=50):
     #Default search to within 100pcm, root finder assumes linear constantly increasing/decreasing
+    #Make sure that the accuracy of the k_eff is lower than tol, perferably atleast 2x smaller.
     class hold_root_cand():
         def __init__(self):
             self.guess=0
