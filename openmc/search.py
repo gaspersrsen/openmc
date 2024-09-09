@@ -61,7 +61,7 @@ def _search_keff(guess, target, model_builder, model_args, print_iterations,
     results.append(keff)
 
     if print_iterations:
-        text = 'Iteration: {}; Guess of {:.2e} produced a keff of ' + \
+        text = 'Iteration: {}; Guess of {:.5e} produced a keff of ' + \
             '{:1.5f} +/- {:1.5f}'
         print(text.format(len(guesses), guess, keff.n, keff.s))
 
