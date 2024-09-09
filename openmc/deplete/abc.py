@@ -852,16 +852,21 @@ class Integrator(ABC):
                 # Update the model and run transport unless already corrected at the end of prevoius step
                 if i == 0:
                     prev_source_rate=None
-                    if model_builder is not None and first_step:
+                    if (model_builder is not None) and first_step:
                         self.operator.model = model_builder(self.operator.model, **model_args)
                     res = self.operator(n, source_rate)
                     self.operator.write_bos_data(i + self._i_res)
-                elif (i > 0):
-                    if model_builder is not None and (not correct_k_after_each_step):
-                        self.operator.model = model_builder(self.operator.model, **model_args)
-                    res = self.operator(n, source_rate, model_builder, model_args)
-                    self.operator.write_bos_data(i + self._i_res)
-
+                else:
+                    if (model_builder is not None):
+                        if (not correct_k_after_each_step) or (prev_source_rate != source_rate):
+                            self.operator.model = model_builder(self.operator.model, **model_args)
+                            res = self.operator(n, source_rate, model_builder, model_args)
+                            self.operator.write_bos_data(i + self._i_res)
+                    else:
+                        res = self.operator(n, source_rate, model_builder, model_args)
+                        self.operator.write_bos_data(i + self._i_res)
+                prev_source_rate = source_rate
+                
                 # Solve Bateman equations over time interval
                 proc_time, n_list, res_list = self(n, res.rates, dt, source_rate, i)
 
