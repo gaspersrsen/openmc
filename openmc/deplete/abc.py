@@ -892,16 +892,16 @@ class Integrator(ABC):
             # just return zero reaction rates without actually doing a transport
             # solve)
             
-            if output and final_step and comm.rank == 0:
+            if output and final_step and comm.rank == 0 and (not correct_k_after_each_step):
                 print(f"[openmc.deplete] t={t} (final operator evaluation)")
                 # Rebuild the model
-                if (model_builder is not None) and (correct_k_after_each_step):
+                if (model_builder is not None):
                     self.operator.model = model_builder(self.operator.model,**model_args)
 
-            res_list = [self.operator(n, source_rate, model_builder, model_args if final_step else 0.0)]
-            StepResult.save(self.operator, [n], res_list, [t, t],
-                         source_rate, self._i_res + len(self), proc_time, path)
-            self.operator.write_bos_data(len(self) + self._i_res)
+                res_list = [self.operator(n, source_rate, model_builder, model_args if final_step else 0.0)]
+                StepResult.save(self.operator, [n], res_list, [t, t],
+                             source_rate, self._i_res + len(self), proc_time, path)
+                self.operator.write_bos_data(len(self) + self._i_res)
 
         self.operator.finalize()
     
