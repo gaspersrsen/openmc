@@ -860,10 +860,6 @@ class Integrator(ABC):
                         self.operator.model = model_builder(self.operator.model, **model_args)
                     res = self.operator(n, source_rate, model_builder, model_args)
                     self.operator.write_bos_data(i + self._i_res)
-                # if i > 0 or self.operator.prev_res is None:
-                #     n, res = self._get_bos_data_from_operator(i, source_rate, n)
-                # else:
-                #     n, res = self._get_bos_data_from_restart(source_rate, n)
 
                 # Solve Bateman equations over time interval
                 proc_time, n_list, res_list = self(n, res.rates, dt, source_rate, i)
