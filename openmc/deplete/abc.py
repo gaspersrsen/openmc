@@ -859,11 +859,11 @@ class Integrator(ABC):
                 else:
                     if (model_builder is not None):
                         if (not correct_k_after_each_step) or (prev_source_rate != source_rate):
-                            self.operator.model = model_builder(self.operator.model, **model_args)
+                            #self.operator.model = model_builder(self.operator.model, **model_args)
                             res = self.operator(n, source_rate, model_builder, model_args)
                             self.operator.write_bos_data(i + self._i_res)
                     else:
-                        res = self.operator(n, source_rate, model_builder, model_args)
+                        res = self.operator(n, source_rate)
                         self.operator.write_bos_data(i + self._i_res)
                 prev_source_rate = source_rate
                 
