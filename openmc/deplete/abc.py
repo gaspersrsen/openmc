@@ -853,9 +853,9 @@ class Integrator(ABC):
                     print(f"[openmc.deplete] t={t} s, dt={dt} s, source={source_rate}")
 
                 # Update the model and run transport
-                if (i>0) and (not correct_k_after_each_step):
+                if i ==0:
                     res = self.operator(n, source_rate, model_builder, model_args)
-                else:
+                elif (i>0) and (not correct_k_after_each_step):
                     res = self.operator(n, source_rate, model_builder, model_args)
                 
                 # if i > 0 or self.operator.prev_res is None:
