@@ -463,7 +463,6 @@ class CoupledOperator(OpenMCOperator):
 
         return copy.deepcopy(op_result)
 
-    
     def _update_materials(self):
         """Updates material compositions in OpenMC on all processes."""
 
