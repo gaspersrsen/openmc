@@ -699,6 +699,7 @@ class Model:
                     self.export_to_model_xml(**export_kwargs)
                 else:
                     self.export_to_xml(**export_kwargs)
+                openmc.lib.reset()
                 path_input = export_kwargs.get("path", None)
                 openmc.run(particles, threads, geometry_debug, restart_file,
                            tracks, output, Path('.'), openmc_exec, mpi_args,
