@@ -850,7 +850,9 @@ class Integrator(ABC):
                 # Update the model and run transport unless already corrected at the end of prevoius step
                 if i > 0 or self.operator.prev_res is None:
                     if model_builder is not None:
-                        self.operator.model = model_builder(self.operator.model, **model_args)
+                        new_model  = model_builder(self.operator.model, **model_args)
+                        self.operator.model= new_model
+                        self.operator.materials = new_model.materials
                         #n = self.operator.initial_condition()
                     n, res = self._get_bos_data_from_operator(i, source_rate, n)
                 else:
