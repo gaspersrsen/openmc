@@ -434,7 +434,7 @@ class LEQIIntegrator(Integrator):
 
         return (
             time1 + time2 + time3 + time4, [n_eos0, n_eos1],
-            [bos_res, res_inter])
+            [res_inter])
 
 
 @add_params
