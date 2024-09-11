@@ -873,7 +873,6 @@ class Integrator(ABC):
                                 source_rate, self._i_res + i, proc_time, path)
 
                 t += dt
-                openmc.lib.finalize()
 
             # Final simulation -- in the case that final_step is False, a zero
             # source rate is passed to the transport operator (which knows to
