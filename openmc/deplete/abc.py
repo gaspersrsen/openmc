@@ -851,7 +851,7 @@ class Integrator(ABC):
                 if i > 0 or self.operator.prev_res is None:
                     if model_builder is not None:
                         self.operator.model = model_builder(self.operator.model, **model_args)
-                        n = self.operator.initial_condition()
+                        #n = self.operator.initial_condition()
                     n, res = self._get_bos_data_from_operator(i, source_rate, n)
                 else:
                     n, res = self._get_bos_data_from_restart(source_rate, n)
