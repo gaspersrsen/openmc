@@ -883,8 +883,13 @@ class Integrator(ABC):
             if output and final_step and comm.rank == 0:
                 print(f"[openmc.deplete] t={t} (final operator evaluation)")
                 # Rebuild the model
-                if (model_builder is not None):
-                    self.operator.model = model_builder(self.operator.model,**model_args)
+                if model_builder is not None:
+                    openmc.lib.finalize()
+                    #For any other simulations resources need to be released
+                    new_model  = model_builder(self.operator.model, **model_args)
+                    self.operator.model= new_model
+                    self.operator.materials = new_model.materials
+                    n = self.operator.initial_condition()
 
             res_list = [self.operator(n, source_rate if final_step else 0.0)]
             StepResult.save(self.operator, [n], res_list, [t, t],
