@@ -406,7 +406,7 @@ class CoupledOperator(OpenMCOperator):
 
         self.materials.export_to_xml(nuclides_to_ignore=self._decay_nucs)
 
-    def __call__(self, vec, source_rate, model_builder=None, model_args={}):
+    def __call__(self, vec, source_rate):
         """Runs a simulation.
 
         Simulation will abort under the following circumstances:
@@ -445,9 +445,6 @@ class CoupledOperator(OpenMCOperator):
             openmc.lib.reset_timers()
 
         self._update_materials_and_nuclides(vec)
-        if model_builder is not None:
-            self.model = model_builder(self.model, **model_args)
-            self.model.export_to_xml()
 
         # If the source rate is zero, return zero reaction rates without running
         # a transport solve
