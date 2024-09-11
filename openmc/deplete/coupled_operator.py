@@ -419,11 +419,6 @@ class CoupledOperator(OpenMCOperator):
             Total atoms to be used in function.
         source_rate : float
             Power in [W] or source rate in [neutron/sec]
-        model_builder : callable function
-            Takes a model as it's first parameter, performs
-            modifications on it and returns the updated model
-        model_args : dict
-            Other arguments passed to the model builder
 
         Returns
         -------
