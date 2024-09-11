@@ -851,6 +851,7 @@ class Integrator(ABC):
                 if i > 0 or self.operator.prev_res is None:
                     if model_builder is not None:
                         openmc.lib.finalize()
+                        #For any other simulations resources need to be released
                         new_model  = model_builder(self.operator.model, **model_args)
                         self.operator.model= new_model
                         self.operator.materials = new_model.materials
