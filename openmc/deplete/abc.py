@@ -833,8 +833,8 @@ class Integrator(ABC):
 
     def custom_integrate(
             self,
-            model_builder = None,
-            model_args = {},
+            conc_run = False,
+            conc_args = {},
             final_step: bool = True,
             output: bool = True,
             path: PathLike = 'depletion_results.h5'
@@ -850,14 +850,14 @@ class Integrator(ABC):
 
                 # Update the model and run transport unless already corrected at the end of prevoius step
                 if i > 0 or self.operator.prev_res is None:
-                    if model_builder is not None:
-                        openmc.lib.finalize()
-                        #For any other simulations resources need to be released
-                        new_model  = model_builder(self.operator.model, **model_args)
-                        self.operator.model= new_model
-                        self.operator.materials = new_model.materials
-                        n = self.operator.initial_condition()
-                    n, res = self._get_bos_data_from_operator(i, source_rate, n)
+                    # if model_builder is not None:
+                    #     openmc.lib.finalize()
+                    #     #For any other simulations resources need to be released
+                    #     new_model  = model_builder(self.operator.model, **model_args)
+                    #     self.operator.model= new_model
+                    #     self.operator.materials = new_model.materials
+                    #     n = self.operator.initial_condition()
+                    n, res = self._get_bos_data_from_operator(i, source_rate, n, conc_run, conc_args)
                 else:
                     n, res = self._get_bos_data_from_restart(source_rate, n)
                 
