@@ -429,9 +429,7 @@ class CoupledOperator(OpenMCOperator):
         openmc.lib.reset()
         if self._n_calls > 0:
             openmc.lib.reset_timers()
-
-        self._update_materials_and_nuclides(vec)
-        self.model.export_to_xml()
+        
         if invert: invert_k = -1 #If increasing conc results in increasing k_eff
         else: invert_k = 1
     
