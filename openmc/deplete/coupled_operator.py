@@ -406,7 +406,7 @@ class CoupledOperator(OpenMCOperator):
 
         self.materials.export_to_xml(nuclides_to_ignore=self._decay_nucs)
     
-    def search_crit_conc(self, iso=None, batches=50, bracket=None, 
+    def search_crit_conc(self, vec, source_rate, iso=None, batches=50, bracket=None, 
                          initial_value=None, target=1., 
                          particles=1000000, invert=False):
         """Initial value is the value given in your material building process, must be bigger than 0"""
@@ -420,20 +420,24 @@ class CoupledOperator(OpenMCOperator):
             cv.check_type('batches', batches, Integral)
         if particles is not None:
             cv.check_type('particles', particles, Integral)
-    
         if bracket is not None:
             cv.check_iterable_type('bracket', bracket, Real)
             cv.check_length('bracket', bracket, 2)
             cv.check_less_than('bracket values', bracket[0], bracket[1])
-    
-        if invert: invert_k = -1
+       
+        openmc.lib.reset()
+        if self._n_calls > 0:
+            openmc.lib.reset_timers()
+
+        self._update_materials_and_nuclides(vec)
+        self.model.export_to_xml()
+        if invert: invert_k = -1 #If increasing conc results in increasing k_eff
         else: invert_k = 1
     
         settings = openmc.Settings()
         settings.batches = batches
         settings.inactive = int(3/4*batches)
         settings.particles = particles
-        settings.output = {'tallies': False}
         settings.export_to_xml()
     
     
@@ -447,7 +451,7 @@ class CoupledOperator(OpenMCOperator):
             conc = 1
             conc_prev = 1
             multi = 0.999
-            direction = 0 #Concentration direction 0 down 1 up
+            direction = 0 #Concentration direction 0-down, 1-up
             
             for step in range(batches-1):
                 if step <= int(4/5*batches):
@@ -493,8 +497,11 @@ class CoupledOperator(OpenMCOperator):
                 openmc.lib.next_batch()
             print(f"Critical concentration: {conc*initial_value} +/- {conc*initial_value*multi}")
             keff = ufloat(*openmc.lib.keff())
+            rates = self._calculate_reaction_rates(source_rate)
+            op_result = OperatorResult(keff, rates)
+            self._n_calls += 1
             
-            return keff
+        return copy.deepcopy(op_result)
         
     def __call__(self, vec, source_rate):
         """Runs a simulation.
