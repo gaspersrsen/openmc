@@ -405,7 +405,97 @@ class CoupledOperator(OpenMCOperator):
             mat._nuclides.sort(key=lambda x: nuclides.index(x[0]))
 
         self.materials.export_to_xml(nuclides_to_ignore=self._decay_nucs)
-
+    
+    def search_crit_conc(self, iso=None, batches=50, bracket=None, 
+                         initial_value=None, target=1., 
+                         particles=1000000, invert=False):
+        """Initial value is the value given in your material building process, must be bigger than 0"""
+        if iso is None:
+            raise ValueError("'iso' argument is empty")
+        if initial_value is not None:
+            cv.check_type('initial_value', initial_value, Real)
+        else:
+            raise ValueError("'initial_value' argument is empty")
+        if batches is not None:
+            cv.check_type('batches', batches, Integral)
+        if particles is not None:
+            cv.check_type('particles', particles, Integral)
+    
+        if bracket is not None:
+            cv.check_iterable_type('bracket', bracket, Real)
+            cv.check_length('bracket', bracket, 2)
+            cv.check_less_than('bracket values', bracket[0], bracket[1])
+    
+        if invert: invert_k = -1
+        else: invert_k = 1
+    
+        settings = openmc.Settings()
+        settings.batches = batches
+        settings.inactive = int(3/4*batches)
+        settings.particles = particles
+        settings.output = {'tallies': False}
+        settings.export_to_xml()
+    
+    
+        with openmc.lib.run_in_memory():
+            comm.barrier()
+            if not openmc.lib.is_initialized:
+                openmc.lib.init(intracomm=comm)
+            openmc.lib.simulation_init()
+            openmc.lib.next_batch()
+            k_prev=openmc.lib.keff()
+            conc = 1
+            conc_prev = 1
+            multi = 0.999
+            direction = 0 #Concentration direction 0 down 1 up
+            
+            for step in range(batches-1):
+                if step <= int(4/5*batches):
+                    k=openmc.lib.keff()
+                    
+                    if invert_k * (k[0] - target) < 0: #Decrease conc
+                        if direction != 0:
+                            multi *= 0.7
+                            direction = 0
+                        conc *= (1 - multi)
+                    else:
+                        if direction != 1:
+                            multi *= 0.7
+                            direction = 1
+                        conc *= (1 + multi)
+                    
+                    if bracket:
+                        if conc*initial_value < bracket[0]: conc = bracket[0] / initial_value
+                        if conc*initial_value > bracket[1]: conc = bracket[1] / initial_value
+                    else:
+                        if conc < 0: conc = 0
+                    
+                    for mat in openmc.lib.materials:
+                        nuclides = []
+                        densities = []
+                        all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
+                        all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
+                        
+                        for nuc in all_nuc:
+                            val = (all_dens[all_nuc==str(nuc)])[0]
+                            # If nuclide is zero, do not add to the problem.
+                            if val > 0.0:
+                                if str(nuc) in iso:
+                                    val *= conc / conc_prev
+        
+                                nuclides.append(nuc)
+                                densities.append(val)
+                        # Update densities on C API side
+                        mat_internal = openmc.lib.materials[int(mat)]
+                        mat_internal.set_densities(nuclides, densities)
+                    conc_prev=conc
+                    k_prev=k
+                openmc.lib.next_batch()
+            print(f"Critical concentration: {conc*initial_value} +/- {conc*initial_value*multi}")
+            keff = ufloat(*openmc.lib.keff())
+            
+            return keff
+        
     def __call__(self, vec, source_rate):
         """Runs a simulation.
 
