@@ -426,7 +426,7 @@ class LEQIIntegrator(Integrator):
             n_inter, le_inputs, dt, matrix_func=leqi_f2)
 
         if conc_run:
-            res_inter = self.search_crit_conc(self, n_eos0, source_rate, **conc_args)
+            res_inter = self.operator.search_crit_conc(self, n_eos0, source_rate, **conc_args)
         else:
             res_inter = self.operator(n_eos0, source_rate)
 
