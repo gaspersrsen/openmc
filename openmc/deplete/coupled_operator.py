@@ -13,6 +13,7 @@ from warnings import warn
 
 import numpy as np
 from uncertainties import ufloat
+from numbers import Real, Integral
 
 import openmc
 from openmc.checkvalue import check_value
@@ -413,17 +414,17 @@ class CoupledOperator(OpenMCOperator):
         if iso is None:
             raise ValueError("'iso' argument is empty")
         if initial_value is not None:
-            cv.check_type('initial_value', initial_value, Real)
+            check_value.check_type('initial_value', initial_value, Real)
         else:
             raise ValueError("'initial_value' argument is empty")
         if batches is not None:
-            cv.check_type('batches', batches, Integral)
+            check_value.check_type('batches', batches, Integral)
         if particles is not None:
-            cv.check_type('particles', particles, Integral)
+            check_value.check_type('particles', particles, Integral)
         if bracket is not None:
-            cv.check_iterable_type('bracket', bracket, Real)
-            cv.check_length('bracket', bracket, 2)
-            cv.check_less_than('bracket values', bracket[0], bracket[1])
+            check_value.check_iterable_type('bracket', bracket, Real)
+            check_value.check_length('bracket', bracket, 2)
+            check_value.check_less_than('bracket values', bracket[0], bracket[1])
        
         openmc.lib.reset()
         if self._n_calls > 0:
