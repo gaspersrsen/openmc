@@ -425,7 +425,12 @@ class CoupledOperator(OpenMCOperator):
             check_value.check_iterable_type('bracket', bracket, Real)
             check_value.check_length('bracket', bracket, 2)
             check_value.check_less_than('bracket values', bracket[0], bracket[1])
-       
+
+        if source_rate == 0.0:
+            rates = self.reaction_rates.copy()
+            rates.fill(0.0)
+            return OperatorResult(ufloat(0.0, 0.0), rates)
+                             
         openmc.lib.reset()
         if self._n_calls > 0:
             openmc.lib.reset_timers()
