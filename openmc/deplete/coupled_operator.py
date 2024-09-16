@@ -433,7 +433,8 @@ class CoupledOperator(OpenMCOperator):
             self.initial_value = initial_value
             self.concs = [initial_value]
         initial_value = self.initial_value
-                             
+
+        openmc.lib.finalize()
         openmc.lib.reset()
         if self._n_calls > 0:
             openmc.lib.reset_timers()
