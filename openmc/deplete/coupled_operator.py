@@ -431,6 +431,10 @@ class CoupledOperator(OpenMCOperator):
             rates = self.reaction_rates.copy()
             rates.fill(0.0)
             return OperatorResult(ufloat(0.0, 0.0), rates)
+
+        if not hasattr(self, 'initial_value'):
+            self.initial_value = initial_value
+        initial_value = self.initial_value
                              
         openmc.lib.reset()
         if self._n_calls > 0:
