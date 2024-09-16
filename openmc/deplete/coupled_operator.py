@@ -463,7 +463,7 @@ class CoupledOperator(OpenMCOperator):
         direction = 0 #Concentration direction 0-down, 1-up
         
         for step in range(batches-1):
-            if step <= int(4/5*batches):
+            if step <= batches:
                 k=openmc.lib.keff()
                 
                 if invert_k * (k[0] - target) < 0: #Decrease conc
