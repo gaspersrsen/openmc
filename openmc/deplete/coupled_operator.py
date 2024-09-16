@@ -444,7 +444,7 @@ class CoupledOperator(OpenMCOperator):
         if invert: invert_k = -1 #If increasing conc results in increasing k_eff
         else: invert_k = 1
     
-        settings = self.operator.model.settings
+        settings = self.model.settings
         settings.batches += batches
         settings.inactive += batches
         settings.export_to_xml()
