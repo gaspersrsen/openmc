@@ -527,6 +527,7 @@ class CoupledOperator(OpenMCOperator):
             rates = self._calculate_reaction_rates(source_rate)
             op_result = OperatorResult(keff, rates)
             self._n_calls += 1
+            self.model.export_to_xml()
             
         return copy.deepcopy(op_result)
         
