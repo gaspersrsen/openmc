@@ -523,6 +523,7 @@ class CoupledOperator(OpenMCOperator):
                     val = (all_dens[all_nuc==str(nuc)])[0]
                     self.model.materials[int(mat)-1].remove_nuclide(nuc)
                     if val > 1e-28:
+                        print(mat,nuc,val)
                         self.model.materials[int(mat)-1].add_nuclide(nuc,val)
             print(f"Critical concentration: {conc*initial_value} +/- {conc*initial_value*multi}")
             keff = ufloat(*openmc.lib.keff())
