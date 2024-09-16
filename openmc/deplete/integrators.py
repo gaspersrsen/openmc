@@ -255,7 +255,7 @@ class CELIIntegrator(Integrator):
         self.operator.model.export_to_xml()
         
         if conc_run:            
-            res_ce = self.operator.search_crit_conc(self, source_rate, **conc_args)
+            res_ce = self.operator.search_crit_conc(n_ce, source_rate, **conc_args)
         else:
             res_ce = self.operator(n_ce, source_rate)
 
@@ -426,7 +426,7 @@ class LEQIIntegrator(Integrator):
             n_inter, le_inputs, dt, matrix_func=leqi_f2)
 
         if conc_run:
-            res_inter = self.operator.search_crit_conc(self, n_eos0, source_rate, **conc_args)
+            res_inter = self.operator.search_crit_conc(n_eos0, source_rate, **conc_args)
         else:
             res_inter = self.operator(n_eos0, source_rate)
 
