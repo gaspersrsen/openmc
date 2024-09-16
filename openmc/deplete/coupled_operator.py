@@ -507,7 +507,8 @@ class CoupledOperator(OpenMCOperator):
                     conc_prev=conc
                     k_prev=k
                 openmc.lib.next_batch()
-            
+            #Set the new initial conc for the future conc searches
+            self.initial_value = conc*initial_value
             #Finaly update densities on Python API side
             for mat in openmc.lib.materials:
                     nuclides = []
