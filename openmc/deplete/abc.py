@@ -739,11 +739,15 @@ class Integrator(ABC):
         """Return integer number of depletion intervals"""
         return len(self.timesteps)
 
-    def _get_bos_data_from_operator(self, step_index, source_rate, bos_conc):
+    def _get_bos_data_from_operator(self, step_index, source_rate, bos_conc,
+            conc_run = False, conc_args = {}):
         """Get beginning of step concentrations, reaction rates from Operator
         """
         x = deepcopy(bos_conc)
-        res = self.operator(x, source_rate)
+        if conc_run:
+            res = self.operator.search_crit_conc(x, source_rate, **conc_args)
+        else:
+            res = self.operator(x, source_rate)
         self.operator.write_bos_data(step_index + self._i_res)
         return x, res
 
