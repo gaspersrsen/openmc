@@ -515,16 +515,16 @@ class CoupledOperator(OpenMCOperator):
             
             #Finaly update densities on Python API side
             for mat in openmc.lib.materials:
-                    nuclides = []
-                    densities = []
-                    all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
-                    all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
-                    
-                    for nuc in all_nuc:
-                        val = (all_dens[all_nuc==str(nuc)])[0]
-                        self.model.materials[int(mat)-1].remove_nuclide(nuc)
-                        if val > 1e-28:
-                            self.model.materials[int(mat)-1].add_nuclide(nuc,val)
+                nuclides = []
+                densities = []
+                all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
+                all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
+                
+                for nuc in all_nuc:
+                    val = (all_dens[all_nuc==str(nuc)])[0]
+                    self.model.materials[int(mat)-1].remove_nuclide(nuc)
+                    if val > 1e-28:
+                        self.model.materials[int(mat)-1].add_nuclide(nuc,val)
             print(f"Critical concentration: {conc*initial_value} +/- {conc*initial_value*multi}")
             keff = ufloat(*openmc.lib.keff())
             rates = self._calculate_reaction_rates(source_rate)
