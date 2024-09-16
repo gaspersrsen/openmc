@@ -450,16 +450,16 @@ class CoupledOperator(OpenMCOperator):
         settings.export_to_xml()
     
 
-        from openmc import cmfd
-        cmfd_run = cmfd.CMFDRun()
-        with cmfd_run.run_in_memory():
-            do_stuff_before_simulation_start()
-            for _ in cmfd_run.iter_batches():
-                do_stuff_between_batches()
-        #with openmc.lib.run_in_memory():
-            # comm.barrier()
-            # if not openmc.lib.is_initialized:
-            #     openmc.lib.init(intracomm=comm)
+        # from openmc import cmfd
+        # cmfd_run = cmfd.CMFDRun()
+        # with cmfd_run.run_in_memory():
+        #     do_stuff_before_simulation_start()
+        #     for _ in cmfd_run.iter_batches():
+        #         do_stuff_between_batches()
+        with openmc.lib.run_in_memory():
+            comm.barrier()
+            if not openmc.lib.is_initialized:
+                openmc.lib.init(intracomm=comm)
             openmc.lib.simulation_init()
             # materials = [openmc.lib.materials[int(i.id)] for i in self.materials]
             # super().initial_condition(materials)
