@@ -463,6 +463,7 @@ class CoupledOperator(OpenMCOperator):
         direction = 0 #Concentration direction 0-down, 1-up
         
         for step in range(batches-1):
+            openmc.lib.reset()
             if step <= batches:
                 k=openmc.lib.keff()
                 
