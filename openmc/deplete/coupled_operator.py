@@ -17,6 +17,7 @@ from numbers import Real, Integral
 
 import openmc
 from openmc.checkvalue import check_value
+import openmc.checkvalue as cv
 from openmc.data import DataLibrary
 from openmc.exceptions import DataError
 import openmc.lib
@@ -414,17 +415,17 @@ class CoupledOperator(OpenMCOperator):
         if iso is None:
             raise ValueError("'iso' argument is empty")
         if initial_value is not None:
-            check_value.check_type('initial_value', initial_value, Real)
+            cv.check_type('initial_value', initial_value, Real)
         else:
             raise ValueError("'initial_value' argument is empty")
         if batches is not None:
-            check_value.check_type('batches', batches, Integral)
+            cv.check_type('batches', batches, Integral)
         if particles is not None:
-            check_value.check_type('particles', particles, Integral)
+            cv.check_type('particles', particles, Integral)
         if bracket is not None:
-            check_value.check_iterable_type('bracket', bracket, Real)
-            check_value.check_length('bracket', bracket, 2)
-            check_value.check_less_than('bracket values', bracket[0], bracket[1])
+            cv.check_iterable_type('bracket', bracket, Real)
+            cv.check_length('bracket', bracket, 2)
+            cv.check_less_than('bracket values', bracket[0], bracket[1])
 
         if source_rate == 0.0:
             rates = self.reaction_rates.copy()
