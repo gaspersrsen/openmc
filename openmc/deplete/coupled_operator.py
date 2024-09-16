@@ -456,6 +456,8 @@ class CoupledOperator(OpenMCOperator):
             if not openmc.lib.is_initialized:
                 openmc.lib.init(intracomm=comm)
             openmc.lib.simulation_init()
+            materials = [openmc.lib.materials[int(i)] for i in self.burnable_mats]
+            super().initial_condition(materials)
             openmc.lib.next_batch()
             k_prev=openmc.lib.keff()
             conc = 1
