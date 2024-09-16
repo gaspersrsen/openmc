@@ -408,7 +408,7 @@ class CoupledOperator(OpenMCOperator):
 
         self.materials.export_to_xml(nuclides_to_ignore=self._decay_nucs)
     
-    def search_crit_conc(self, vec, source_rate, iso=None, batches=None, bracket=None, 
+    def search_crit_conc(self, vec, source_rate, iso=None, batches=50, bracket=None, 
                          initial_value=None, target=1., invert=False):
         """Initial value is the value given in your material building process, must be bigger than 0"""
         if iso is None:
