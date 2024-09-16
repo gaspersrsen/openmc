@@ -437,7 +437,7 @@ class CoupledOperator(OpenMCOperator):
             openmc.lib.reset_timers()
 
         self._update_materials_and_nuclides(vec)
-        self.export_to_xml()
+        self.model.export_to_xml()
         
         if invert: invert_k = -1 #If increasing conc results in increasing k_eff
         else: invert_k = 1
@@ -503,6 +503,19 @@ class CoupledOperator(OpenMCOperator):
                     conc_prev=conc
                     k_prev=k
                 openmc.lib.next_batch()
+            
+            #Finaly update densities on Python API side
+            for mat in openmc.lib.materials:
+                    nuclides = []
+                    densities = []
+                    all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
+                    all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
+                    
+                    for nuc in all_nuc:
+                        val = (all_dens[all_nuc==str(nuc)])[0]
+                        self.model.materials[int(mat)-1].remove_nuclide(nuc)
+                        if val > 1e-28:
+                            self.model.materials[int(mat)-1].add_nuclide(nuc,val)
             print(f"Critical concentration: {conc*initial_value} +/- {conc*initial_value*multi}")
             keff = ufloat(*openmc.lib.keff())
             rates = self._calculate_reaction_rates(source_rate)
