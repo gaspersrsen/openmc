@@ -448,7 +448,7 @@ class CoupledOperator(OpenMCOperator):
         settings.inactive += batches
         settings.export_to_xml()
         openmc.lib.finalize()
-        with openmc.lib.run_in_memory(intracomm=comm):
+        with openmc.lib.run_in_memory(intracomm=comm, output=False):
             openmc.lib.simulation_init()
             
             conc = 1
@@ -517,7 +517,7 @@ class CoupledOperator(OpenMCOperator):
                             self.model.materials[i].remove_nuclide(nuc)
                             if val > 1e-28:
                                 self.model.materials[i].add_nuclide(nuc,val)
-                                print(mat,nuc,val, self.model.materials[i])
+                                #print(mat,nuc,val, self.model.materials[i])
                         i += 1
             print(f"Critical concentration: {conc*initial_value} +/- {conc*initial_value*multi}")
             keff = ufloat(*openmc.lib.keff())
