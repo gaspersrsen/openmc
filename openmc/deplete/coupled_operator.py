@@ -481,6 +481,8 @@ class CoupledOperator(OpenMCOperator):
                         if conc < 0: conc = 0
                     
                     for mat in openmc.lib.materials:
+                        nuclides=[]
+                        densities=[]
                         all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
                         all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
                         
@@ -519,12 +521,13 @@ class CoupledOperator(OpenMCOperator):
                                 self.model.materials[i].add_nuclide(nuc,val)
                                 #print(mat,nuc,val, self.model.materials[i])
                         i += 1
+            self._n_calls += 1
+            self.model.export_to_xml()
             print(f"Critical concentration: {conc*initial_value} +/- {conc*initial_value*multi}")
             keff = ufloat(*openmc.lib.keff())
             rates = self._calculate_reaction_rates(source_rate)
             op_result = OperatorResult(keff, rates)
-            self._n_calls += 1
-            self.model.export_to_xml()
+
             #EOS
             openmc.lib.simulation_finalize()
             
