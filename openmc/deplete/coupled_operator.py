@@ -499,6 +499,7 @@ class CoupledOperator(OpenMCOperator):
                         mat_internal.set_densities(nuclides, densities)
                     conc_prev=conc
             #EOS
+            openmc.lib.simulation_finalize()
             #Set the new initial conc for the future conc searches
             self.initial_value = conc*initial_value
             self.concs += [self.initial_value]
@@ -526,7 +527,7 @@ class CoupledOperator(OpenMCOperator):
             op_result = OperatorResult(keff, rates)
             self._n_calls += 1
             self.model.export_to_xml()
-            openmc.lib.simulation_finalize()
+            
             
         return copy.deepcopy(op_result)
         
