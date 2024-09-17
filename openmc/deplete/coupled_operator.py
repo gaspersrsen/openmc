@@ -456,9 +456,11 @@ class CoupledOperator(OpenMCOperator):
         #     do_stuff_before_simulation_start()
         #     for _ in cmfd_run.iter_batches():
         #         do_stuff_between_batches()
+        print("cp_1")
         openmc.lib.simulation_finalize()
         openmc.lib.reset()
         with openmc.lib.run_in_memory():
+            print("cp2")
             comm.barrier()
             # if not openmc.lib.is_initialized:
             openmc.lib.init(intracomm=comm)
@@ -476,6 +478,7 @@ class CoupledOperator(OpenMCOperator):
             for _ in openmc.lib.iter_batches():
                 
                 if openmc.lib.current_batch() <= batches:
+                    print("cp_in")
                     k=openmc.lib.keff()
                     
                     if invert_k * (k[0] - target) < 0: #Decrease conc
