@@ -456,10 +456,14 @@ class CoupledOperator(OpenMCOperator):
         #     do_stuff_before_simulation_start()
         #     for _ in cmfd_run.iter_batches():
         #         do_stuff_between_batches()
+        openmc.lib.reset()
         with openmc.lib.run_in_memory():
-            comm.barrier()
-            #if not openmc.lib.is_initialized:
-            openmc.lib.init(intracomm=comm)
+            # comm.barrier()
+            # if not openmc.lib.is_initialized:
+            #     openmc.lib.init(intracomm=comm)
+            openmc.lib.read_settings_xml()
+            openmc.lib.read_materials_xml()
+            openmc.lib.read_geometry_xml()
             openmc.lib.simulation_init()
             # materials = [openmc.lib.materials[int(i.id)] for i in self.materials]
             # super().initial_condition(materials)
@@ -469,7 +473,7 @@ class CoupledOperator(OpenMCOperator):
             direction = 0 #Concentration direction 0-down, 1-up
             # for step in range(batches-1):
             for _ in openmc.lib.iter_batches():
-                #openmc.lib.reset()
+                
                 if openmc.lib.current_batch() <= batches:
                     k=openmc.lib.keff()
                     
@@ -510,7 +514,7 @@ class CoupledOperator(OpenMCOperator):
                         mat_internal.set_densities(nuclides, densities)
                     conc_prev=conc
                 #openmc.lib.next_batch()
-            
+            #EOS
             #Set the new initial conc for the future conc searches
             self.initial_value = conc*initial_value
             self.concs += [self.initial_value]
