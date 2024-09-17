@@ -450,11 +450,7 @@ class CoupledOperator(OpenMCOperator):
 
         print("cp_1")
         openmc.lib.finalize()
-        with openmc.lib.run_in_memory():
-            comm.barrier()
-            if not openmc.lib.is_initialized:
-                openmc.lib.init(intracomm=comm)
-                print("cp_INIT")
+        with openmc.lib.run_in_memory(intracomm=comm):
             print("cp2")
             
             conc = 1
