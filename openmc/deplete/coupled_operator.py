@@ -434,14 +434,11 @@ class CoupledOperator(OpenMCOperator):
             self.concs = [initial_value]
         initial_value = self.initial_value
         
-        if self._n_calls > 0:
-            openmc.lib.reset_timers()
-                             
-        self._update_materials_and_nuclides(vec)
-        self.model.export_to_xml()
-                             
         if invert: invert_k = -1 #If increasing conc results in increasing k_eff
         else: invert_k = 1
+        
+        self._update_materials_and_nuclides(vec)
+        self.model.export_to_xml()
     
         settings = self.model.settings
         settings.batches += batches
