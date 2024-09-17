@@ -456,6 +456,7 @@ class CoupledOperator(OpenMCOperator):
         #     do_stuff_before_simulation_start()
         #     for _ in cmfd_run.iter_batches():
         #         do_stuff_between_batches()
+        openmc.lib.simulation_finalize()
         openmc.lib.reset()
         with openmc.lib.run_in_memory():
             comm.barrier()
