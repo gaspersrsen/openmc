@@ -478,8 +478,6 @@ class CoupledOperator(OpenMCOperator):
                         if conc < 0: conc = 0
                     
                     for mat in openmc.lib.materials:
-                        nuclides = []
-                        densities = []
                         all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
                         all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
                         
@@ -621,19 +619,28 @@ class CoupledOperator(OpenMCOperator):
                                       ' atom/b-cm)')
 
                                 number_i[mat, nuc] = 0.0
-                        
-                        #Update density on Python API side:
-                        if self.model.materials[int(mat)-1].depletable:
-                            self.model.materials[int(mat)-1].remove_nuclide(nuc)
-                            if val > 1e-28:
-                                self.model.materials[int(mat)-1].add_nuclide(nuc,val)
                 
                 # Update densities on C API side
                 mat_internal = openmc.lib.materials[int(mat)]
                 mat_internal.set_densities(nuclides, densities)
 
-                # TODO Update densities on the Python side, otherwise the
-                # summary.h5 file contains densities at the first time step
+        #Update density on Python API side:
+        for mat in openmc.lib.materials:
+            all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
+            all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
+            
+            for nuc in all_nuc:
+                i = 0
+                for matPY in self.model.materials:
+                    if matPY.id == int(mat):
+                        val = (all_dens[all_nuc==str(nuc)])[0]
+                        self.model.materials[i].remove_nuclide(nuc)
+                        if val > 1e-28:
+                            self.model.materials[i].add_nuclide(nuc,val)
+                    i += 1
+
+        # TODO Update densities on the Python side, otherwise the
+        # summary.h5 file contains densities at the first time step
         #Update the xml files
         self.model.export_to_xml()
 
