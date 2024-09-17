@@ -451,6 +451,7 @@ class CoupledOperator(OpenMCOperator):
         print("cp_1")
         openmc.lib.finalize()
         with openmc.lib.run_in_memory(intracomm=comm):
+            openmc.lib.simulation_init()
             print("cp2")
             
             conc = 1
@@ -523,6 +524,7 @@ class CoupledOperator(OpenMCOperator):
             op_result = OperatorResult(keff, rates)
             self._n_calls += 1
             self.model.export_to_xml()
+            openmc.lib.simulation_finalize()
             
         return copy.deepcopy(op_result)
         
