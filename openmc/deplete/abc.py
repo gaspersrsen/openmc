@@ -745,10 +745,8 @@ class Integrator(ABC):
         """
         x = deepcopy(bos_conc)
         if conc_run:
-            res = self.operator.search_crit_conc(x, source_rate, **conc_args)
-            self.operator.initial_condition()
-        else:
-            res = self.operator(x, source_rate)
+            self.operator.search_crit_conc(x, source_rate, **conc_args)
+        res = self.operator(x, source_rate)
         self.operator.write_bos_data(step_index + self._i_res)
         return x, res
 
