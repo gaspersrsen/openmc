@@ -449,20 +449,20 @@ class CoupledOperator(OpenMCOperator):
         settings.export_to_xml()
 
         print("cp_1")
-        openmc.lib.simulation_finalize()
-        openmc.lib.reset()
+        openmc.lib.finalize()
         with openmc.lib.run_in_memory():
-            print("cp2")
             comm.barrier()
-            openmc.lib.simulation_init()
+            if not openmc.lib.is_initialized:
+                openmc.lib.init(intracomm=comm)
+                print("cp_INIT")
+            print("cp2")
             
             conc = 1
             conc_prev = 1
             multi = 0.999
             direction = 0 #Concentration direction 0-down, 1-up
-            # for step in range(batches-1):
-            for _ in openmc.lib.iter_batches():
-                
+            for step in range(batches):
+                openmc.lib.next_batch()
                 if openmc.lib.current_batch() <= batches:
                     print("cp_in")
                     k=openmc.lib.keff()
@@ -503,7 +503,6 @@ class CoupledOperator(OpenMCOperator):
                         mat_internal = openmc.lib.materials[int(mat)]
                         mat_internal.set_densities(nuclides, densities)
                     conc_prev=conc
-                #openmc.lib.next_batch()
             #EOS
             #Set the new initial conc for the future conc searches
             self.initial_value = conc*initial_value
@@ -528,7 +527,6 @@ class CoupledOperator(OpenMCOperator):
             op_result = OperatorResult(keff, rates)
             self._n_calls += 1
             self.model.export_to_xml()
-            openmc.lib.simulation_finalize()
             
         return copy.deepcopy(op_result)
         
