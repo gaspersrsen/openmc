@@ -448,6 +448,7 @@ class CoupledOperator(OpenMCOperator):
         settings.inactive += batches
         settings.export_to_xml()
         openmc.lib.finalize()
+        comm.barrier()
         with openmc.lib.run_in_memory(intracomm=comm, output=False):
             openmc.lib.simulation_init()
             
