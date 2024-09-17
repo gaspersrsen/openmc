@@ -458,12 +458,12 @@ class CoupledOperator(OpenMCOperator):
         #         do_stuff_between_batches()
         openmc.lib.reset()
         with openmc.lib.run_in_memory():
-            # comm.barrier()
+            comm.barrier()
             # if not openmc.lib.is_initialized:
-            #     openmc.lib.init(intracomm=comm)
-            openmc.lib.read_settings_xml()
-            openmc.lib.read_materials_xml()
-            openmc.lib.read_geometry_xml()
+            openmc.lib.init(intracomm=comm)
+            # openmc.lib.read_settings_xml()
+            # openmc.lib.read_materials_xml()
+            # openmc.lib.read_geometry_xml()
             openmc.lib.simulation_init()
             # materials = [openmc.lib.materials[int(i.id)] for i in self.materials]
             # super().initial_condition(materials)
