@@ -444,7 +444,7 @@ class CoupledOperator(OpenMCOperator):
         settings.batches += batches
         settings.inactive += batches
         settings.export_to_xml()
-        openmc.lib.finalize()
+        openmc.lib.simulation_finalize()
         openmc.lib.reset()
         if self._n_calls > 0:
             openmc.lib.reset_timers()
@@ -519,7 +519,8 @@ class CoupledOperator(OpenMCOperator):
                         i += 1
             self.model.export_to_xml()
             #EOS
-        #     openmc.lib.simulation_finalize()
+            openmc.lib.simulation_finalize()
+            self.operator.initial_condition()
         #     print(f"Critical concentration: {conc*initial_value} +/- {conc*initial_value*multi}")
         #     keff = ufloat(*openmc.lib.keff())
         #     rates = self._calculate_reaction_rates(source_rate)
