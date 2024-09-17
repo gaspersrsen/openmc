@@ -520,7 +520,6 @@ class CoupledOperator(OpenMCOperator):
             self.model.export_to_xml()
             #EOS
             openmc.lib.simulation_finalize()
-            self.operator.initial_condition()
         #     print(f"Critical concentration: {conc*initial_value} +/- {conc*initial_value*multi}")
         #     keff = ufloat(*openmc.lib.keff())
         #     rates = self._calculate_reaction_rates(source_rate)
