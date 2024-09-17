@@ -449,7 +449,7 @@ class CoupledOperator(OpenMCOperator):
         settings.export_to_xml()
         openmc.lib.finalize()
         comm.barrier()
-        with openmc.lib.run_in_memory(intracomm=comm, output=False):
+        with openmc.lib.run_in_memory(intracomm=comm):
             openmc.lib.simulation_init()
             
             conc = 1
