@@ -434,6 +434,8 @@ class CoupledOperator(OpenMCOperator):
             self.concs = [initial_value]
         initial_value = self.initial_value
 
+       if not openmc.lib.is_initialized:
+            openmc.lib.init(intracomm=comm)
         openmc.lib.reset()
         if self._n_calls > 0:
             openmc.lib.reset_timers()
@@ -448,28 +450,15 @@ class CoupledOperator(OpenMCOperator):
         settings.batches += batches
         settings.inactive += batches
         settings.export_to_xml()
-    
 
-        # from openmc import cmfd
-        # cmfd_run = cmfd.CMFDRun()
-        # with cmfd_run.run_in_memory():
-        #     do_stuff_before_simulation_start()
-        #     for _ in cmfd_run.iter_batches():
-        #         do_stuff_between_batches()
         print("cp_1")
         openmc.lib.simulation_finalize()
         openmc.lib.reset()
         with openmc.lib.run_in_memory():
             print("cp2")
             comm.barrier()
-            # if not openmc.lib.is_initialized:
-            openmc.lib.init(intracomm=comm)
-            # openmc.lib.read_settings_xml()
-            # openmc.lib.read_materials_xml()
-            # openmc.lib.read_geometry_xml()
             openmc.lib.simulation_init()
-            # materials = [openmc.lib.materials[int(i.id)] for i in self.materials]
-            # super().initial_condition(materials)
+            
             conc = 1
             conc_prev = 1
             multi = 0.999
