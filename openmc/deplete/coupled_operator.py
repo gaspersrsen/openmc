@@ -433,10 +433,7 @@ class CoupledOperator(OpenMCOperator):
             self.initial_value = initial_value
             self.concs = [initial_value]
         initial_value = self.initial_value
-
-       if not openmc.lib.is_initialized:
-            openmc.lib.init(intracomm=comm)
-        openmc.lib.reset()
+        
         if self._n_calls > 0:
             openmc.lib.reset_timers()
                              
