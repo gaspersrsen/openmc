@@ -505,23 +505,22 @@ class CoupledOperator(OpenMCOperator):
             self.concs += [self.initial_value]
             
             #Finaly update densities on Python API side
-            self._update_materials()
-            # for mat in openmc.lib.materials:
-            #     all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
-            #     all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
+            for mat in openmc.lib.materials:
+                all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
+                all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
                 
-            #     for nuc in all_nuc:
-            #         i = 0
-            #         for matPY in self.model.materials:
-            #             if matPY.id == int(mat):
-            #                 val = (all_dens[all_nuc==str(nuc)])[0]
-            #                 self.model.materials[i].remove_nuclide(nuc)
-            #                 if val > 1e-28:
-            #                     self.model.materials[i].add_nuclide(nuc,val)
-            #                     #print(mat,nuc,val, self.model.materials[i])
-            #             i += 1
+                for nuc in all_nuc:
+                    i = 0
+                    for matPY in self.model.materials:
+                        if matPY.id == int(mat):
+                            val = (all_dens[all_nuc==str(nuc)])[0]
+                            self.model.materials[i].remove_nuclide(nuc)
+                            if val > 1e-28:
+                                self.model.materials[i].add_nuclide(nuc,val)
+                                #print(mat,nuc,val, self.model.materials[i])
+                        i += 1
             self._n_calls += 1
-            #self.model.export_to_xml()
+            self.model.export_to_xml()
             print(f"Critical concentration: {conc*initial_value} +/- {conc*initial_value*multi}")
             keff = ufloat(*openmc.lib.keff())
             rates = self._calculate_reaction_rates(source_rate)
