@@ -447,21 +447,18 @@ class CoupledOperator(OpenMCOperator):
         settings.batches += batches
         settings.inactive += batches
         settings.export_to_xml()
-
-        print("cp_1")
         openmc.lib.finalize()
         with openmc.lib.run_in_memory(intracomm=comm):
             openmc.lib.simulation_init()
-            print("cp2")
             
             conc = 1
             conc_prev = 1
             multi = 0.999
             direction = 0 #Concentration direction 0-down, 1-up
             for step in range(batches):
+                 openmc.lib.reset()
                 openmc.lib.next_batch()
                 if openmc.lib.current_batch() <= batches:
-                    print("cp_in")
                     k=openmc.lib.keff()
                     
                     if invert_k * (k[0] - target) < 0: #Decrease conc
@@ -513,11 +510,15 @@ class CoupledOperator(OpenMCOperator):
                 all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
                 
                 for nuc in all_nuc:
-                    val = (all_dens[all_nuc==str(nuc)])[0]
-                    self.model.materials[int(mat)-1].remove_nuclide(nuc)
-                    if val > 1e-28:
-                        print(mat,nuc,val)
-                        self.model.materials[int(mat)-1].add_nuclide(nuc,val)
+                    i = 0
+                    for matPY in self.model.materials:
+                        if matPY.id == int(mat):
+                            val = (all_dens[all_nuc==str(nuc)])[0]
+                            self.model.materials[i].remove_nuclide(nuc)
+                            if val > 1e-28:
+                                self.model.materials[i].add_nuclide(nuc,val)
+                                print(mat,nuc,val, self.model.materials[i])
+                        i += 1
             print(f"Critical concentration: {conc*initial_value} +/- {conc*initial_value*multi}")
             keff = ufloat(*openmc.lib.keff())
             rates = self._calculate_reaction_rates(source_rate)
