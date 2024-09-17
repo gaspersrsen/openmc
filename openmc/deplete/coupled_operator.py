@@ -506,8 +506,6 @@ class CoupledOperator(OpenMCOperator):
             
             #Finaly update densities on Python API side
             for mat in openmc.lib.materials:
-                nuclides = []
-                densities = []
                 all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
                 all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
                 
