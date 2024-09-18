@@ -472,18 +472,18 @@ class CoupledOperator(OpenMCOperator):
         else: invert_k = 1
         
         self._update_materials_and_nuclides(vec)
-        self.model.export_to_xml()
-    
+        self.model.materials.export_to_xml()
+        
         settings = self.model.settings
         settings.batches += batches
         settings.inactive += batches
         settings.export_to_xml()
         import time
-        time.sleep(3)
+        time.sleep(5)
         openmc.lib.simulation_finalize()
         openmc.lib.reset()
-        # if self._n_calls > 0:
-        #     openmc.lib.reset_timers()
+        if self._n_calls > 0:
+            openmc.lib.reset_timers()
         
         
         conc = 1
@@ -560,17 +560,17 @@ class CoupledOperator(OpenMCOperator):
                             self.model.materials[i].add_nuclide(nuc,val)
                             #print(mat,nuc,val, self.model.materials[i])
                     i += 1
-        self.operator.materials = self.model.materials
+        #self.materials = self.model.materials
         self.model.export_to_xml()
         #EOS
         
-        # print(f"Critical concentration: {conc*initial_value} +/- {conc*initial_value*multi}")
-        # keff = ufloat(*openmc.lib.keff())
-        # rates = self._calculate_reaction_rates(source_rate)
-        # op_result = OperatorResult(keff, rates)
-        # self._n_calls += 1
+        print(f"Critical concentration: {conc*initial_value} +/- {conc*initial_value*multi}")
+        keff = ufloat(*openmc.lib.keff())
+        rates = self._calculate_reaction_rates(source_rate)
+        op_result = OperatorResult(keff, rates)
+        self._n_calls += 1
             
-        # return copy.deepcopy(op_result)
+        return copy.deepcopy(op_result)
         
     def __call__(self, vec, source_rate):
         """Runs a simulation.
