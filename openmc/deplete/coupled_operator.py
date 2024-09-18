@@ -463,7 +463,7 @@ class CoupledOperator(OpenMCOperator):
         with openmc.lib.run_in_memory(args=args, intracomm=comm):
             openmc.lib.simulation_init()
             for _ in openmc.lib.iter_batches():
-                openmc.lib.next_batch()
+                #openmc.lib.next_batch()
                 if openmc.lib.current_batch() <= batches:
                     k=openmc.lib.keff()
                     
