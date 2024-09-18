@@ -253,7 +253,6 @@ class CELIIntegrator(Integrator):
         
         if conc_run:            
             res_ce = self.operator.search_crit_conc(n_ce, source_rate, **conc_args)
-            self.operator.initial_condition()
         else:
             res_ce = self.operator(n_ce, source_rate)
 
@@ -406,7 +405,6 @@ class LEQIIntegrator(Integrator):
                 self._prev_rates = bos_rates
                 return CELIIntegrator.__call__(
                     self, n_bos, bos_rates, dt, source_rate, i, conc_run, conc_args)
-            self.operator.initial_condition()
             prev_res = self.operator.prev_res[-2]
             prev_dt = self.timesteps[i] - prev_res.time[0]
             self._prev_rates = prev_res.rates[0]
@@ -426,7 +424,6 @@ class LEQIIntegrator(Integrator):
 
         if conc_run:
             res_inter = self.operator.search_crit_conc(n_eos0, source_rate, **conc_args)
-            self.operator.initial_condition()
         else:
             res_inter = self.operator(n_eos0, source_rate)
 
