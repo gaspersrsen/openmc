@@ -459,7 +459,7 @@ class CoupledOperator(OpenMCOperator):
             volume=False, geometry_debug=False, particles=None,
             restart_file=None, threads=None, tracks=False,
             event_based=False, openmc_exec=None, mpi_args=None,
-            path_input=None)
+            path_input=None)[1:]
         with openmc.lib.run_in_memory(args=args, intracomm=comm):
             openmc.lib.simulation_init()
             for _ in openmc.lib.iter_batches():
