@@ -455,7 +455,7 @@ class CoupledOperator(OpenMCOperator):
         conc_prev = 1
         multi = 0.999
         direction = 0 #Concentration direction 0-down, 1-up
-        args = openmc.lib._process_CLI_arguments(
+        args = _process_CLI_arguments(
             volume=False, geometry_debug=False, particles=None,
             restart_file=None, threads=None, tracks=False,
             event_based=False, openmc_exec='openmc', mpi_args=None,
