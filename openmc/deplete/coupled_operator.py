@@ -444,56 +444,65 @@ class CoupledOperator(OpenMCOperator):
         settings.batches += batches
         settings.inactive += batches
         settings.export_to_xml()
-        openmc.lib.simulation_finalize()
-        openmc.lib.reset()
+        #openmc.lib.simulation_finalize()
+        #openmc.lib.reset()
         # if self._n_calls > 0:
         #     openmc.lib.reset_timers()
-        openmc.lib.simulation_init()
+        
         
         conc = 1
         conc_prev = 1
         multi = 0.999
         direction = 0 #Concentration direction 0-down, 1-up
-        while openmc.lib.current_batch() <= batches:
-            openmc.lib.next_batch()
-            k=openmc.lib.keff()
-            
-            if invert_k * (k[0] - target) < 0: #Decrease conc
-                if direction != 0:
-                    multi *= 0.7
-                    direction = 0
-                conc *= (1 - multi)
-            else:
-                if direction != 1:
-                    multi *= 0.7
-                    direction = 1
-                conc *= (1 + multi)
-            
-            if bracket:
-                if conc*initial_value < bracket[0]: conc = bracket[0] / initial_value
-                if conc*initial_value > bracket[1]: conc = bracket[1] / initial_value
-            else:
-                if conc < 0: conc = 0
-            
-            for mat in openmc.lib.materials:
-                nuclides=[]
-                densities=[]
-                all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
-                all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
-                
-                for nuc in all_nuc:
-                    val = (all_dens[all_nuc==str(nuc)])[0]
-                    # If nuclide is zero, do not add to the problem.
-                    if val > 0.0:
-                        if str(nuc) in iso:
-                            val *= conc / conc_prev
-
-                        nuclides.append(nuc)
-                        densities.append(val)
-                # Update densities on C API side
-                mat_internal = openmc.lib.materials[int(mat)]
-                mat_internal.set_densities(nuclides, densities)
-            conc_prev=conc
+        args = _process_CLI_arguments(
+            volume=False, geometry_debug=False, particles=None,
+            restart_file=None, threads=None, tracks=False,
+            event_based=False, openmc_exec='openmc', mpi_args=None,
+            path_input=None)
+        with openmc.lib.run_in_memory(args=args, intracomm=comm):
+            openmc.lib.simulation_init()
+            for _ in openmc.lib.iter_batches():
+                openmc.lib.next_batch()
+                if openmc.lib.current_batch() <= batches:
+                    k=openmc.lib.keff()
+                    
+                    if invert_k * (k[0] - target) < 0: #Decrease conc
+                        if direction != 0:
+                            multi *= 0.7
+                            direction = 0
+                        conc *= (1 - multi)
+                    else:
+                        if direction != 1:
+                            multi *= 0.7
+                            direction = 1
+                        conc *= (1 + multi)
+                    
+                    if bracket:
+                        if conc*initial_value < bracket[0]: conc = bracket[0] / initial_value
+                        if conc*initial_value > bracket[1]: conc = bracket[1] / initial_value
+                    else:
+                        if conc < 0: conc = 0
+                    
+                    for mat in openmc.lib.materials:
+                        nuclides=[]
+                        densities=[]
+                        all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
+                        all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
+                        
+                        for nuc in all_nuc:
+                            val = (all_dens[all_nuc==str(nuc)])[0]
+                            # If nuclide is zero, do not add to the problem.
+                            if val > 0.0:
+                                if str(nuc) in iso:
+                                    val *= conc / conc_prev
+        
+                                nuclides.append(nuc)
+                                densities.append(val)
+                        # Update densities on C API side
+                        mat_internal = openmc.lib.materials[int(mat)]
+                        mat_internal.set_densities(nuclides, densities)
+                    conc_prev=conc
+            openmc.lib.simulation_finalize()
 
         #Set the new initial conc for the future conc searches
         self.initial_value = conc*initial_value
@@ -517,7 +526,7 @@ class CoupledOperator(OpenMCOperator):
         self.operator.materials = self.model.materials
         self.model.export_to_xml()
         #EOS
-        openmc.lib.simulation_finalize()
+        
         # print(f"Critical concentration: {conc*initial_value} +/- {conc*initial_value*multi}")
         # keff = ufloat(*openmc.lib.keff())
         # rates = self._calculate_reaction_rates(source_rate)
