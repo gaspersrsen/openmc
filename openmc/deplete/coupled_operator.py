@@ -480,8 +480,8 @@ class CoupledOperator(OpenMCOperator):
         settings.export_to_xml()
         import time
         time.sleep(3)
-        #openmc.lib.simulation_finalize()
-        #openmc.lib.reset()
+        openmc.lib.simulation_finalize()
+        openmc.lib.reset()
         # if self._n_calls > 0:
         #     openmc.lib.reset_timers()
         
@@ -495,7 +495,8 @@ class CoupledOperator(OpenMCOperator):
             restart_file=None, threads=None, tracks=False,
             event_based=False, openmc_exec=None, mpi_args=None,
             path_input=None)[1:]
-        with openmc.lib.run_in_memory(args=args, intracomm=comm):
+        #with openmc.lib.run_in_memory(args=args, intracomm=comm):
+        with quiet_dll(output=True):
             openmc.lib.simulation_init()
             for _ in openmc.lib.iter_batches():
                 #openmc.lib.next_batch()
