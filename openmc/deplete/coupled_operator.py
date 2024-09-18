@@ -496,7 +496,7 @@ class CoupledOperator(OpenMCOperator):
             event_based=False, openmc_exec=None, mpi_args=None,
             path_input=None)[1:]
         #with openmc.lib.run_in_memory(args=args, intracomm=comm):
-        with quiet_dll(output=True):
+        with openmc.lib.quiet_dll(output=True):
             openmc.lib.simulation_init()
             for _ in openmc.lib.iter_batches():
                 #openmc.lib.next_batch()
