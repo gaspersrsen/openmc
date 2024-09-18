@@ -411,7 +411,40 @@ class CoupledOperator(OpenMCOperator):
     
     def search_crit_conc(self, vec, source_rate, iso=None, batches=50, bracket=None, 
                          initial_value=None, target=1., invert=False):
-        """Initial value is the value given in your material building process, must be bigger than 0"""
+        """
+        Runs a simulation where 'iso' nuclide values converge in such a way to obtain the desired k_eff.
+        Operator.model materials are updated 
+        Initial value is the value given in your material building process, must be bigger than 0.
+        All 'iso' nuclides are multiplied by the same scaling factor.
+        Higher (>100 000) particle numbers in 'openmc.settings' are recommended for more accurate simulation.
+
+        Parameters
+        ----------
+        vec : list of numpy.ndarray
+            Total atoms to be used in function.
+        source_rate : float
+            Power in [W] or source rate in [neutron/sec]
+        iso: array of str
+            Nuclide name, ex. ["B10", "B11"]
+        batches: int
+            Number of inactive batches added to the begining of simulation where 'iso' concentration converges.
+            Defaults to 50 extra inactive cycles
+        bracket: array of 2 floats > 0, optional
+            Lower and upper bounds for concentrations.
+            Needs to be used with initial_value.
+        initial_value: float > 0, optional
+            Only used in first call, used for prettier critical concentration message.
+        target: float
+            Target k_eff, defaults to 1.0
+        invert: Bool
+            If increase in nuclide concentration leads to increase in k_eff.
+            Defaults to False.
+
+        Returns
+        -------
+        Nothing
+
+        """
         if iso is None:
             raise ValueError("'iso' argument is empty")
         if initial_value is not None:
