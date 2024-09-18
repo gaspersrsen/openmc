@@ -250,9 +250,6 @@ class CELIIntegrator(Integrator):
         """
         # deplete to end using BOS rates
         proc_time, n_ce = self._timed_deplete(n_bos, rates, dt)
-
-        self._update_materials_and_nuclides(vec)
-        self.operator.model.export_to_xml()
         
         if conc_run:            
             res_ce = self.operator.search_crit_conc(n_ce, source_rate, **conc_args)
