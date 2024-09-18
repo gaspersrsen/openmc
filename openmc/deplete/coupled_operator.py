@@ -21,6 +21,7 @@ import openmc.checkvalue as cv
 from openmc.data import DataLibrary
 from openmc.exceptions import DataError
 import openmc.lib
+from openmc.executor import _process_CLI_arguments
 from openmc.mpi import comm
 from .abc import OperatorResult
 from .openmc_operator import OpenMCOperator
