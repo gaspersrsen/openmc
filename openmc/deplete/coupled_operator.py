@@ -478,6 +478,8 @@ class CoupledOperator(OpenMCOperator):
         settings.batches += batches
         settings.inactive += batches
         settings.export_to_xml()
+        import time
+        time.sleep(3)
         #openmc.lib.simulation_finalize()
         #openmc.lib.reset()
         # if self._n_calls > 0:
