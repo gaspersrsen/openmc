@@ -688,10 +688,11 @@ class CoupledOperator(OpenMCOperator):
                 i = 0
                 for matPY in self.model.materials:
                     if matPY.id == int(mat):
-                        val = (all_dens[all_nuc==str(nuc)])[0]
-                        self.model.materials[i].remove_nuclide(nuc)
-                        if val > 1e-28:
-                            self.model.materials[i].add_nuclide(nuc,val)
+                        if str(nuc)[0] != "c":
+                            val = (all_dens[all_nuc==str(nuc)])[0]
+                            self.model.materials[i].remove_nuclide(nuc)
+                            if val > 1e-28:
+                                self.model.materials[i].add_nuclide(nuc,val)
                     i += 1
 
         # TODO Update densities on the Python side, otherwise the
