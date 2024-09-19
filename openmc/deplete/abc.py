@@ -20,7 +20,6 @@ from uncertainties import ufloat
 
 from openmc.checkvalue import check_type, check_greater_than, PathLike
 from openmc.mpi import comm
-import openmc.lib
 from openmc.utility_funcs import change_directory
 from openmc import Material
 from .stepresult import StepResult
