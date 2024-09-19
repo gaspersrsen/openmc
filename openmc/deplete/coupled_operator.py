@@ -504,7 +504,8 @@ class CoupledOperator(OpenMCOperator):
         openmc.lib.simulation_init()
         #for _ in openmc.lib.iter_batches():
         for _ in range(settings.batches):
-            openmc.lib.next_batch()
+            err = openmc.lib.next_batch()
+            print(err)
             if openmc.lib.current_batch() <= batches:
                 k=openmc.lib.keff()
                 
@@ -520,8 +521,10 @@ class CoupledOperator(OpenMCOperator):
                     conc *= (1 + multi)
                 
                 if bracket:
-                    if conc*initial_value < bracket[0]: conc = bracket[0] / initial_value
-                    if conc*initial_value > bracket[1]: conc = bracket[1] / initial_value
+                    if conc*initial_value < bracket[0]:
+                        conc = bracket[0] / initial_value
+                    if conc*initial_value > bracket[1]:
+                        conc = bracket[1] / initial_value
                 else:
                     if conc < 0: conc = 0
                 
@@ -537,7 +540,6 @@ class CoupledOperator(OpenMCOperator):
                         if val > 0.0:
                             if str(nuc) in iso:
                                 val *= conc / conc_prev
-    
                             nuclides.append(nuc)
                             densities.append(val)
                     # Update densities on C API side
