@@ -468,8 +468,10 @@ class CoupledOperator(OpenMCOperator):
             self.concs = [initial_value]
         initial_value = self.initial_value
         
-        if invert: invert_k = -1 #If increasing conc results in increasing k_eff
-        else: invert_k = 1
+        if invert:
+            invert_k = -1 #If increasing conc results in increasing k_eff
+        else:
+            invert_k = 1
         
         self._update_materials_and_nuclides(vec)
         self.model.materials.export_to_xml()
@@ -558,11 +560,13 @@ class CoupledOperator(OpenMCOperator):
                 i = 0
                 for matPY in self.model.materials:
                     if matPY.id == int(mat):
-                        val = (all_dens[all_nuc==str(nuc)])[0]
-                        self.model.materials[i].remove_nuclide(nuc)
-                        if val > 1e-28:
-                            self.model.materials[i].add_nuclide(nuc,val)
-                            #print(mat,nuc,val, self.model.materials[i])
+                        for nucPY in matPY.nuclides:
+                            if nucPY.name == str(nuc):
+                                val = (all_dens[all_nuc==str(nuc)])[0]
+                                self.model.materials[i].remove_nuclide(nuc)
+                                #if val > 1e-28:
+                                self.model.materials[i].add_nuclide(nuc,val)
+                                #print(mat,nuc,val, self.model.materials[i])
                     i += 1
         #self.materials = self.model.materials
         self.model.export_to_xml()
