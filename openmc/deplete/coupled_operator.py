@@ -478,14 +478,10 @@ class CoupledOperator(OpenMCOperator):
         settings.batches = settings.batches + batches
         settings.inactive = settings.inactive + batches
         settings.export_to_xml()
-        import time
-        time.sleep(5)
         #openmc.lib.simulation_finalize()
         openmc.lib.reset()
         if self._n_calls > 0:
             openmc.lib.reset_timers()
-        
-        
         conc = 1
         conc_prev = 1
         multi = 0.999
@@ -499,6 +495,7 @@ class CoupledOperator(OpenMCOperator):
                              
         #with openmc.lib.run_in_memory(args=args[1:], intracomm=comm):
         #with openmc.lib.quiet_dll(output=True):
+         openmc.lib.finalize()
         comm.barrier()
         if not openmc.lib.is_initialized:
             openmc.lib.init(intracomm=comm)
@@ -575,6 +572,7 @@ class CoupledOperator(OpenMCOperator):
         rates = self._calculate_reaction_rates(source_rate)
         op_result = OperatorResult(keff, rates)
         self._n_calls += 1
+        
             
         return copy.deepcopy(op_result)
         
