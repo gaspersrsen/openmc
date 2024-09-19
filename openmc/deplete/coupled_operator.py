@@ -457,7 +457,7 @@ class CoupledOperator(OpenMCOperator):
             cv.check_iterable_type('bracket', bracket, Real)
             cv.check_length('bracket', bracket, 2)
             cv.check_less_than('bracket values', bracket[0], bracket[1])
-
+        
         if source_rate == 0.0:
             rates = self.reaction_rates.copy()
             rates.fill(0.0)
