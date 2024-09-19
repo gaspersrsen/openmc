@@ -481,36 +481,22 @@ class CoupledOperator(OpenMCOperator):
         settings.batches = settings.batches + batches
         settings.inactive = settings.inactive + batches
         settings.export_to_xml()
-        #openmc.lib.simulation_finalize()
-        openmc.lib.reset()
-        if self._n_calls > 0:
-            openmc.lib.reset_timers()
+
         conc = 1
         conc_prev = 1
         multi = 0.999
         #Direction of concentration change: 0-decreasing, 1-increasing
         direction = 0
-        # args = _process_CLI_arguments(
-        #     volume=False, geometry_debug=False, particles=settings.particles,
-        #     restart_file=None, threads=None, tracks=False,
-        #     event_based=False, openmc_exec=None, mpi_args=None,
-        #     path_input=None)
-        # print(args,args[1:])
                              
-        #with openmc.lib.run_in_memory(args=args[1:], intracomm=comm):
-        #with openmc.lib.quiet_dll(output=True):
-        # openmc.lib.finalize()
-        # comm.barrier()
-        # if not openmc.lib.is_initialized:
-        #     openmc.lib.init(intracomm=comm)
+        openmc.lib.reset()
+        if self._n_calls > 0:
+            openmc.lib.reset_timers()
         openmc.lib.simulation_init()
         for _ in openmc.lib.iter_batches():
-            #err = openmc.lib.next_batch()
-            #print(err)
             if openmc.lib.current_batch() <= batches:
                 k=openmc.lib.keff()
                 
-                if invert_k*(k[0]-target) < 0: #Decrease conc
+                if invert_k*(k[0]-target) < 0: 
                     if direction != 0:
                         multi *= 0.7
                         direction = 0
@@ -558,8 +544,6 @@ class CoupledOperator(OpenMCOperator):
         for mat in openmc.lib.materials:
             all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
             all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
-            
-            
             i = 0
             for matPY in self.model.materials:
                 if matPY.id == int(mat):
