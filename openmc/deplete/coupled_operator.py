@@ -468,8 +468,9 @@ class CoupledOperator(OpenMCOperator):
             self.concs = [initial_value]
         initial_value = self.initial_value
         
+        #Inverted k means an increasing k_eff with increasing nuclide density (oppostite of ex. Boron)
         if invert:
-            invert_k = -1 #If increasing conc results in increasing k_eff
+            invert_k = -1 
         else:
             invert_k = 1
         
@@ -487,7 +488,8 @@ class CoupledOperator(OpenMCOperator):
         conc = 1
         conc_prev = 1
         multi = 0.999
-        direction = 0 #Concentration direction 0-down, 1-up
+        #Direction of concentration change: 0-decreasing, 1-increasing
+        direction = 0
         # args = _process_CLI_arguments(
         #     volume=False, geometry_debug=False, particles=settings.particles,
         #     restart_file=None, threads=None, tracks=False,
@@ -501,23 +503,23 @@ class CoupledOperator(OpenMCOperator):
         # comm.barrier()
         # if not openmc.lib.is_initialized:
         #     openmc.lib.init(intracomm=comm)
-        # openmc.lib.simulation_init()
+        openmc.lib.simulation_init()
         for _ in openmc.lib.iter_batches():
             #err = openmc.lib.next_batch()
             #print(err)
             if openmc.lib.current_batch() <= batches:
                 k=openmc.lib.keff()
                 
-                if invert_k * (k[0] - target) < 0: #Decrease conc
+                if invert_k*(k[0]-target) < 0: #Decrease conc
                     if direction != 0:
                         multi *= 0.7
                         direction = 0
-                    conc *= (1 - multi)
+                    conc *= (1-multi)
                 else:
                     if direction != 1:
                         multi *= 0.7
                         direction = 1
-                    conc *= (1 + multi)
+                    conc *= (1+multi)
                 
                 if bracket:
                     if conc*initial_value < bracket[0]:
@@ -546,7 +548,7 @@ class CoupledOperator(OpenMCOperator):
                     mat_internal.set_densities(nuclides, densities)
                 conc_prev=conc
         openmc.lib.simulation_finalize()
-        openmc.lib.finalize()
+        #openmc.lib.finalize()
 
         #Set the new initial conc for the future conc searches
         self.initial_value = conc*initial_value
