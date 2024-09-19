@@ -888,7 +888,7 @@ class Integrator(ABC):
             if output and final_step and comm.rank == 0:
                 print(f"[openmc.deplete] t={t} (final operator evaluation)")
             if conc_run:
-                res_list = [self.operator.search_crit_conc(n, source_rate, conc_run, conc_args if final_step else 0.0)]
+                res_list = [self.operator.search_crit_conc(n, source_rate, conc_run, **conc_args if final_step else 0.0)]
             else:
                 res_list = [self.operator.operator(n, source_rate if final_step else 0.0)]
             StepResult.save(self.operator, [n], res_list, [t, t],
