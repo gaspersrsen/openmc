@@ -500,6 +500,8 @@ class CoupledOperator(OpenMCOperator):
         #with openmc.lib.run_in_memory(args=args[1:], intracomm=comm):
         #with openmc.lib.quiet_dll(output=True):
         comm.barrier()
+        if not openmc.lib.is_initialized:
+            openmc.lib.init(intracomm=comm)
         openmc.lib.simulation_init()
         #for _ in openmc.lib.iter_batches():
         for _ in range(settings.batches):
