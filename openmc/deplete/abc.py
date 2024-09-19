@@ -870,7 +870,7 @@ class Integrator(ABC):
                     n, res = self._get_bos_data_from_restart(source_rate, n)
                 
                 # Solve Bateman equations over time interval
-                proc_time, n_list, res_list = self(n, res.rates, dt, source_rate, i)
+                proc_time, n_list, res_list = self(n, res.rates, dt, source_rate, i, conc_run, conc_args)
 
                 # Insert BOS concentration, transport results
                 n_list.insert(0, n)
