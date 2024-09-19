@@ -495,7 +495,7 @@ class CoupledOperator(OpenMCOperator):
                              
         #with openmc.lib.run_in_memory(args=args[1:], intracomm=comm):
         #with openmc.lib.quiet_dll(output=True):
-         openmc.lib.finalize()
+        openmc.lib.finalize()
         comm.barrier()
         if not openmc.lib.is_initialized:
             openmc.lib.init(intracomm=comm)
@@ -543,6 +543,7 @@ class CoupledOperator(OpenMCOperator):
                     mat_internal.set_densities(nuclides, densities)
                 conc_prev=conc
         openmc.lib.simulation_finalize()
+        openmc.lib.finalize()
 
         #Set the new initial conc for the future conc searches
         self.initial_value = conc*initial_value
@@ -572,6 +573,7 @@ class CoupledOperator(OpenMCOperator):
         rates = self._calculate_reaction_rates(source_rate)
         op_result = OperatorResult(keff, rates)
         self._n_calls += 1
+        self.initial_condition()
         
             
         return copy.deepcopy(op_result)
