@@ -409,7 +409,7 @@ class CoupledOperator(OpenMCOperator):
 
         self.materials.export_to_xml(nuclides_to_ignore=self._decay_nucs)
     
-    def search_crit_conc(self, vec, source_rate, iso=None, batches=50, bracket=None, 
+    def search_crit_conc(self, vec, source_rate, iso=None, batches=None, bracket=None, 
                          initial_value=None, target=1., invert=False):
         """
         Runs a simulation where 'iso' nuclide values converge in such a way to obtain the desired k_eff.
@@ -453,6 +453,8 @@ class CoupledOperator(OpenMCOperator):
             raise ValueError("'initial_value' argument is empty")
         if batches is not None:
             cv.check_type('batches', batches, Integral)
+        else:
+            raise ValueError("'batches' argument is empty")
         if bracket is not None:
             cv.check_iterable_type('bracket', bracket, Real)
             cv.check_length('bracket', bracket, 2)
@@ -468,7 +470,7 @@ class CoupledOperator(OpenMCOperator):
             self.concs = [initial_value]
         initial_value = self.initial_value
         
-        # Inverted k means an increasing k_eff with increasing nuclide density (oppostite of ex. Boron)
+        # Inverted k means an increasing k_eff with increasing nuclide density (opposite of Boron)
         if invert:
             invert_k = -1 
         else:
