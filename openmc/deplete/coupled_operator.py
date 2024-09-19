@@ -476,11 +476,6 @@ class CoupledOperator(OpenMCOperator):
         
         self._update_materials_and_nuclides(vec)
         self.model.materials.export_to_xml()
-        
-        settings = self.model.settings
-        settings.batches = settings.batches + batches
-        settings.inactive = settings.inactive + batches
-        settings.export_to_xml()
 
         conc = 1
         conc_prev = 1
