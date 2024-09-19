@@ -844,6 +844,11 @@ class Integrator(ABC):
         ):
 
         with change_directory(self.operator.output_dir):
+            if conc_run:
+                if "batches" not in conc_args:
+                    conc_args["batches"] = 50
+                self.operator.model.settings.batches += conc_args["batches"]
+                self.operator.model.settings.inactive += conc_args["batches"]
             n = self.operator.initial_condition()
             t, self._i_res = self._get_start_data()
 
