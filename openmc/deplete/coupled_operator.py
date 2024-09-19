@@ -556,18 +556,17 @@ class CoupledOperator(OpenMCOperator):
             all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
             all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
             
-            for nuc in all_nuc:
-                i = 0
-                for matPY in self.model.materials:
-                    if matPY.id == int(mat):
-                        for nucPY in matPY.nuclides:
-                            if nucPY.name == str(nuc):
-                                val = (all_dens[all_nuc==str(nuc)])[0]
-                                self.model.materials[i].remove_nuclide(nuc)
-                                #if val > 1e-28:
-                                self.model.materials[i].add_nuclide(nuc,val)
-                                #print(mat,nuc,val, self.model.materials[i])
-                    i += 1
+            
+            i = 0
+            for matPY in self.model.materials:
+                if matPY.id == int(mat):
+                    for nuc in all_nuc:
+                        val = (all_dens[all_nuc==str(nuc)])[0]
+                        self.model.materials[i].remove_nuclide(nuc)
+                        #if val > 1e-28:
+                        self.model.materials[i].add_nuclide(nuc,val)
+                        #print(mat,nuc,val, self.model.materials[i])
+                i += 1
         #self.materials = self.model.materials
         self.model.export_to_xml()
         #EOS
@@ -684,16 +683,15 @@ class CoupledOperator(OpenMCOperator):
             all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
             all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
             
-            for nuc in all_nuc:
-                i = 0
-                for matPY in self.model.materials:
-                    if matPY.id == int(mat):
-                        if str(nuc)[0] != "c":
-                            val = (all_dens[all_nuc==str(nuc)])[0]
-                            self.model.materials[i].remove_nuclide(nuc)
-                            if val > 1e-28:
-                                self.model.materials[i].add_nuclide(nuc,val)
-                    i += 1
+            i = 0
+            for matPY in self.model.materials:
+                if matPY.id == int(mat):
+                    for nuc in all_nuc:
+                        val = (all_dens[all_nuc==str(nuc)])[0]
+                        self.model.materials[i].remove_nuclide(nuc)
+                        if val > 1e-28:
+                            self.model.materials[i].add_nuclide(nuc,val)
+                i += 1
 
         # TODO Update densities on the Python side, otherwise the
         # summary.h5 file contains densities at the first time step
