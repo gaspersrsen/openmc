@@ -495,9 +495,8 @@ class CoupledOperator(OpenMCOperator):
             if openmc.lib.current_batch() <= batches:
                 k=openmc.lib.keff()
                 tallies = openmc.lib.tallies
-                print(tallies)
-                for i in tallies:
-                    print(openmc.lib.tally(uid=i))
+                for i in tallies.values:
+                    print(i.results)
                 # Determine change of concentration
                 if invert_k*(k[0]-target) < 0: 
                     if direction != 0:
