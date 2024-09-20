@@ -494,6 +494,8 @@ class CoupledOperator(OpenMCOperator):
             # Only change concentrations during the additional batches
             if openmc.lib.current_batch() <= batches:
                 k=openmc.lib.keff()
+                tallies = openmc.lib.tallies()
+                print(tallies)
                 # Determine change of concentration
                 if invert_k*(k[0]-target) < 0: 
                     if direction != 0:
@@ -556,7 +558,7 @@ class CoupledOperator(OpenMCOperator):
         # self.materials = self.model.materials
         self.model.export_to_xml()
         # Print results 
-        print(f"Critical concentration: {conc*initial_value} +/- {conc*initial_value*multi}")
+        print(f"Critical concentration: {conc*initial_value:.05f} +/- {conc*initial_value*multi:.05f}")
         keff = ufloat(*openmc.lib.keff())
         rates = self._calculate_reaction_rates(source_rate)
         op_result = OperatorResult(keff, rates)
