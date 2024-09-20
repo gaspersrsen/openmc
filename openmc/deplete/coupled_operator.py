@@ -523,7 +523,7 @@ class CoupledOperator(OpenMCOperator):
                     for nuc in all_nuc:
                         val = (all_dens[all_nuc==str(nuc)])[0]
                         # If nuclide is zero, do not add to the problem.
-                        if val > 0.0:
+                        if val > 1e-36:
                             if str(nuc) in iso:
                                 val *= conc / conc_prev
                             nuclides.append(nuc)
@@ -636,7 +636,7 @@ class CoupledOperator(OpenMCOperator):
                         val = 1.0e-24 * number_i.get_atom_density(mat, nuc)
 
                         # If nuclide is zero, do not add to the problem.
-                        if val > 0.0:
+                        if val > 1e-36:
                             if self.round_number:
                                 val_magnitude = np.floor(np.log10(val))
                                 val_scaled = val / 10**val_magnitude
