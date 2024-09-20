@@ -497,7 +497,7 @@ class CoupledOperator(OpenMCOperator):
                 tallies = openmc.lib.tallies
                 print(tallies)
                 for i in tallies:
-                    print(i)
+                    print(openmc.lib.tally(uid=i))
                 # Determine change of concentration
                 if invert_k*(k[0]-target) < 0: 
                     if direction != 0:
