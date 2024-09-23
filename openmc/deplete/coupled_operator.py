@@ -496,9 +496,7 @@ class CoupledOperator(OpenMCOperator):
                 k=openmc.lib.keff()
                 tallies = openmc.lib.tallies
                 for i in tallies.values():
-                    print(i.mean)
-                    for j in i.filters:
-                        print(j)
+                    print(f"{np.array2string(i.mean, formatter={'float': lambda x: f'{x:.5f}'}, separator=', ')}")
                 # Determine change of concentration
                 if invert_k*(k[0]-target) < 0: 
                     if direction != 0:
