@@ -489,8 +489,8 @@ class CoupledOperator(OpenMCOperator):
         # if self._n_calls > 0:
         #     openmc.lib.reset_timers()
         openmc.lib.simulation_init()
-        def discard_inactive(a = openmc.lib.current_batch()):
-            return not a <= batches
+        def discard_inactive():
+            return not openmc.lib.current_batch() <= batches
         # Run simulation
         for _ in openmc.lib.iter_batches(discard_inactive):
             # Only change concentrations during the additional batches
