@@ -357,7 +357,7 @@ def is_statepoint_batch():
     return _dll.openmc_is_statepoint_batch()
 
 
-def iter_batches(discard_inactive = None):
+def iter_batches():
     """Iterator over batches.
 
     This function returns a generator-iterator that allows Python code to be run
@@ -381,7 +381,7 @@ def iter_batches(discard_inactive = None):
     """
     while True:
         # Run next batch
-        status = next_batch(discard_inactive() if discard_inactive is not None else 1)
+        status = next_batch()
 
         # Provide opportunity for user to perform action between batches
         yield
@@ -417,7 +417,7 @@ def master():
     return _dll.openmc_master()
 
 
-def next_batch(discard_inactive = 1):
+def next_batch():
     """Run next batch.
 
     Returns
@@ -428,7 +428,7 @@ def next_batch(discard_inactive = 1):
 
     """
     status = c_int()
-    _dll.openmc_next_batch(status, discard_inactive)
+    _dll.openmc_next_batch(status)
     return status.value
 
 
