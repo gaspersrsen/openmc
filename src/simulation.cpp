@@ -373,6 +373,9 @@ void initialize_batch()
   // Manage active/inactive timers and activate tallies if necessary.
   if (first_inactive) {
     simulation::time_inactive.start();
+    for (auto& t : model::tallies) {
+      t->active_ = true;
+    }
   } else if (first_active) {
     simulation::time_inactive.stop();
     simulation::time_active.start();
