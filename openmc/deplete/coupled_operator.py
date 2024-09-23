@@ -486,8 +486,8 @@ class CoupledOperator(OpenMCOperator):
         direction = 0
                              
         openmc.lib.reset()
-        if self._n_calls > 0:
-            openmc.lib.reset_timers()
+        # if self._n_calls > 0:
+        #     openmc.lib.reset_timers()
         openmc.lib.simulation_init()
         # Run simulation
         for _ in openmc.lib.iter_batches():
