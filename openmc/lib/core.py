@@ -381,7 +381,7 @@ def iter_batches(discard_inactive = None):
     """
     while True:
         # Run next batch
-        status = next_batch(discard_inactive() if discard_inactive is not None)
+        status = next_batch(discard_inactive() if discard_inactive is not None else 1)
 
         # Provide opportunity for user to perform action between batches
         yield
@@ -417,7 +417,7 @@ def master():
     return _dll.openmc_master()
 
 
-def next_batch(discard_inactive=1):
+def next_batch(discard_inactive = 1):
     """Run next batch.
 
     Returns
