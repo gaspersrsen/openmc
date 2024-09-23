@@ -417,7 +417,7 @@ def master():
     return _dll.openmc_master()
 
 
-def next_batch():
+def next_batch(discard_inactive=1):
     """Run next batch.
 
     Returns
@@ -428,7 +428,7 @@ def next_batch():
 
     """
     status = c_int()
-    _dll.openmc_next_batch(status)
+    _dll.openmc_next_batch(status, discard_inactive)
     return status.value
 
 
