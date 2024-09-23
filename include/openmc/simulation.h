@@ -76,7 +76,7 @@ void initialize_history(Particle& p, int64_t index_source);
 //! Handles synchronization and accumulation of tallies, calculation of Shannon
 //! entropy, getting single-batch estimate of keff, and turning on tallies when
 //! appropriate
-void finalize_batch();
+void finalize_batch(int);
 
 //! Finalize a fission generation
 void finalize_generation();
