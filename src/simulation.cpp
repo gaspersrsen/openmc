@@ -226,7 +226,7 @@ int openmc_simulation_finalize()
   return 0;
 }
 
-int openmc_next_batch(int* status, bool discard_inactive = 1)
+int openmc_next_batch(int* status, int discard_inactive = 1)
 {
   using namespace openmc;
   using openmc::simulation::current_gen;
@@ -385,7 +385,7 @@ void initialize_batch()
   setup_active_tallies();
 }
 
-void finalize_batch(bool discard_inactive = 1)
+void finalize_batch(int discard_inactive = 1)
 {
   // Reduce tallies onto master process and accumulate
   simulation::time_tallies.start();
