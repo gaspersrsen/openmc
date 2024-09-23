@@ -497,6 +497,7 @@ class CoupledOperator(OpenMCOperator):
                 tallies = openmc.lib.tallies
                 for i in tallies.values():
                     print(f"{np.array2string(i.mean, formatter={'float': lambda x: f'{x:.5f}'}, separator=', ')}")
+                    print(f"{np.array2string(i.results[-1], formatter={'float': lambda x: f'{x:.5f}'}, separator=', ')}")
                 # Determine change of concentration
                 if invert_k*(k[0]-target) < 0: 
                     if direction != 0:
