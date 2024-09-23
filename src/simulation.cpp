@@ -263,7 +263,6 @@ int openmc_next_batch(int* status)
 
   finalize_batch();
 
-  broadcast_results();
   // Check simulation ending criteria
   if (status) {
     if (simulation::current_batch >= settings::n_max_batches) {
