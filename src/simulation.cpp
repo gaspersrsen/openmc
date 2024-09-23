@@ -226,7 +226,7 @@ int openmc_simulation_finalize()
   return 0;
 }
 
-int openmc_next_batch(int* status)
+int openmc_next_batch(int* status, bool discard_inactive = True)
 {
   using namespace openmc;
   using openmc::simulation::current_gen;
@@ -261,7 +261,7 @@ int openmc_next_batch(int* status)
     finalize_generation();
   }
 
-  finalize_batch();
+  finalize_batch(discard_inactive);
 
   // Check simulation ending criteria
   if (status) {
@@ -385,7 +385,7 @@ void initialize_batch()
   setup_active_tallies();
 }
 
-void finalize_batch()
+void finalize_batch(bool discard_inactive = True)
 {
   // Reduce tallies onto master process and accumulate
   simulation::time_tallies.start();
@@ -398,7 +398,7 @@ void finalize_batch()
   }
 
   // Reset global tally results
-  if (simulation::current_batch <= settings::n_inactive) {
+  if (simulation::current_batch <= settings::n_inactive && discard_inactive) {
     xt::view(simulation::global_tallies, xt::all()) = 0.0;
     simulation::n_realizations = 0;
   }
