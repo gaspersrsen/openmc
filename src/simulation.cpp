@@ -385,7 +385,7 @@ void initialize_batch()
   setup_active_tallies();
 }
 
-void finalize_batch(int discard_inactive = 1)
+void finalize_batch()
 {
   // Reduce tallies onto master process and accumulate
   simulation::time_tallies.start();
@@ -398,7 +398,7 @@ void finalize_batch(int discard_inactive = 1)
   }
 
   // Reset global tally results
-  if (simulation::current_batch <= settings::n_inactive && (discard_inactive > 0 ? 1 : 0)) {
+  if (simulation::current_batch == settings::n_inactive)) {
     xt::view(simulation::global_tallies, xt::all()) = 0.0;
     simulation::n_realizations = 0;
   }
