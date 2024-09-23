@@ -9,7 +9,6 @@
 extern "C" {
 #endif
 
-int openmc_broadcast_results();
 int openmc_calculate_volumes();
 int openmc_cell_filter_get_bins(
   int32_t index, const int32_t** cells, int32_t* n);
