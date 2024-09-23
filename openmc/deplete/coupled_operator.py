@@ -21,7 +21,6 @@ import openmc.checkvalue as cv
 from openmc.data import DataLibrary
 from openmc.exceptions import DataError
 import openmc.lib
-from openmc.lib.core import _dll
 from openmc.executor import _process_CLI_arguments
 from openmc.mpi import comm
 from .abc import OperatorResult
@@ -494,7 +493,7 @@ class CoupledOperator(OpenMCOperator):
         for _ in openmc.lib.iter_batches():
             # Only change concentrations during the additional batches
             if openmc.lib.current_batch() <= batches:
-                _dll.broadcast_results()
+                openmc.lib.broadcast_results()
                 k=openmc.lib.keff()
                 tallies = openmc.lib.tallies
                 for i in tallies.values():
