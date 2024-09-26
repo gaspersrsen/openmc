@@ -499,7 +499,7 @@ class CoupledOperator(OpenMCOperator):
                 i=0
                 for tally in tallies.values():
                     if openmc.lib.current_batch() == 1:
-                        prev_res = np.zeros(tally.shape)
+                        prev_res = np.zeros(tally.results.shape)
                     if i == 2:
                         break
                     curr_res = tally.results
