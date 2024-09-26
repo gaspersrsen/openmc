@@ -505,7 +505,7 @@ class CoupledOperator(OpenMCOperator):
                     i += 1
                 curr_res = np.array(curr_res)
                 if openmc.lib.current_batch() == 1:
-                    prev_res = np.zeros(curr_res.shape)
+                    prev_res = curr_res-curr_res
                 print(curr_res-prev_res)
                 prev_res = curr_res
                 #print(tally.results[tally.results != 0])
