@@ -495,20 +495,23 @@ class CoupledOperator(OpenMCOperator):
             if openmc.lib.current_batch() <= batches:
                 #openmc.lib.broadcast_results()
                 k=openmc.lib.keff()
-                tallies = openmc.lib.tallies
+                talliez = openmc.lib.tallies
                 i=0
-                for tally in tallies.values():
-                    if openmc.lib.current_batch() == 1:
-                        prev_res = np.zeros(tally.results.shape)
+                curr_res = []
+                for tally_ in talliez.values():
                     if i == 2:
                         break
-                    curr_res = tally.results
-                    print(curr_res-prev_res)
-                    prev_res = curr_res
-                    #print(tally.results[tally.results != 0])
-                    #print(tally.results)
-                    #print(tally.results.shape)
+                    curr_res += [tally_.results]
                     i += 1
+                curr_res = np.array(curr_res)
+                if openmc.lib.current_batch() == 1:
+                    prev_res = np.zeros(curr_res.shape)
+                print(curr_res-prev_res)
+                prev_res = curr_res
+                #print(tally.results[tally.results != 0])
+                #print(tally.results)
+                #print(tally.results.shape)
+                    
                 print(openmc.lib.global_tallies())
                 # Determine change of concentration
                 if invert_k*(k[0]-target) < 0: 
