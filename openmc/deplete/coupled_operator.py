@@ -496,7 +496,7 @@ class CoupledOperator(OpenMCOperator):
                 #openmc.lib.broadcast_results()
                 k=openmc.lib.keff()
                 tallies = openmc.lib.tallies
-                for i in tallies.values()[:-1]:
+                for i in tallies.values():
                     #print(i.results[i.results != 0])
                     print(i.results)
                     #print(dir(i.results))
