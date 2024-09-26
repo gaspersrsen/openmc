@@ -498,6 +498,7 @@ class CoupledOperator(OpenMCOperator):
                 tallies = openmc.lib.tallies
                 for i in tallies.values():
                     print(i.results[i.results != 0])
+                    print(i.results.shape)
                 print(openmc.lib.global_tallies())
                 # Determine change of concentration
                 if invert_k*(k[0]-target) < 0: 
