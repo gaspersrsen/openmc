@@ -497,15 +497,16 @@ class CoupledOperator(OpenMCOperator):
                 #openmc.lib.broadcast_results()
                 k = openmc.lib.keff()
                 talliez = openmc.lib.tallies
-                i = 0
                 curr_res = []
                 if openmc.lib.current_batch() == 1:
+                    i = 0
                     prev_res = []
                     for tally_ in talliez.values():
                         if i == 2:
                             break
                         prev_res.append([tally_.results - tally_.results])
                         i += 1
+                i = 0
                 for tally_ in talliez.values():
                     if i == 2:
                         break
