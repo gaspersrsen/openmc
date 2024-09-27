@@ -503,7 +503,6 @@ class CoupledOperator(OpenMCOperator):
                         break
                     curr_res += [tally_.results]
                     i += 1
-                curr_res = np.array(curr_res)
                 if openmc.lib.current_batch() == 1:
                     prev_res = curr_res-curr_res
                 print(curr_res-prev_res)
