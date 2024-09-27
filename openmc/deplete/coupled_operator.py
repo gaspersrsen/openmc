@@ -504,6 +504,7 @@ class CoupledOperator(OpenMCOperator):
                     tally0 = copy.copy(talliez)
                     i = 0
                     prev_res = []
+                    prev_leak = 0
                     for tally_ in talliez.values():
                         if i == 2:
                             break
@@ -518,6 +519,8 @@ class CoupledOperator(OpenMCOperator):
                     prev_res[i] = curr_res[i]
                     i += 1
                 print(curr_res)
+                leak = glob_tall[3][0]*openmc.lib.current_batch() - prev_leak
+                prev_leak = glob_tall[3][0]*openmc.lib.current_batch()
                 #print(tally.results[tally.results != 0])
                 #print(tally.results)
                 #print(tally.results.shape)
@@ -525,15 +528,15 @@ class CoupledOperator(OpenMCOperator):
                 print(glob_tall)
                 P_fiss = curr_res[0][0][0][1]
                 P_nxn = curr_res[0][0][2][1] + 2.0*curr_res[0][0][3][1]
-                L_leak = glob_tall[3][0]
+                L_leak = leak
                 L_abs = curr_res[0][0][1][1]
                 L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
                 print(P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs)
                 
                 g = ((P_fiss/target +  P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / (L_abs_nucs)
-                #f *= g
+                f *= g
                 print(g, f)
-                g = 1
+                #g = 1
                 # Determine change of concentration
                 # if invert_k*(k[0]-target) < 0: 
                 #     if direction != 0:
