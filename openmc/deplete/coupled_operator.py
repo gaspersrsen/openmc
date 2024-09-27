@@ -485,7 +485,8 @@ class CoupledOperator(OpenMCOperator):
         # # Direction of concentration change: 0-decreasing, 1-increasing
         # direction = 0
         f = 1
-        g = 1            
+        g = 1
+        tally0 = []
         openmc.lib.reset()
         # if self._n_calls > 0:
         #     openmc.lib.reset_timers()
@@ -497,22 +498,23 @@ class CoupledOperator(OpenMCOperator):
                 print(openmc.lib.current_batch())
                 #openmc.lib.broadcast_results()
                 k = openmc.lib.keff()
-                talliez = openmc.lib.tallies
+                talliez = copy.copy(openmc.lib.tallies)
                 curr_res = []
                 if openmc.lib.current_batch() == 1:
+                    tally0 = copy.copy(talliez)
                     i = 0
                     prev_res = []
                     for tally_ in talliez.values():
                         if i == 2:
                             break
-                        prev_res.append([tally_.results - tally_.results])
+                        prev_res +=[tally_.results - tally_.results]
                         i += 1
                 i = 0
                 for tally_ in talliez.values():
                     if i == 2:
                         break
                     print(tally_.results - prev_res[i],tally_.results,prev_res[i])
-                    curr_res.append([tally_.results - prev_res[i]])
+                    curr_res += [tally_.results - prev_res[i]]
                     prev_res[i] = curr_res[i]
                     i += 1
                 print(curr_res)
@@ -571,6 +573,8 @@ class CoupledOperator(OpenMCOperator):
                     mat_internal = openmc.lib.materials[int(mat)]
                     mat_internal.set_densities(nuclides, densities)
                 #conc_prev=conc
+                # if openmc.lib.current_batch() == batches:
+                #     openmc.lib.tallies = tally0
         openmc.lib.simulation_finalize()
         #openmc.lib.finalize()
 
