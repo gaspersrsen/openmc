@@ -504,12 +504,12 @@ class CoupledOperator(OpenMCOperator):
                     for tally_ in talliez.values():
                         if i == 2:
                             break
-                        prev_res += [tally_.results - tally_.results]
+                        prev_res.append([tally_.results - tally_.results])
                         i += 1
                 for tally_ in talliez.values():
                     if i == 2:
                         break
-                    curr_res += [tally_.results - prev_res[i]]
+                    curr_res.append([tally_.results - prev_res[i]])
                     prev_res[i] = curr_res[i]
                     i += 1
                 print(curr_res)
