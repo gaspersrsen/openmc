@@ -485,7 +485,7 @@ class CoupledOperator(OpenMCOperator):
         # # Direction of concentration change: 0-decreasing, 1-increasing
         # direction = 0
         f = 1
-        h = 1                     
+        g = 1            
         openmc.lib.reset()
         # if self._n_calls > 0:
         #     openmc.lib.reset_timers()
@@ -521,7 +521,7 @@ class CoupledOperator(OpenMCOperator):
                 #print(tally.results.shape)
                 glob_tall = openmc.lib.global_tallies()
                 print(glob_tall)
-                if curr_res:
+                if False:
                     P_fiss = curr_res[0][0][0][1]
                     P_nxn = curr_res[0][0][2][1] + 2*curr_res[0][0][3][1]
                     L_leak = glob_tall[4][0]
