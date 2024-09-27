@@ -514,7 +514,7 @@ class CoupledOperator(OpenMCOperator):
                     if i == 2:
                         break
                     #print(tally_.results - prev_res[i],tally_.results,prev_res[i])
-                    curr_res += [tally_.results - prev_res[i]]
+                    curr_res += [tally_.results]# - prev_res[i]]
                     prev_res[i] = curr_res[i]
                     i += 1
                 print(curr_res)
