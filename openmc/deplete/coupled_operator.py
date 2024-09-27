@@ -507,14 +507,14 @@ class CoupledOperator(OpenMCOperator):
                     for tally_ in talliez.values():
                         if i == 2:
                             break
-                        prev_res += tally_.results - tally_.results
+                        prev_res += [tally_.results - tally_.results]
                         i += 1
                 i = 0
                 for tally_ in talliez.values():
                     if i == 2:
                         break
                     #print(tally_.results - prev_res[i],tally_.results,prev_res[i])
-                    curr_res += tally_.results - prev_res[i]
+                    curr_res += [tally_.results - prev_res[i]]
                     prev_res[i] = curr_res[i]
                     i += 1
                 print(curr_res)
@@ -523,17 +523,16 @@ class CoupledOperator(OpenMCOperator):
                 #print(tally.results.shape)
                 glob_tall = openmc.lib.global_tallies()
                 print(glob_tall)
-                if False:
-                    P_fiss = curr_res[0][0][0][1]
-                    P_nxn = curr_res[0][0][2][1] + 2*curr_res[0][0][3][1]
-                    L_leak = glob_tall[4][0]
-                    L_abs = curr_res[0][0][1][1]
-                    L_abs_nucs = np.sum(np.array(curr_res[0][1]), axis=1)[2]
-                    print(P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs)
-                    
-                    g = ((P_fiss/target +  P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / (L_abs_nucs)
-                    f *= g
-                    print(g, f)
+                P_fiss = curr_res[0][0][0][1]
+                P_nxn = curr_res[0][0][2][1] + 2*curr_res[0][0][3][1]
+                L_leak = glob_tall[4][0]
+                L_abs = curr_res[0][0][1][1]
+                L_abs_nucs = np.sum(np.array(curr_res[0][1]), axis=1)[2]
+                print(P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs)
+                
+                g = ((P_fiss/target +  P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / (L_abs_nucs)
+                f *= g
+                print(g, f)
                 # Determine change of concentration
                 # if invert_k*(k[0]-target) < 0: 
                 #     if direction != 0:
