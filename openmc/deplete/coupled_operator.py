@@ -527,7 +527,7 @@ class CoupledOperator(OpenMCOperator):
                 P_nxn = curr_res[0][0][2][1] + 2*curr_res[0][0][3][1]
                 L_leak = glob_tall[3][0]
                 L_abs = curr_res[0][0][1][1]
-                L_abs_nucs = np.sum(np.array(curr_res[0][1]), axis=1)[2]
+                L_abs_nucs = np.sum(np.array(curr_res[1][0]), axis=1)[1]
                 print(P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs)
                 
                 g = ((P_fiss/target +  P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / (L_abs_nucs)
