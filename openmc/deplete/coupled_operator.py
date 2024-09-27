@@ -494,6 +494,7 @@ class CoupledOperator(OpenMCOperator):
         for _ in openmc.lib.iter_batches():
             # Only change concentrations during the additional batches
             if openmc.lib.current_batch() <= batches:
+                print(openmc.lib.current_batch())
                 #openmc.lib.broadcast_results()
                 k = openmc.lib.keff()
                 talliez = openmc.lib.tallies
