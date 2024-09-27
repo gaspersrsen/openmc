@@ -507,14 +507,14 @@ class CoupledOperator(OpenMCOperator):
                     for tally_ in talliez.values():
                         if i == 2:
                             break
-                        prev_res +=[tally_.results - tally_.results]
+                        prev_res += tally_.results - tally_.results
                         i += 1
                 i = 0
                 for tally_ in talliez.values():
                     if i == 2:
                         break
-                    print(tally_.results - prev_res[i],tally_.results,prev_res[i])
-                    curr_res += [tally_.results - prev_res[i]]
+                    #print(tally_.results - prev_res[i],tally_.results,prev_res[i])
+                    curr_res += tally_.results - prev_res[i]
                     prev_res[i] = curr_res[i]
                     i += 1
                 print(curr_res)
