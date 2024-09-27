@@ -498,15 +498,16 @@ class CoupledOperator(OpenMCOperator):
                 talliez = openmc.lib.tallies
                 i=0
                 curr_res = []
+                if openmc.lib.current_batch() == 1:
+                        prev_res = []
                 for tally_ in talliez.values():
                     if i == 2:
                         break
-                    curr_res += [tally_.results]
+                    curr_res += [tally_.results - prev_res[i] if openmc.lib.current_batch() != 1
+                                else tally_.results - tally_.results]
+                    prev_res[i] = curr_res[i]
                     i += 1
-                if openmc.lib.current_batch() == 1:
-                    prev_res = curr_res-curr_res
-                print(curr_res-prev_res)
-                prev_res = curr_res
+                print(curr_res)
                 #print(tally.results[tally.results != 0])
                 #print(tally.results)
                 #print(tally.results.shape)
