@@ -471,20 +471,21 @@ class CoupledOperator(OpenMCOperator):
         initial_value = self.initial_value
         
         # Inverted k means an increasing k_eff with increasing nuclide density (opposite of Boron)
-        if invert:
-            invert_k = -1 
-        else:
-            invert_k = 1
+        # if invert:
+        #     invert_k = -1 
+        # else:
+        #     invert_k = 1
         
         self._update_materials_and_nuclides(vec)
         self.model.materials.export_to_xml()
 
-        conc = 1
-        conc_prev = 1
-        multi = 0.999
-        # Direction of concentration change: 0-decreasing, 1-increasing
-        direction = 0
-                             
+        # conc = 1
+        # conc_prev = 1
+        # multi = 0.999
+        # # Direction of concentration change: 0-decreasing, 1-increasing
+        # direction = 0
+        f = 1
+        h = 1                     
         openmc.lib.reset()
         # if self._n_calls > 0:
         #     openmc.lib.reset_timers()
@@ -515,27 +516,38 @@ class CoupledOperator(OpenMCOperator):
                 #print(tally.results[tally.results != 0])
                 #print(tally.results)
                 #print(tally.results.shape)
-                    
-                print(openmc.lib.global_tallies())
+                glob_tall = openmc.lib.global_tallies()
+                print(glob_tall)
+                
+                P_fiss = curr_res[0][0][0][1]
+                P_nxn = curr_res[0][0][2][1] + 2*curr_res[0][0][3][1]
+                L_leak = glob_tall[4][0]
+                L_abs = curr_res[0][0][1][1]
+                L_abs_nucs = np.sum(np.array(curr_res[0][1]), axis=1)[2]
+                print(P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs)
+                
+                g = ((P_fiss/target +  P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / (L_abs_nucs)
+                f *= g
+                print(g, f)
                 # Determine change of concentration
-                if invert_k*(k[0]-target) < 0: 
-                    if direction != 0:
-                        multi *= 0.7
-                        direction = 0
-                    conc *= (1-multi)
-                else:
-                    if direction != 1:
-                        multi *= 0.7
-                        direction = 1
-                    conc *= (1+multi)
-                # Check the limits of the concentration
-                if bracket:
-                    if conc*initial_value < bracket[0]:
-                        conc = bracket[0] / initial_value
-                    if conc*initial_value > bracket[1]:
-                        conc = bracket[1] / initial_value
-                else:
-                    if conc < 0: conc = 0
+                # if invert_k*(k[0]-target) < 0: 
+                #     if direction != 0:
+                #         multi *= 0.7
+                #         direction = 0
+                #     conc *= (1-multi)
+                # else:
+                #     if direction != 1:
+                #         multi *= 0.7
+                #         direction = 1
+                #     conc *= (1+multi)
+                # # Check the limits of the concentration
+                # if bracket:
+                #     if conc*initial_value < bracket[0]:
+                #         conc = bracket[0] / initial_value
+                #     if conc*initial_value > bracket[1]:
+                #         conc = bracket[1] / initial_value
+                # else:
+                #     if conc < 0: conc = 0
                 # Update densities on C API side
                 for mat in openmc.lib.materials:
                     nuclides=[]
@@ -548,18 +560,20 @@ class CoupledOperator(OpenMCOperator):
                         # If nuclide is zero, do not add to the problem.
                         if val > 1e-36:
                             if str(nuc) in iso:
-                                val *= conc / conc_prev
+                                # val *= conc / conc_prev
+                                val *= g
                             nuclides.append(nuc)
                             densities.append(val)
                     # Update densities on C API side
                     mat_internal = openmc.lib.materials[int(mat)]
                     mat_internal.set_densities(nuclides, densities)
-                conc_prev=conc
+                #conc_prev=conc
         openmc.lib.simulation_finalize()
         #openmc.lib.finalize()
 
         # Set the new initial concentrations for the future concentration searches
-        self.initial_value = conc*initial_value
+        #self.initial_value = conc*initial_value
+        self.initial_value = f*initial_value
         self.concs += [self.initial_value]
             
         # Finaly update densities on Python API side
@@ -579,7 +593,7 @@ class CoupledOperator(OpenMCOperator):
         # self.materials = self.model.materials
         self.model.export_to_xml()
         # Print results 
-        print(f"Critical concentration: {conc*initial_value:.05f} +/- {conc*initial_value*multi:.05f}")
+        print(f"Critical concentration: {f*initial_value:.05f}")# +/- {f*initial_value*multi:.05f}")
         keff = ufloat(*openmc.lib.keff())
         rates = self._calculate_reaction_rates(source_rate)
         op_result = OperatorResult(keff, rates)
