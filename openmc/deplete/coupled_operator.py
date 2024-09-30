@@ -486,7 +486,8 @@ class CoupledOperator(OpenMCOperator):
         # direction = 0
         f = 1
         g = 1
-        tally0 = []
+        prev_res = []
+        prev_leak = 0
         openmc.lib.reset()
         # if self._n_calls > 0:
         #     openmc.lib.reset_timers()
@@ -501,10 +502,7 @@ class CoupledOperator(OpenMCOperator):
                 talliez = copy.copy(openmc.lib.tallies)
                 curr_res = []
                 if openmc.lib.current_batch() == 1:
-                    tally0 = copy.copy(talliez)
                     i = 0
-                    prev_res = []
-                    prev_leak = 0
                     for tally_ in talliez.values():
                         if i == 2:
                             break
@@ -514,7 +512,7 @@ class CoupledOperator(OpenMCOperator):
                 for tally_ in talliez.values():
                     if i == 2:
                         break
-                    #print(tally_.results - prev_res[i],tally_.results,prev_res[i])
+                    print(tally_.results,prev_res[i])
                     curr_res += [tally_.results - prev_res[i]]
                     prev_res[i] = curr_res[i]
                     i += 1
@@ -579,14 +577,11 @@ class CoupledOperator(OpenMCOperator):
                     mat_internal = openmc.lib.materials[int(mat)]
                     mat_internal.set_densities(nuclides, densities)
                 #conc_prev=conc
-                # if openmc.lib.current_batch() == batches:
-                #     openmc.lib.tallies = tally0
         openmc.lib.simulation_finalize()
-        #openmc.lib.finalize()
 
         # Set the new initial concentrations for the future concentration searches
         #self.initial_value = conc*initial_value
-        self.initial_value = f*initial_value
+        self.initial_value *= f
         self.concs += [self.initial_value]
             
         # Finaly update densities on Python API side
@@ -606,7 +601,7 @@ class CoupledOperator(OpenMCOperator):
         # self.materials = self.model.materials
         self.model.export_to_xml()
         # Print results 
-        print(f"Critical concentration: {f*initial_value:.05f}")# +/- {f*initial_value*multi:.05f}")
+        print(f"Critical concentration: {self.initial_value:.05f}")# +/- {f*initial_value*multi:.05f}")
         keff = ufloat(*openmc.lib.keff())
         rates = self._calculate_reaction_rates(source_rate)
         op_result = OperatorResult(keff, rates)
