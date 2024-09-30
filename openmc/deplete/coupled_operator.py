@@ -521,8 +521,8 @@ class CoupledOperator(OpenMCOperator):
                 glob_tall = openmc.lib.global_tallies()
                 #print(glob_tall)
                 
-                leak = glob_tall[3][0]*openmc.lib.current_batch() - prev_leak
-                prev_leak = glob_tall[3][0]*openmc.lib.current_batch()
+                leak = glob_tall[3][0] - prev_leak
+                prev_leak = glob_tall[3][0]
                 #print(tally.results[tally.results != 0])
                 #print(tally.results)
                 #print(tally.results.shape)
