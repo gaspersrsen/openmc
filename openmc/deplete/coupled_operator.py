@@ -512,7 +512,7 @@ class CoupledOperator(OpenMCOperator):
                 for tally_ in talliez.values():
                     if i == 2:
                         break
-                    #print(tally_.results,prev_res[i])
+                    print(tally_.results,prev_res[i])
                     curr_res += [tally_.results - prev_res[i]]
                     prev_res[i] = copy.copy(tally_.results)
                     i += 1
@@ -577,6 +577,8 @@ class CoupledOperator(OpenMCOperator):
                     mat_internal = openmc.lib.materials[int(mat)]
                     mat_internal.set_densities(nuclides, densities)
                 #conc_prev=conc
+            if openmc.lib.current_batch() == batches:
+                openmc.lib.reset()
         openmc.lib.simulation_finalize()
 
         # Set the new initial concentrations for the future concentration searches
