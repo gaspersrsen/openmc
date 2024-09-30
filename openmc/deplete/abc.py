@@ -894,7 +894,7 @@ class Integrator(ABC):
             if conc_run and final_step:
                 res_list = [self.operator.search_crit_conc(n, source_rate, **conc_args)]
             else:
-                res_list = [self.operator.operator(n, source_rate if final_step else 0.0)]
+                res_list = [self.operator(n, source_rate if final_step else 0.0)]
             StepResult.save(self.operator, [n], res_list, [t, t],
                          source_rate, self._i_res + len(self), proc_time, path)
             self.operator.write_bos_data(len(self) + self._i_res)
