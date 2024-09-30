@@ -514,7 +514,7 @@ class CoupledOperator(OpenMCOperator):
                         break
                     print(tally_.results,prev_res[i])
                     curr_res += [tally_.results - prev_res[i]]
-                    prev_res[i] = tally_.results
+                    prev_res[i] = copy.copy(tally_.results)
                     i += 1
                 print(curr_res)
                 
