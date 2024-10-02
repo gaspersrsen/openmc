@@ -243,13 +243,13 @@ RUN ${HOME}/OpenMC/openmc/tools/ci/download-xs.sh
 
 RUN cd $HOME \
 RUN git clone https://github.com/neams-th-coe/cardinal.git \
-RUN cd cardinal \
-RUN export NEKRS_HOME=$HOME/cardinal/install \
-RUN ./scripts/get-dependencies.sh \
-RUN ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
-RUN ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
-RUN ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
-RUN cardinal-opt -i nek.i --nekrs-backend=CPU \
-RUN make -j8 MAKEFLAGS=-j8 \
-RUN export OPENMC_CROSS_SECTIONS=/root/nndc_hdf5/cross_sections.xml \
+# RUN cd cardinal \
+# RUN export NEKRS_HOME=$HOME/cardinal/install \
+# RUN ./scripts/get-dependencies.sh \
+# RUN ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
+# RUN ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
+# RUN ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
+# RUN cardinal-opt -i nek.i --nekrs-backend=CPU \
+# RUN make -j8 MAKEFLAGS=-j8 \
+# RUN export OPENMC_CROSS_SECTIONS=/root/nndc_hdf5/cross_sections.xml \
     
