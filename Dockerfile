@@ -248,7 +248,7 @@ RUN cd $HOME \
     && export NEKRS_OCCA_MODE_DEFAULT=CPU \
     && export CC=mpicc \
     && export CXX=mpicxx \
-    && export FC=mpif90
+    && export FC=mpif90 \
     && ./scripts/get-dependencies.sh \
     #&& ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     #&& ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
