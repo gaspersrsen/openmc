@@ -240,7 +240,8 @@ RUN pip install --upgrade pip
 # RUN ${HOME}/OpenMC/openmc/tools/ci/download-xs.sh
 
 ## RUN BASIC 
-RUN cd /home \
+ENV HOME=/home
+RUN cd $HOME \
     && git clone https://github.com/neams-th-coe/cardinal.git \
     && cd cardinal \
     && export ENABLE_DAGMC=yes \
