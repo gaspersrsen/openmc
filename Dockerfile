@@ -252,4 +252,5 @@ RUN cd $HOME \
     && cardinal-opt -i nek.i --nekrs-backend=CPU \
     && make -j8 MAKEFLAGS=-j8 \
     && export OPENMC_CROSS_SECTIONS=/root/nndc_hdf5/cross_sections.xml \
+    && ls \
     
