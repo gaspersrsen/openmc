@@ -243,11 +243,15 @@ RUN pip install --upgrade pip
 RUN cd $HOME \
     && git clone https://github.com/neams-th-coe/cardinal.git \
     && cd cardinal \
+    && export ENABLE_DAGMC=yes \
     && export NEKRS_HOME=$HOME/cardinal/install \
+    && export NEKRS_OCCA_MODE_DEFAULT=CPU \
+    && export CC=mpicc \
+    && export CXX=mpicxx \
+    && export FC=mpif90 \
     && ./scripts/get-dependencies.sh \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
     && ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
-    && cardinal-opt -i nek.i --nekrs-backend=CPU \
     && make -j8 MAKEFLAGS=-j8 \
     
