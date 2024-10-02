@@ -250,5 +250,6 @@ RUN ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
 RUN ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
 RUN ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
 RUN cardinal-opt -i nek.i --nekrs-backend=CPU \
-RUN make -j8 MAKEFLAGS=-j8\
+RUN make -j8 MAKEFLAGS=-j8 \
+RUN export OPENMC_CROSS_SECTIONS=/root/nndc_hdf5/cross_sections.xml \
     
