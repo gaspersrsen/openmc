@@ -240,3 +240,15 @@ ENV OPENMC_CROSS_SECTIONS=/root/nndc_hdf5/cross_sections.xml
 
 # Download cross sections (NNDC and WMP) and ENDF data needed by test suite
 RUN ${HOME}/OpenMC/openmc/tools/ci/download-xs.sh
+
+RUN cd $HOME \
+    && git clone https://github.com/neams-th-coe/cardinal.git \
+    && cd cardinal \
+    && ./scripts/get-dependencies.sh \
+    && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
+    && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
+    && ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
+    && export NEKRS_HOME=$HOME/cardinal/install \
+    && cardinal-opt -i nek.i --nekrs-backend=CPU \
+    && make -j8 MAKEFLAGS=-j8\
+    
