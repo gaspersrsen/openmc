@@ -247,11 +247,8 @@ RUN /bin/bash -c (cd $HOME \
     && export ENABLE_DAGMC=yes \
     && export NEKRS_HOME=$HOME/cardinal/install \
     && export NEKRS_OCCA_MODE_DEFAULT=CPU \
-    && export CC=mpicc \
-    && export CXX=mpicxx \
-    && export FC=mpif90 \
     && ./scripts/get-dependencies.sh \)
-    && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
+    && ./contrib/moose/scripts/update_and_rebuild_petsc.sh --download-mpich\
     #&& ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
     #&& ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
     #&& make -j8 MAKEFLAGS=-j8
