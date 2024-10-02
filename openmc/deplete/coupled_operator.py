@@ -536,7 +536,7 @@ class CoupledOperator(OpenMCOperator):
                 
                 g = ((P_fiss/target +  P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / (L_abs_nucs)
                 f *= g
-                print(g*initial_value)
+                print(f*initial_value)
                 #g = 1
                 # Determine change of concentration
                 # if invert_k*(k[0]-target) < 0: 
