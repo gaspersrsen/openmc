@@ -522,9 +522,8 @@ class CoupledOperator(OpenMCOperator):
                 #print('{0:12.6E}'.format(gt[gt['name'] == b'leakage'][0]['sum']))
                 #print(glob_tall)
                 
-                leak = glob_tall[3][0] - prev_leak
-                print(glob_tall[3][0], prev_leak, leak)
-                prev_leak = glob_tall[3][0]
+                leak = glob_tall[3][0]*openmc.lib.current_batch() - prev_leak
+                prev_leak = glob_tall[3][0]*openmc.lib.current_batch()
                 
                 P_fiss = curr_res[0][0][0][1]
                 P_nxn = curr_res[0][0][2][1] + 2.0*curr_res[0][0][3][1]
