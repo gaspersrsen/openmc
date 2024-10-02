@@ -250,7 +250,7 @@ RUN cd $HOME \
     && export CXX=mpicxx \
     && export FC=mpif90 \
     && ./scripts/get-dependencies.sh \
-    #&& ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
+    && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     #&& ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
     #&& ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
     #&& make -j8 MAKEFLAGS=-j8 \
