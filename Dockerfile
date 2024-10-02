@@ -249,9 +249,9 @@ RUN cd $HOME \
     && export CC=mpicc \
     && export CXX=mpicxx \
     && export FC=mpif90
-RUN ./scripts/get-dependencies.sh \
-    && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
-    && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
-    && ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
+    && ./scripts/get-dependencies.sh \
+    #&& ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
+    #&& ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
+    #&& ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
     #&& make -j8 MAKEFLAGS=-j8 \
     
