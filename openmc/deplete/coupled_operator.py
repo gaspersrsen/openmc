@@ -496,9 +496,8 @@ class CoupledOperator(OpenMCOperator):
         for _ in openmc.lib.iter_batches():
             # Only change concentrations during the additional batches
             if openmc.lib.current_batch() < batches:
-                #print(openmc.lib.current_batch())
-                #openmc.lib.broadcast_results()
-                k = openmc.lib.keff()
+                print(openmc.lib.current_batch())
+                #k = openmc.lib.keff()
                 talliez = copy.copy(openmc.lib.tallies)
                 curr_res = []
                 if openmc.lib.current_batch() == 1:
@@ -512,20 +511,17 @@ class CoupledOperator(OpenMCOperator):
                 for tally_ in talliez.values():
                     if i == 2:
                         break
-                    #print(tally_.results,prev_res[i])
+                    print(tally_.results)
                     curr_res += [tally_.results - prev_res[i]]
                     prev_res[i] = copy.copy(tally_.results)
                     i += 1
-                #print(curr_res)
+                print(curr_res)
                 
                 glob_tall = openmc.lib.global_tallies()
-                #print(glob_tall)
+                print(glob_tall)
                 
                 leak = glob_tall[3][0] - prev_leak
                 prev_leak = glob_tall[3][0]
-                #print(tally.results[tally.results != 0])
-                #print(tally.results)
-                #print(tally.results.shape)
                 
                 P_fiss = curr_res[0][0][0][1]
                 P_nxn = curr_res[0][0][2][1] + 2.0*curr_res[0][0][3][1]
