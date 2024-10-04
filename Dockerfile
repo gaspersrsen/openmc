@@ -243,6 +243,7 @@ RUN pip install --upgrade pip
 ENV HOME=/home
 RUN /bin/bash -c 'cd $HOME \
     && apt install flex -y \
+    && apt install bison -y \
     && git clone https://github.com/neams-th-coe/cardinal.git \
     && cd cardinal \
     && export ENABLE_DAGMC=yes \
