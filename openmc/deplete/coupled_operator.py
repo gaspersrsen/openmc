@@ -535,10 +535,10 @@ class CoupledOperator(OpenMCOperator):
                 
                 #OPTIMAL FOLLOWING
                 if openmc.lib.current_batch() == 1:
-                    opt_vari = (k[1]/k[0])**2
+                    opt_vari = 1
                     opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs = P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs
                 else:
-                    vari = (k[1]/k[0])**2
+                    vari = (k[1]/k[0]+ np.abs(target-k[0]/target))**2
                     [opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs] = np.array([opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs]) + (np.array([P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs])-np.array([opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs]))*opt_vari/(vari+opt_vari)
                     opt_vari = (1-opt_vari/(opt_vari+vari))*opt_vari
                 print(opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs)
