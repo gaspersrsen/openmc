@@ -497,7 +497,8 @@ class CoupledOperator(OpenMCOperator):
             # Only change concentrations during the additional batches
             if openmc.lib.current_batch() < batches:
                 print(openmc.lib.current_batch())
-                #k = openmc.lib.keff()
+                k = openmc.lib.keff()
+                print(k)
                 talliez = copy.copy(openmc.lib.tallies)
                 curr_res = []
                 if openmc.lib.current_batch() == 1:
@@ -532,7 +533,18 @@ class CoupledOperator(OpenMCOperator):
                 L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
                 print(P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs)
                 
-                g = ((P_fiss/target +  P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / (L_abs_nucs)
+                #OPTIMAL FOLLOWING
+                if openmc.lib.current_batch() == 1:
+                    opt_vari = (k[1]/k[0])**2
+                    opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs = P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs
+                else:
+                    vari = (k[1]/k[0])**2
+                    [opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs] += ([P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs]-[opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs])*opt_vari/(vari+opt_vari)
+                    opt_vari = (1-opt_vari/(opt_vari+vari))*opt_vari
+                print(opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs)
+                
+                
+                g = ((opt_P_fiss/target +  opt_P_nxn) * (1-opt_L_leak) - (opt_L_abs-opt_L_abs_nucs)) / opt_L_abs_nucs
                 f *= g
                 print(f*initial_value)
                 #g = 1
