@@ -266,5 +266,6 @@ RUN /bin/bash -c 'cd $HOME \
     && export NEKRS_HOME=$HOME/cardinal/install \
     && make -j8 MAKEFLAGS=-j8 '
 ENV HOME=/home
-RUN /bin/bash -c 'cd cardinal/contrib/openmc \
+RUN /bin/bash -c 'cd $HOME \
+    && cd cardinal/contrib/openmc \
     && pip install .''
