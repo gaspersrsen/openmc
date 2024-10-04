@@ -272,4 +272,4 @@ RUN /bin/bash -c 'cd $HOME \
 ENV OPENMC_CROSS_SECTIONS=/root/nndc_hdf5/cross_sections.xml
 
 # Download cross sections (NNDC and WMP) and ENDF data needed by test suite
-RUN ${HOME}/OpenMC/openmc/tools/ci/download-xs.sh
+RUN /home/OpenMC/openmc/tools/ci/download-xs.sh
