@@ -525,7 +525,7 @@ class CoupledOperator(OpenMCOperator):
                 prev_leak = glob_tall[3][0]*openmc.lib.current_batch()
                 
                 P_fiss = curr_res[0][0][0][1]
-                P_nxn = curr_res[0][0][2][1]
+                P_nxn = curr_res[0][0][2][1] - curr_res[0][0][3][1]
                 L_leak = leak # Fraction
                 L_abs = curr_res[0][0][1][1]
                 L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
