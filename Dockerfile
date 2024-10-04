@@ -258,8 +258,6 @@ RUN /bin/bash -c 'pip install pyyaml jinja2 packaging \
     && cd cardinal \
     && export ENABLE_DAGMC=yes \
     && export NEKRS_HOME=$HOME/cardinal/install \
-    && export NEKRS_OCCA_MODE_DEFAULT=CPU \
-    && gcc --version '
-    #&& make -j8 MAKEFLAGS=-j8 '
-RUN /bin/bash -c 'gcc --version '
+    && export NEKRS_OCCA_MODE_DEFAULT=CPU'
+RUN /bin/bash -c 'make -j8 MAKEFLAGS=-j8 '
     
