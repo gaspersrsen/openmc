@@ -253,7 +253,7 @@ RUN /bin/bash -c 'cd $HOME \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
     && ./contrib/moose/scripts/update_and_rebuild_wasp.sh '
-RUN /bin/bash -c ' apt install python-yaml -y \
+RUN /bin/bash -c ' apt-get install python-yaml -y \
     && cd $HOME \
     && cd cardinal \
     && export ENABLE_DAGMC=yes \
