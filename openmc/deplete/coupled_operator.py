@@ -530,23 +530,24 @@ class CoupledOperator(OpenMCOperator):
                 L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
                 print(P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs)
                 
-                #OPTIMAL FOLLOWING
-                if openmc.lib.current_batch() == 1:
-                    #opt_vari = np.abs((target-k[0])/target)**2
-                    opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs = P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs
-                else:
-                    #vari = ((target-k[0])/target)**2
-                    a = np.array([opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs])
-                    b = np.array([P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs])
-                    #[opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs] = (a*vari + b*opt_vari)/(vari+opt_vari)
-                    [opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs] = (a + b) / 2
-                    #opt_vari = (1-opt_vari/(opt_vari+vari))*opt_vari
-                    #opt_vari = opt_vari*vari/(opt_vari+vari)
-                print(opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs)
+                # #OPTIMAL FOLLOWING
+                # if openmc.lib.current_batch() == 1:
+                #     #opt_vari = np.abs((target-k[0])/target)**2
+                #     opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs = P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs
+                # else:
+                #     #vari = ((target-k[0])/target)**2
+                #     a = np.array([opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs])
+                #     b = np.array([P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs])
+                #     #[opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs] = (a*vari + b*opt_vari)/(vari+opt_vari)
+                #     [opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs] = (a + b) / 2
+                #     #opt_vari = (1-opt_vari/(opt_vari+vari))*opt_vari
+                #     #opt_vari = opt_vari*vari/(opt_vari+vari)
+                # print(opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs)
                 
                 
-                g = ((opt_P_fiss/target) * (1-opt_L_leak) + opt_P_nxn - (opt_L_abs-opt_L_abs_nucs)) / opt_L_abs_nucs
+                # g = ((opt_P_fiss/target) * (1-opt_L_leak) + opt_P_nxn - (opt_L_abs-opt_L_abs_nucs)) / opt_L_abs_nucs
                 # g = ((P_fiss/target +  P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs
+                g = ((P_fiss/target) * (1-L_leak) +  P_nxn - (L_abs-L_abs_nucs)) / L_abs_nucs
                 f *= g
                 print(f*initial_value)
                 #g = 1
