@@ -545,7 +545,7 @@ class CoupledOperator(OpenMCOperator):
                 print(opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs)
                 
                 
-                g = ((opt_P_fiss/target +  opt_P_nxn) * (1-opt_L_leak) - (opt_L_abs-opt_L_abs_nucs)) / opt_L_abs_nucs
+                g = ((opt_P_fiss/target) * (1-opt_L_leak) + opt_P_nxn - (opt_L_abs-opt_L_abs_nucs)) / opt_L_abs_nucs
                 # g = ((P_fiss/target +  P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs
                 f *= g
                 print(f*initial_value)
