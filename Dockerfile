@@ -262,5 +262,5 @@ RUN /bin/bash -c 'pip install pyyaml jinja2 packaging \
 ENV HOME=/home
 RUN /bin/bash -c 'cd $HOME \
     && cd cardinal \
-    make -j8 MAKEFLAGS=-j8 '
+    && make -j8 MAKEFLAGS=-j8 '
     
