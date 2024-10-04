@@ -242,7 +242,7 @@ RUN pip install --upgrade pip
 ## RUN BASIC 
 ENV HOME=/home
 RUN /bin/bash -c 'cd $HOME \
-    && apt install flex \
+    && apt install flex -y \
     && git clone https://github.com/neams-th-coe/cardinal.git \
     && cd cardinal \
     && export ENABLE_DAGMC=yes \
