@@ -261,4 +261,5 @@ RUN /bin/bash -c 'pip install pyyaml jinja2 packaging \
     && export NEKRS_OCCA_MODE_DEFAULT=CPU \
     && gcc --version '
     #&& make -j8 MAKEFLAGS=-j8 '
+RUN /bin/bash -c 'gcc --version '
     
