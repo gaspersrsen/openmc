@@ -539,7 +539,7 @@ class CoupledOperator(OpenMCOperator):
                     opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs = P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs
                 else:
                     vari = (k[1]/k[0])**2
-                    [opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs] = [opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs] + ([P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs]-[opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs])*opt_vari/(vari+opt_vari)
+                    [opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs] = np.array([opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs]) + (np.array([P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs])-np.array([opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs]))*opt_vari/(vari+opt_vari)
                     opt_vari = (1-opt_vari/(opt_vari+vari))*opt_vari
                 print(opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs)
                 
