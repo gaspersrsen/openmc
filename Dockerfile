@@ -252,6 +252,6 @@ RUN /bin/bash -c 'cd $HOME \
     && ./scripts/get-dependencies.sh \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
-    && ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
-    && make -j8 MAKEFLAGS=-j8 '
+    && ./contrib/moose/scripts/update_and_rebuild_wasp.sh '
+RUN /bin/bash -c 'make -j8 MAKEFLAGS=-j8 '
     
