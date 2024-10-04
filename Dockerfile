@@ -258,5 +258,6 @@ RUN /bin/bash -c 'cd $HOME \
     && export ENABLE_DAGMC=yes \
     && export NEKRS_HOME=$HOME/cardinal/install \
     && export NEKRS_OCCA_MODE_DEFAULT=CPU \
+    && apt install python-yaml -y \
     && make -j8 MAKEFLAGS=-j8 '
     
