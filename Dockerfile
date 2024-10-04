@@ -262,6 +262,7 @@ RUN /bin/bash -c 'pip install pyyaml jinja2 packaging \
 ENV HOME=/home
 RUN /bin/bash -c 'cd $HOME \
     && cd cardinal \
+    && apt-get install pkg-config \
     && export NEKRS_HOME=$HOME/cardinal/install \
     && make -j8 MAKEFLAGS=-j8 '
     
