@@ -268,4 +268,4 @@ RUN /bin/bash -c 'cd $HOME \
 ENV HOME=/home
 RUN /bin/bash -c 'cd $HOME \
     && cd cardinal/contrib/openmc \
-    && pip install .''
+    && pip install .'
