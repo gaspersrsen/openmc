@@ -241,14 +241,14 @@ RUN pip install --upgrade pip
 
 ## RUN BASIC 
 ENV HOME=/home
-RUN /bin/bash -c (cd $HOME \
+RUN /bin/bash -c 'cd $HOME \
     && git clone https://github.com/neams-th-coe/cardinal.git \
     && cd cardinal \
     && export ENABLE_DAGMC=yes \
     && export NEKRS_HOME=$HOME/cardinal/install \
     && export NEKRS_OCCA_MODE_DEFAULT=CPU \
-    && ./scripts/get-dependencies.sh \)
-    && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
+    && ./scripts/get-dependencies.sh \
+    && ./contrib/moose/scripts/update_and_rebuild_petsc.sh '
     #&& ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
     #&& ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
     #&& make -j8 MAKEFLAGS=-j8
