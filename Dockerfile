@@ -253,5 +253,5 @@ RUN /bin/bash -c 'cd $HOME \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
     && ./contrib/moose/scripts/update_and_rebuild_wasp.sh '
-RUN /bin/bash -c 'make -j8 MAKEFLAGS=-j8 '
+RUN /bin/bash -c 'ls && make -j8 MAKEFLAGS=-j8 '
     
