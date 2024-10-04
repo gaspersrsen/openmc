@@ -255,5 +255,6 @@ RUN /bin/bash -c 'cd $HOME \
     && ./contrib/moose/scripts/update_and_rebuild_wasp.sh '
 RUN /bin/bash -c 'cd $HOME \
     && cd cardinal \
+    && export NEKRS_HOME=$HOME/cardinal/install \
     && make -j8 MAKEFLAGS=-j8 '
     
