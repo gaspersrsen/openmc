@@ -255,6 +255,8 @@ RUN /bin/bash -c 'cd $HOME \
     && ./contrib/moose/scripts/update_and_rebuild_wasp.sh '
 RUN /bin/bash -c 'cd $HOME \
     && cd cardinal \
+    && export ENABLE_DAGMC=yes \
     && export NEKRS_HOME=$HOME/cardinal/install \
+    && export NEKRS_OCCA_MODE_DEFAULT=CPU \
     && make -j8 MAKEFLAGS=-j8 '
     
