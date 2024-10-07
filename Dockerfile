@@ -272,4 +272,4 @@ RUN /bin/bash -c 'cd $HOME \
     && pip install .'
 RUN
 ENV OPENMC_CROSS_SECTIONS=/home/nndc_hdf5/cross_sections.xml
-ENV NEKRS_HOME=$HOME/cardinal/install
+ENV $NEKRS_HOME=$HOME/cardinal/install
