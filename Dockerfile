@@ -240,7 +240,6 @@ RUN pip install --upgrade pip
 # RUN ${HOME}/OpenMC/openmc/tools/ci/download-xs.sh
 
 ## RUN BASIC 
-ARG HOME=/home
 ENV $HOME=/home
 RUN /bin/bash -c 'cd $HOME \
     && apt install flex -y \
