@@ -259,17 +259,16 @@ RUN /bin/bash -c 'pip install pyyaml jinja2 packaging \
     && export ENABLE_DAGMC=yes \
     && export NEKRS_HOME=$HOME/cardinal/install \
     && export NEKRS_OCCA_MODE_DEFAULT=CPU'
-ENV HOME=/home
 RUN /bin/bash -c 'cd $HOME \
     && cd cardinal \
     && apt install pkg-config -y \
     && export NEKRS_HOME=$HOME/cardinal/install \
     && make -j8 MAKEFLAGS=-j8 '
-ENV HOME=/home
 RUN /bin/bash -c 'cd $HOME \
     && cd cardinal/contrib/openmc \
     && pip install .'
-ENV OPENMC_CROSS_SECTIONS=/root/nndc_hdf5/cross_sections.xml
+ENV OPENMC_CROSS_SECTIONS=/home/nndc_hdf5/cross_sections.xml
+ENV NEKRS_HOME=$HOME/cardinal/install
 
 # Download cross sections (NNDC and WMP) and ENDF data needed by test suite
 RUN /home/cardinal/contrib/openmc/tools/ci/download-xs.sh
