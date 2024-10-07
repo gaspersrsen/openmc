@@ -554,7 +554,7 @@ class CoupledOperator(OpenMCOperator):
                 if M < 20:
                     g = (M - 1 + g_corr) / M
                 else:
-                    g = (M - 10 + 10*g_corr) / M
+                    g = (M - 5 + 5*g_corr) / M
                 f *= g
                 print(f*initial_value)
                 #g = 1
