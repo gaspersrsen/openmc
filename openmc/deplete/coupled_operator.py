@@ -551,10 +551,10 @@ class CoupledOperator(OpenMCOperator):
                 
                 f_prev = f
                 g_corr = ((P_fiss/target) * (1-L_leak) +  P_nxn - (L_abs-L_abs_nucs)) / L_abs_nucs
-                if M < 20:
-                    g = (M - 1 + g_corr) / M
+                if M < 5:
+                    g = g_corr
                 else:
-                    g = (M - 5 + 5*g_corr) / M
+                    g = (M - 3 + 3*g_corr) / M
                 f *= g
                 print(f*initial_value)
                 #g = 1
