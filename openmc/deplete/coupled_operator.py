@@ -486,6 +486,7 @@ class CoupledOperator(OpenMCOperator):
         # direction = 0
         f = 1
         g = 1
+        f_all = []
         prev_res = []
         prev_leak = 0
         openmc.lib.reset()
@@ -494,14 +495,15 @@ class CoupledOperator(OpenMCOperator):
         openmc.lib.simulation_init()
         # Run simulation
         for _ in openmc.lib.iter_batches():
+            M = openmc.lib.current_batch()
             # Only change concentrations during the additional batches
-            if openmc.lib.current_batch() < batches:
-                print(openmc.lib.current_batch())
+            if M < batches:
+                print(M)
                 k = openmc.lib.keff()
                 print(k)
                 talliez = copy.copy(openmc.lib.tallies)
                 curr_res = []
-                if openmc.lib.current_batch() == 1:
+                if M == 1:
                     i = 0
                     for tally_ in talliez.values():
                         if i == 2:
@@ -520,8 +522,8 @@ class CoupledOperator(OpenMCOperator):
                 
                 glob_tall = copy.copy(openmc.lib.global_tallies())
                 
-                leak = glob_tall[3][0]*openmc.lib.current_batch() - prev_leak
-                prev_leak = glob_tall[3][0]*openmc.lib.current_batch()
+                leak = glob_tall[3][0]*M - prev_leak
+                prev_leak = glob_tall[3][0]*M
                 
                 P_fiss = curr_res[0][0][0][1]
                 P_nxn = curr_res[0][0][2][1] - curr_res[0][0][3][1]
@@ -531,7 +533,7 @@ class CoupledOperator(OpenMCOperator):
                 print(P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs)
                 
                 # #OPTIMAL FOLLOWING
-                # if openmc.lib.current_batch() == 1:
+                # if M == 1:
                 #     #opt_vari = np.abs((target-k[0])/target)**2
                 #     opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs = P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs
                 # else:
@@ -547,8 +549,12 @@ class CoupledOperator(OpenMCOperator):
                 
                 # g = ((opt_P_fiss/target) * (1-opt_L_leak) + opt_P_nxn - (opt_L_abs-opt_L_abs_nucs)) / opt_L_abs_nucs
                 # g = ((P_fiss/target +  P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs
-                g = ((P_fiss/target) * (1-L_leak) +  P_nxn - (L_abs-L_abs_nucs)) / L_abs_nucs
+                
+                f_prev = f
+                g_corr = ((P_fiss/target) * (1-L_leak) +  P_nxn - (L_abs-L_abs_nucs)) / L_abs_nucs
+                g = (M - 1 + g_corr) / M
                 f *= g
+                f_all.append(f)
                 print(f*initial_value)
                 #g = 1
                 # Determine change of concentration
@@ -590,7 +596,7 @@ class CoupledOperator(OpenMCOperator):
                     mat_internal = openmc.lib.materials[int(mat)]
                     mat_internal.set_densities(nuclides, densities)
                 #conc_prev=conc
-            if openmc.lib.current_batch() == batches:
+            if M == batches:
                 openmc.lib.reset()
         openmc.lib.simulation_finalize()
 
