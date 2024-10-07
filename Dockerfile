@@ -268,9 +268,9 @@ RUN /bin/bash -c 'cd $HOME \
 RUN /bin/bash -c 'cd $HOME \
     && cd cardinal/contrib/openmc \
     && pip install .'
-
-export OPENMC_CROSS_SECTIONS=/home/nndc_hdf5/cross_sections.xml
-export NEKRS_HOME=$HOME/cardinal/install
+RUN
+ENV $OPENMC_CROSS_SECTIONS=/home/nndc_hdf5/cross_sections.xml
+ENV $NEKRS_HOME=$HOME/cardinal/install
 
 # Download cross sections (NNDC and WMP) and ENDF data needed by test suite
 RUN /home/cardinal/contrib/openmc/tools/ci/download-xs.sh
