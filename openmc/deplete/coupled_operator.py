@@ -486,7 +486,6 @@ class CoupledOperator(OpenMCOperator):
         # direction = 0
         f = 1
         g = 1
-        f_all = []
         prev_res = []
         prev_leak = 0
         openmc.lib.reset()
@@ -552,9 +551,11 @@ class CoupledOperator(OpenMCOperator):
                 
                 f_prev = f
                 g_corr = ((P_fiss/target) * (1-L_leak) +  P_nxn - (L_abs-L_abs_nucs)) / L_abs_nucs
-                g = (M - 1 + g_corr) / M
+                if M < 20:
+                    g = (M - 1 + g_corr) / M
+                else:
+                    g = (M - 10 + 10*g_corr) / M
                 f *= g
-                f_all.append(f)
                 print(f*initial_value)
                 #g = 1
                 # Determine change of concentration
