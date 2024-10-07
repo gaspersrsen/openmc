@@ -239,7 +239,7 @@ RUN pip install --upgrade pip
 # # Download cross sections (NNDC and WMP) and ENDF data needed by test suite
 # RUN ${HOME}/OpenMC/openmc/tools/ci/download-xs.sh
 
-## RUN BASIC 
+## RUN BASIC
 ENV $HOME=/home
 RUN /bin/bash -c 'cd $HOME \
     && apt install flex -y \
@@ -253,17 +253,20 @@ RUN /bin/bash -c 'cd $HOME \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
     && ./contrib/moose/scripts/update_and_rebuild_wasp.sh '
+ENV $HOME=/home
 RUN /bin/bash -c 'pip install pyyaml jinja2 packaging \
     && cd $HOME \
     && cd cardinal \
     && export ENABLE_DAGMC=yes \
     && export NEKRS_HOME=$HOME/cardinal/install \
     && export NEKRS_OCCA_MODE_DEFAULT=CPU'
+ENV $HOME=/home
 RUN /bin/bash -c 'cd $HOME \
     && cd cardinal \
     && apt install pkg-config -y \
     && export NEKRS_HOME=$HOME/cardinal/install \
     && make -j8 MAKEFLAGS=-j8 '
+ENV $HOME=/home
 RUN /bin/bash -c 'cd $HOME \
     && cd cardinal/contrib/openmc \
     && pip install .'
