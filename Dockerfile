@@ -241,7 +241,7 @@ RUN pip install --upgrade pip
 
 ## RUN BASIC 
 ARG HOME=/home
-ENV HOME=/home
+ENV $HOME=/home
 RUN /bin/bash -c 'cd $HOME \
     && apt install flex -y \
     && apt install bison -y \
