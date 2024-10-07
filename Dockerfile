@@ -240,7 +240,7 @@ RUN pip install --upgrade pip
 # RUN ${HOME}/OpenMC/openmc/tools/ci/download-xs.sh
 
 ## RUN BASIC
-ENV $HOME=/home
+ENV HOME=/home
 RUN /bin/bash -c 'cd $HOME \
     && apt install flex -y \
     && apt install bison -y \
@@ -253,23 +253,23 @@ RUN /bin/bash -c 'cd $HOME \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
     && ./contrib/moose/scripts/update_and_rebuild_wasp.sh '
-ENV $HOME=/home
+ENV HOME=/home
 RUN /bin/bash -c 'pip install pyyaml jinja2 packaging \
     && cd $HOME \
     && cd cardinal \
     && export ENABLE_DAGMC=yes \
     && export NEKRS_HOME=$HOME/cardinal/install \
     && export NEKRS_OCCA_MODE_DEFAULT=CPU'
-ENV $HOME=/home
+ENV HOME=/home
 RUN /bin/bash -c 'cd $HOME \
     && cd cardinal \
     && apt install pkg-config -y \
     && export NEKRS_HOME=$HOME/cardinal/install \
     && make -j8 MAKEFLAGS=-j8 '
-ENV $HOME=/home
+ENV HOME=/home
 RUN /bin/bash -c 'cd $HOME \
     && cd cardinal/contrib/openmc \
     && pip install .'
 RUN
-ENV $OPENMC_CROSS_SECTIONS=/home/nndc_hdf5/cross_sections.xml
-ENV $NEKRS_HOME=$HOME/cardinal/install
+ENV OPENMC_CROSS_SECTIONS=/home/nndc_hdf5/cross_sections.xml
+ENV NEKRS_HOME=$HOME/cardinal/install
