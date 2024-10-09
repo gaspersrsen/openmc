@@ -549,12 +549,11 @@ class CoupledOperator(OpenMCOperator):
                 # g = ((opt_P_fiss/target) * (1-opt_L_leak) + opt_P_nxn - (opt_L_abs-opt_L_abs_nucs)) / opt_L_abs_nucs
                 # g = ((P_fiss/target +  P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs
                 
-                f_prev = f
                 g_corr = ((P_fiss/target +  P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs
                 if M < 5:
                     g = g_corr
                 else:
-                    g = (0.9 +0.1*g_corr)
+                    g = (0.8 + 0.2*g_corr)
                 f *= g
                 print(f*initial_value)
                 #g = 1
@@ -592,7 +591,7 @@ class CoupledOperator(OpenMCOperator):
                                 # val *= conc / conc_prev
                                 val *= g
                             nuclides.append(nuc)
-                            densities.append(val)
+                            densities.append(float(val))
                     # Update densities on C API side
                     mat_internal = openmc.lib.materials[int(mat)]
                     mat_internal.set_densities(nuclides, densities)
@@ -712,7 +711,7 @@ class CoupledOperator(OpenMCOperator):
                                 val = val_round * 10**val_magnitude
 
                             nuclides.append(nuc)
-                            densities.append(val)
+                            densities.append(float(val))
                         else:
                             # Only output warnings if values are significantly
                             # negative. CRAM does not guarantee positive
