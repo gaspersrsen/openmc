@@ -75,8 +75,8 @@ RUN apt-get update -y && \
     apt-get autoremove
 
 # create virtual enviroment to avoid externally managed environment error
-RUN python3 -m venv openmc_venv
-ENV PATH=/openmc_venv/bin:$PATH
+# RUN python3 -m venv openmc_venv
+# ENV PATH=/openmc_venv/bin:$PATH
 
 # Update system-provided pip
 RUN pip install --upgrade pip
@@ -267,9 +267,8 @@ RUN /bin/bash -c 'cd $HOME \
     && export NEKRS_HOME=$HOME/cardinal/install \
     && make -j8 MAKEFLAGS=-j8 '
 ENV HOME=/home
-RUN /bin/bash -c 'cd $HOME \
-    && cd cardinal/contrib/openmc \
-    && pip install .'
-RUN
+# RUN /bin/bash -c 'cd $HOME \
+#     && cd cardinal/contrib/openmc \
+#     && pip install .'
 ENV OPENMC_CROSS_SECTIONS=/home/nndc_hdf5/cross_sections.xml
 ENV NEKRS_HOME=$HOME/cardinal/install
