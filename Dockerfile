@@ -75,8 +75,8 @@ RUN apt-get update -y && \
     apt-get autoremove
 
 # create virtual enviroment to avoid externally managed environment error
-# RUN python3 -m venv openmc_venv
-# ENV PATH=/openmc_venv/bin:$PATH
+RUN python3 -m venv openmc_venv
+ENV PATH=/openmc_venv/bin:$PATH
 
 # Update system-provided pip
 RUN pip install --upgrade pip
