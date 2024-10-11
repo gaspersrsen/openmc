@@ -553,12 +553,15 @@ class CoupledOperator(OpenMCOperator):
                 g_corr = ((P_fiss/target +  P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs
                 if M < 5:
                     g = g_corr
+                    if g <= 0: g=0.5
                 else:
                     #g = (0.8 + 0.2*g_corr)
                     if g_corr > 0:
                         f_all += [f*g_corr]
-                    g = np.average(np.array(f_all))/f
-                if g <= 0: g=0.5
+                        g = np.average(np.array(f_all))/f
+                    else:
+                        f_all += [f*0.5]
+                        g = 0.5
                 f *= g
                 print(f*initial_value)
                 #g = 1
@@ -598,11 +601,7 @@ class CoupledOperator(OpenMCOperator):
                             nuclides.append(nuc)
                             densities.append(val)
                     # Update densities on C API side
-                    try:
-                        mat_internal = openmc.lib.materials[int(mat)]
-                    except:
-                        print(mat_internal)
-                        exit()
+                    mat_internal = openmc.lib.materials[int(mat)]
                     mat_internal.set_densities(nuclides, densities)
                 #conc_prev=conc
             if M == batches:
