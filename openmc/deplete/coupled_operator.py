@@ -584,16 +584,20 @@ class CoupledOperator(OpenMCOperator):
                     all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
                     
                     for nuc in all_nuc:
-                        val = (all_dens[all_nuc==str(nuc)])[0]
+                        val = float((all_dens[all_nuc==str(nuc)])[0])
                         # If nuclide is zero, do not add to the problem.
                         if val > 1e-36:
                             if str(nuc) in iso:
                                 # val *= conc / conc_prev
                                 val *= g
                             nuclides.append(nuc)
-                            densities.append(float(val))
+                            densities.append(val)
                     # Update densities on C API side
-                    mat_internal = openmc.lib.materials[int(mat)]
+                    try:
+                        mat_internal = openmc.lib.materials[int(mat)]
+                    except:
+                        print(mat_internal)
+                        exit()
                     mat_internal.set_densities(nuclides, densities)
                 #conc_prev=conc
             if M == batches:
