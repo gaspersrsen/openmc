@@ -17,8 +17,8 @@
 
 
 # global ARG as these ARGS are used in multiple stages
-# By default one core is used to compile
-ARG compile_cores=1
+# By default eight cores is used to compile
+ARG compile_cores=8
 
 # By default this Dockerfile builds OpenMC without DAGMC and LIBMESH support
 ARG build_dagmc=on
