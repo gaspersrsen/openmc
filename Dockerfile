@@ -21,8 +21,8 @@
 ARG compile_cores=1
 
 # By default this Dockerfile builds OpenMC without DAGMC and LIBMESH support
-ARG build_dagmc=off
-ARG build_libmesh=off
+ARG build_dagmc=on
+ARG build_libmesh=on
 
 FROM debian:bookworm-slim AS dependencies
 
