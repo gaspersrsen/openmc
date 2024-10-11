@@ -554,6 +554,7 @@ class CoupledOperator(OpenMCOperator):
                     g = g_corr
                 else:
                     g = (0.8 + 0.2*g_corr)
+                if g <= 0: g=1
                 f *= g
                 print(f*initial_value)
                 #g = 1
