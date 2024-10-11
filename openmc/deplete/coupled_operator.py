@@ -486,6 +486,7 @@ class CoupledOperator(OpenMCOperator):
         # direction = 0
         f = 1
         g = 1
+        f_all = []
         prev_res = []
         prev_leak = 0
         openmc.lib.reset()
@@ -553,8 +554,11 @@ class CoupledOperator(OpenMCOperator):
                 if M < 5:
                     g = g_corr
                 else:
-                    g = (0.8 + 0.2*g_corr)
-                if g <= 0: g=1
+                    #g = (0.8 + 0.2*g_corr)
+                    if g_corr > 0:
+                        f_all += [f*g_corr]
+                    g = np.average(np.array(f_all))/f
+                if g <= 0: g=0.5
                 f *= g
                 print(f*initial_value)
                 #g = 1
