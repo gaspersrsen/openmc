@@ -556,10 +556,10 @@ class CoupledOperator(OpenMCOperator):
                     g = g_corr
                     if g <= 0: g=0.5
                 else:
-                    #g = (0.8 + 0.2*g_corr)
                     if g_corr > 0:
                         f_all += [f*g_corr]
-                        g = np.average(np.array(f_all))/f
+                        #g = np.average(np.array(f_all))/f
+                        g = (0.8 + 0.1*g_corr)
                     else:
                         f_all += [f*0.5]
                         g = 0.5
