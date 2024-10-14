@@ -486,7 +486,7 @@ class CoupledOperator(OpenMCOperator):
         # direction = 0
         f = 1
         g = 1
-        f_all = []
+        res_avg = []
         prev_res = []
         prev_leak = 0
         openmc.lib.reset()
@@ -530,9 +530,11 @@ class CoupledOperator(OpenMCOperator):
                 L_leak = leak # Fraction
                 L_abs = curr_res[0][0][1][1]
                 L_abs_nucs = np.sum(np.sum(np.array(curr_res[1][0]).T, axis=1))
-                #print(np.sum(np.array(curr_res[1][0]).T, axis=1))
                 print(P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs)
                 
+                if M > 5:
+                    res_avg += [[P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs]]
+                    [P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs] = np.average(np.array(res_avg).T, axis=1)
                 # #OPTIMAL FOLLOWING
                 # if M == 1:
                 #     #opt_vari = np.abs((target-k[0])/target)**2
@@ -552,17 +554,19 @@ class CoupledOperator(OpenMCOperator):
                 # g = ((P_fiss/target +  P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs
                 
                 g_corr = ((P_fiss/target +  P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs
-                if M < 5:
-                    g = g_corr
-                    if g <= 0: g=0.5
-                else:
-                    if g_corr > 0:
-                        f_all += [f*g_corr]
-                        #g = np.average(np.array(f_all))/f
-                        g = (0.9 + 0.1*g_corr)
-                    else:
-                        f_all += [f*0.5]
-                        g = 0.5
+                g = g_corr
+                if g <= 0: g=0.5
+                # if M <= 5:
+                #     g = g_corr
+                #     if g <= 0: g=0.5
+                # else:
+                #     if g_corr > 0:
+                #         f_all += [f*g_corr]
+                #         #g = np.average(np.array(f_all))/f
+                #         g = (0.9 + 0.1*g_corr)
+                #     else:
+                #         f_all += [f*0.5]
+                #         g = 0.5
                 f *= g
                 print(f*initial_value)
                 #g = 1
