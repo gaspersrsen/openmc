@@ -529,8 +529,8 @@ class CoupledOperator(OpenMCOperator):
                 P_nxn = curr_res[0][0][2][1] - curr_res[0][0][3][1]
                 L_leak = leak # Fraction
                 L_abs = curr_res[0][0][1][1]
-                L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
-                print(np.sum(np.array(curr_res[1][0]).T, axis=1))
+                L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=0)
+                #print(np.sum(np.array(curr_res[1][0]).T, axis=1))
                 print(P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs)
                 
                 # #OPTIMAL FOLLOWING
