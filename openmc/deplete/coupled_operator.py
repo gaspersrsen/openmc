@@ -489,6 +489,7 @@ class CoupledOperator(OpenMCOperator):
         res_avg = []
         prev_res = []
         prev_leak = 0
+        prev_g = 1
         openmc.lib.reset()
         # if self._n_calls > 0:
         #     openmc.lib.reset_timers()
@@ -568,7 +569,7 @@ class CoupledOperator(OpenMCOperator):
                 #     else:
                 #         f_all += [f*0.5]
                 #         g = 0.5
-                f *= g
+                f = g/prev_g
                 print(f*initial_value)
                 #g = 1
                 # Determine change of concentration
@@ -610,6 +611,7 @@ class CoupledOperator(OpenMCOperator):
                     mat_internal = openmc.lib.materials[int(mat)]
                     mat_internal.set_densities(nuclides, densities)
                 #conc_prev=conc
+                prev_g = g
             if M == batches:
                 openmc.lib.reset()
         openmc.lib.simulation_finalize()
