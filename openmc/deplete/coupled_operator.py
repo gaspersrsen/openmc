@@ -532,10 +532,10 @@ class CoupledOperator(OpenMCOperator):
                 L_abs_nucs = np.sum(np.sum(np.array(curr_res[1][0]).T, axis=1))#/k[0]
                 print(P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs)
                 
-                # if M > 5:
-                #     res_avg += [[P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs]]
-                #     [P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs] = np.average(np.array(res_avg).T, axis=1)
-                # print(P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs)
+                if M > 5:
+                    res_avg += [[P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs]]
+                    [P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs] = np.average(np.array(res_avg).T, axis=1)
+                print(P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs)
                 # #OPTIMAL FOLLOWING
                 # if M == 1:
                 #     #opt_vari = np.abs((target-k[0])/target)**2
