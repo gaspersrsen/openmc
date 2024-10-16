@@ -525,7 +525,7 @@ class CoupledOperator(OpenMCOperator):
                 leak = glob_tall[3][0]*M - prev_leak
                 prev_leak = glob_tall[3][0]*M
                 
-                P_fiss = curr_res[0][0][0][1]
+                P_fiss = curr_res[0][0][0][1]/k
                 P_nxn = curr_res[0][0][2][1] - curr_res[0][0][3][1]
                 L_leak = leak # Fraction
                 L_abs = curr_res[0][0][1][1]
@@ -533,7 +533,7 @@ class CoupledOperator(OpenMCOperator):
                 print(P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs)
                 
                 if M > 5:
-                    res_avg += [[P_fiss/k, P_nxn/k, L_leak, L_abs/k, L_abs_nucs/k]]
+                    res_avg += [[P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs]]
                     [P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs] = np.average(np.array(res_avg).T, axis=1)
                 print(P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs)
                 # #OPTIMAL FOLLOWING
