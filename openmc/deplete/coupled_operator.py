@@ -490,6 +490,7 @@ class CoupledOperator(OpenMCOperator):
         prev_res = []
         prev_leak = 0
         prev_g = 1
+        prev_k_sum = 0
         openmc.lib.reset()
         # if self._n_calls > 0:
         #     openmc.lib.reset_timers()
@@ -500,7 +501,9 @@ class CoupledOperator(OpenMCOperator):
             # Only change concentrations during the additional batches
             if M < batches:
                 print(M)
-                k = openmc.lib.keff()
+                k_sum = openmc.lib.keff()[0]
+                k = k_sum*M - prev_k_sum
+                prev_k_sum = k_sum*M
                 print(k)
                 talliez = copy.copy(openmc.lib.tallies)
                 curr_res = []
@@ -526,11 +529,11 @@ class CoupledOperator(OpenMCOperator):
                 leak = glob_tall[3][0]*M - prev_leak
                 prev_leak = glob_tall[3][0]*M
                 
-                P_fiss = (curr_res[0][0][0][1])/k[0]
-                P_nxn = (curr_res[0][0][2][1] - curr_res[0][0][3][1])/k[0]
+                P_fiss = (curr_res[0][0][0][1])/k
+                P_nxn = (curr_res[0][0][2][1] - curr_res[0][0][3][1])/k
                 L_leak = leak # Fraction
-                L_abs = curr_res[0][0][1][1]/k[0]
-                L_abs_nucs = np.sum(np.sum(np.array(curr_res[1][0]).T, axis=1))/k[0]
+                L_abs = curr_res[0][0][1][1]/k
+                L_abs_nucs = np.sum(np.sum(np.array(curr_res[1][0]).T, axis=1))/k
                 print(P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs)
                 
                 if M > 5:
