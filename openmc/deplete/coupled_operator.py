@@ -525,11 +525,11 @@ class CoupledOperator(OpenMCOperator):
                 leak = glob_tall[3][0]*M - prev_leak
                 prev_leak = glob_tall[3][0]*M
                 
-                P_fiss = curr_res[0][0][0][1]/k[0]
-                P_nxn = curr_res[0][0][2][1] - curr_res[0][0][3][1]
+                P_fiss = (curr_res[0][0][0][1])/k[0]
+                P_nxn = (curr_res[0][0][2][1] - curr_res[0][0][3][1])/k[0]
                 L_leak = leak # Fraction
-                L_abs = curr_res[0][0][1][1]
-                L_abs_nucs = np.sum(np.sum(np.array(curr_res[1][0]).T, axis=1))
+                L_abs = curr_res[0][0][1][1]/k[0]
+                L_abs_nucs = np.sum(np.sum(np.array(curr_res[1][0]).T, axis=1))/k[0]
                 print(P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs)
                 
                 if M > 5:
