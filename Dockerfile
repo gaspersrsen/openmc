@@ -276,6 +276,7 @@ RUN /bin/bash -c 'echo "export RUNLEVEL=1" >> ~/.bashrc \
     && cd Nek5000/tools \
     && ./maketools all \
     && echo "export PATH=/etc:$PATH" >> ~/.bashrc \
-    && echo "export PATH=/root/Nek5000/tools:/etc:$PATH" >> ~/.bashrc'
+    && echo "export PATH=/root/Nek5000/tools:/etc:$PATH" >> ~/.bashrc \
+    && echo "export PATH=/root/cardinal/build/openmc/bin:$PATH" >> ~/.bashrc'
 ENV OPENMC_CROSS_SECTIONS=$HOME/nndc_hdf5/cross_sections.xml
 ENV NEKRS_HOME=$HOME/cardinal/install
