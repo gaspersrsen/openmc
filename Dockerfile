@@ -269,12 +269,13 @@ RUN /bin/bash -c 'cd $HOME \
     && apt install pkg-config -y \
     && make -j${compile_cores} MAKEFLAGS=-j${compile_cores} '
 
-RUN /bin/bash -c 'apt install xorg -y \
-    && echo "export RUNLEVEL=1" >> ~/.bashrc \
+RUN /bin/bash -c 'echo "export RUNLEVEL=1" >> ~/.bashrc \
+    && apt install libxt-dev xorg -y \
     && cd $HOME \
     && git clone https://github.com/Nek5000/Nek5000.git \
     && cd Nek5000/tools \
     && ./maketools all \
-    && echo "export PATH=$HOME/Nek5000/tools:$PATH" >> ~/.bashrc'
+    && echo "export PATH=/etc:$PATH" >> ~/.bashrc \
+    && echo "export PATH=/root/Nek5000/tools:/etc:$PATH" >> ~/.bashrc'
 ENV OPENMC_CROSS_SECTIONS=$HOME/nndc_hdf5/cross_sections.xml
 ENV NEKRS_HOME=$HOME/cardinal/install
