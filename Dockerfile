@@ -269,7 +269,8 @@ RUN /bin/bash -c 'cd $HOME \
     && apt install pkg-config -y \
     && make -j${compile_cores} MAKEFLAGS=-j${compile_cores} '
 
-    RUN /bin/bash -c 'apt install xorg -y \
+RUN /bin/bash -c 'apt install xorg -y \
+    && echo "export RUNLEVEL=1" >> ~/.bashrc \
     && cd $HOME \
     && git clone https://github.com/Nek5000/Nek5000.git \
     && cd Nek5000/tools \
