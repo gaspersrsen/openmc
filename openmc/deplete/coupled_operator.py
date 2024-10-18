@@ -529,17 +529,17 @@ class CoupledOperator(OpenMCOperator):
                 leak = glob_tall[3][0]*M - prev_leak
                 prev_leak = glob_tall[3][0]*M
                 
-                P_fiss_prompt = (curr_res[0][0][0][1])#/(1+(target-k))
+                P_fiss_prompt = (curr_res[0][0][0][1])/k#/(1+(target-k))
                 P_fiss_delayed = (curr_res[0][0][1][1])#/(1+(target-k))
                 P_nxn = (curr_res[0][0][3][1] - curr_res[0][0][4][1])#/k
                 L_leak = leak # Fraction
                 L_abs = curr_res[0][0][2][1]#/k
                 L_abs_nucs = np.sum(np.sum(np.array(curr_res[1][0]).T, axis=1))#/k
                 print(P_fiss_prompt, P_fiss_delayed, P_nxn, L_leak, L_abs, L_abs_nucs)
-                corr = ((P_fiss_prompt*(1+(target-k))/target + P_fiss_delayed +  P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs
+                corr = ((P_fiss_prompt/target + P_fiss_delayed +  P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs
                 
                 if M > 5:
-                    res_avg += [[P_fiss_prompt*(1+(target-k)), P_fiss_delayed, P_nxn, L_leak, L_abs*corr, L_abs_nucs*corr]]
+                    res_avg += [[P_fiss_prompt*target, P_fiss_delayed, P_nxn, L_leak, L_abs*corr, L_abs_nucs*corr]]
                     [P_fiss_prompt, P_fiss_delayed, P_nxn, L_leak, L_abs, L_abs_nucs] = np.average(np.array(res_avg).T, axis=1)
                 print(P_fiss_prompt, P_fiss_delayed, P_nxn, L_leak, L_abs, L_abs_nucs)
                 
