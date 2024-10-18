@@ -264,6 +264,7 @@ RUN /bin/bash -c 'pip install pyyaml jinja2 packaging \
     && export NEKRS_HOME=$HOME/cardinal/install \
     && export NEKRS_OCCA_MODE_DEFAULT=OPENMP'
 
+ENV NEKRS_HOME=$HOME/cardinal/install
 RUN /bin/bash -c 'cd $HOME \
     && cd cardinal \
     && apt install pkg-config -y \
@@ -277,7 +278,7 @@ RUN /bin/bash -c 'echo "export RUNLEVEL=1" >> ~/.bashrc \
     && ./maketools all \
     && echo "export PATH=/etc:$PATH" >> ~/.bashrc \
     && echo "export PATH=/root/Nek5000/tools:/etc:$PATH" >> ~/.bashrc \
-    && echo "export PATH=/root/cardinal/build/openmc/bin:$PATH" >> ~/.bashrc'
+    && echo "export PATH=/root/cardinal/build/openmc/bin:$PATH" >> ~/.bashrc \
     && echo "export PATH=/root/cardinal:$PATH" >> ~/.bashrc'
 ENV OPENMC_CROSS_SECTIONS=$HOME/nndc_hdf5/cross_sections.xml
 ENV NEKRS_HOME=$HOME/cardinal/install
