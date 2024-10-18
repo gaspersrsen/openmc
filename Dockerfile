@@ -264,7 +264,7 @@ RUN /bin/bash -c 'pip install pyyaml jinja2 packaging \
     && export NEKRS_HOME=$HOME/cardinal/install \
     && export NEKRS_OCCA_MODE_DEFAULT=OPENMP'
 
-ENV NEKRS_HOME=$HOME/cardinal/install
+ENV NEKRS_HOME=/root/cardinal/install
 RUN /bin/bash -c 'cd $HOME \
     && cd cardinal \
     && apt install pkg-config -y \
