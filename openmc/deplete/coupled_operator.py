@@ -529,7 +529,7 @@ class CoupledOperator(OpenMCOperator):
                 leak = glob_tall[3][0]*M - prev_leak
                 prev_leak = glob_tall[3][0]*M
                 
-                P_fiss_prompt = (curr_res[0][0][0][1])/k #Normalize to k=1
+                P_fiss_prompt = (curr_res[0][0][0][1]) #Normalize to k=1
                 P_fiss_delayed = (curr_res[0][0][1][1])
                 P_nxn = (curr_res[0][0][3][1] - curr_res[0][0][4][1])
                 L_leak = leak # Fraction
@@ -549,7 +549,10 @@ class CoupledOperator(OpenMCOperator):
                 #Decrease the swing of conc
                 if M > 5:
                     g = ((M-5) + corr)/(M-4)
-                if g <= 0: g=0.5
+                else:
+                    g = corr
+                if g <= 0:
+                    g = 0.5
                 # if M <= 5:
                 #     g = g_corr
                 #     if g <= 0: g=0.5
