@@ -239,14 +239,19 @@ ENV OPENMC_CROSS_SECTIONS=/root/nndc_hdf5/cross_sections.xml
 # Download cross sections (NNDC and WMP) and ENDF data needed by test suite
 RUN ${HOME}/OpenMC/openmc/tools/ci/download-xs.sh
 
+RUN printf '#!/bin/sh\nexit 0' > /usr/sbin/policy-rc.d
 RUN /bin/bash -c 'cd $HOME \
     && apt install flex -y \
     && apt install bison -y \
     && git clone https://github.com/neams-th-coe/cardinal.git \
     && cd cardinal \
-    && export ENABLE_DAGMC=yes \
-    && export NEKRS_HOME=$HOME/cardinal/install \
-    && export NEKRS_OCCA_MODE_DEFAULT=CPU \
+    && echo "export ENABLE_DAGMC=yes" >> ~/.bashrc \
+    && echo "export NEKRS_HOME=$HOME/cardinal/install" >> ~/.bashrc \
+    && echo "export NEKRS_OCCA_MODE_DEFAULT=CPU" >> ~/.bashrc \
+    && echo "export CC=mpicc" >> ~/.bashrc \
+    && echo "export CXX=mpicxx" >> ~/.bashrc \
+    && echo "export FC=mpif90" >> ~/.bashrc \
+    && echo "export MPICH_FC=gfortran" >> ~/.bashrc \
     && ./scripts/get-dependencies.sh \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
@@ -257,16 +262,18 @@ RUN /bin/bash -c 'pip install pyyaml jinja2 packaging \
     && cd cardinal \
     && export ENABLE_DAGMC=yes \
     && export NEKRS_HOME=$HOME/cardinal/install \
-    && export NEKRS_OCCA_MODE_DEFAULT=CPU'
+    && export NEKRS_OCCA_MODE_DEFAULT=OPENMP'
 
 RUN /bin/bash -c 'cd $HOME \
     && cd cardinal \
     && apt install pkg-config -y \
-    && export NEKRS_HOME=$HOME/cardinal/install \
     && make -j${compile_cores} MAKEFLAGS=-j${compile_cores} '
 
-# RUN /bin/bash -c 'cd $HOME \
-#     && cd cardinal/contrib/openmc \
-#     && pip install .'
+    RUN /bin/bash -c 'apt install xorg -y \
+    && cd $HOME \
+    && git clone https://github.com/Nek5000/Nek5000.git \
+    && cd Nek5000/tools \
+    && ./maketools all \
+    && echo "export PATH=$HOME/Nek5000/tools:$PATH" >> ~/.bashrc'
 ENV OPENMC_CROSS_SECTIONS=$HOME/nndc_hdf5/cross_sections.xml
 ENV NEKRS_HOME=$HOME/cardinal/install
