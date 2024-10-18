@@ -536,28 +536,12 @@ class CoupledOperator(OpenMCOperator):
                 L_abs = curr_res[0][0][2][1]#/k
                 L_abs_nucs = np.sum(np.sum(np.array(curr_res[1][0]).T, axis=1))#/k
                 print(P_fiss_prompt, P_fiss_delayed, P_nxn, L_leak, L_abs, L_abs_nucs)
-                corr = ((P_fiss_prompt/target + P_fiss_delayed +  P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs
+                # corr = ((P_fiss_prompt/target + P_fiss_delayed +  P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs
                 
-                if M > 5:
-                    res_avg += [[P_fiss_prompt, P_fiss_delayed, P_nxn, L_leak, L_abs*corr, L_abs_nucs*corr]]
-                    [P_fiss_prompt, P_fiss_delayed, P_nxn, L_leak, L_abs, L_abs_nucs] = np.average(np.array(res_avg).T, axis=1)
-                print(P_fiss_prompt, P_fiss_delayed, P_nxn, L_leak, L_abs, L_abs_nucs)
-                # #OPTIMAL FOLLOWING
-                # if M == 1:
-                #     #opt_vari = np.abs((target-k[0])/target)**2
-                #     opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs = P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs
-                # else:
-                #     #vari = ((target-k[0])/target)**2
-                #     a = np.array([opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs])
-                #     b = np.array([P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs])
-                #     #[opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs] = (a*vari + b*opt_vari)/(vari+opt_vari)
-                #     [opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs] = (a + b) / 2
-                #     #opt_vari = (1-opt_vari/(opt_vari+vari))*opt_vari
-                #     #opt_vari = opt_vari*vari/(opt_vari+vari)
-                # print(opt_P_fiss, opt_P_nxn, opt_L_leak, opt_L_abs, opt_L_abs_nucs)
-                
-                
-                # g = ((opt_P_fiss/target) * (1-opt_L_leak) + opt_P_nxn - (opt_L_abs-opt_L_abs_nucs)) / opt_L_abs_nucs
+                # if M > 5:
+                #     res_avg += [[P_fiss_prompt, P_fiss_delayed, P_nxn, L_leak, L_abs*corr, L_abs_nucs*corr]]
+                #     [P_fiss_prompt, P_fiss_delayed, P_nxn, L_leak, L_abs, L_abs_nucs] = np.average(np.array(res_avg).T, axis=1)
+                # print(P_fiss_prompt, P_fiss_delayed, P_nxn, L_leak, L_abs, L_abs_nucs)
                 # g = ((P_fiss/target +  P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs
                 
                 g_corr = ((P_fiss_prompt/target + P_fiss_delayed + P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs
@@ -575,7 +559,7 @@ class CoupledOperator(OpenMCOperator):
                 #         f_all += [f*0.5]
                 #         g = 0.5
                 print(g)
-                f = g/prev_g
+                f *= g
                 print(f*initial_value)
                 #g = 1
                 # Determine change of concentration
