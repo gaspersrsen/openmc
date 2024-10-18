@@ -489,8 +489,6 @@ class CoupledOperator(OpenMCOperator):
         res_avg = []
         prev_res = []
         prev_leak = 0
-        prev_g = 1
-        prev_k_sum = 0
         openmc.lib.reset()
         # if self._n_calls > 0:
         #     openmc.lib.reset_timers()
@@ -501,9 +499,7 @@ class CoupledOperator(OpenMCOperator):
             # Only change concentrations during the additional batches
             if M < batches:
                 print(M)
-                k_sum = openmc.lib.keff()[0]
-                k = k_sum*M - prev_k_sum
-                prev_k_sum = k_sum*M
+                k = openmc.lib.keff()[0]
                 print(k)
                 talliez = copy.copy(openmc.lib.tallies)
                 curr_res = []
@@ -525,7 +521,6 @@ class CoupledOperator(OpenMCOperator):
                 #print(curr_res)
                 
                 glob_tall = copy.copy(openmc.lib.global_tallies())
-                print(glob_tall)
                 
                 leak = glob_tall[3][0]*M - prev_leak
                 prev_leak = glob_tall[3][0]*M
