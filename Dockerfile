@@ -238,7 +238,7 @@ ENV OPENMC_CROSS_SECTIONS=/root/nndc_hdf5/cross_sections.xml
 
 # Download cross sections (NNDC and WMP) and ENDF data needed by test suite
 # RUN ${HOME}/OpenMC/openmc/tools/ci/download-xs.sh
-
+RUN /bin/bash -c 'echo "CMAKE_BUILD_PARALLEL_LEVEL=${compile_cores}" >> ~/.bashrc'
 RUN printf '#!/bin/sh\nexit 0' > /usr/sbin/policy-rc.d
 RUN /bin/bash -c 'cd $HOME \
     && apt install flex -y \
