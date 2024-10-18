@@ -529,7 +529,7 @@ class CoupledOperator(OpenMCOperator):
                 leak = glob_tall[3][0]*M - prev_leak
                 prev_leak = glob_tall[3][0]*M
                 
-                P_fiss_prompt = (curr_res[0][0][0][1])#/(1+(target-k))
+                P_fiss_prompt = (curr_res[0][0][0][1])/k#/(1+(target-k))
                 P_fiss_delayed = (curr_res[0][0][1][1])#/(1+(target-k))
                 P_nxn = (curr_res[0][0][3][1] - curr_res[0][0][4][1])#/k
                 L_leak = leak # Fraction
