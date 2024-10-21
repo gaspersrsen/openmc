@@ -252,6 +252,9 @@ RUN /bin/bash -c 'cd $HOME \
     && echo "export CXX=mpicxx" >> ~/.bashrc \
     && echo "export FC=mpif90" >> ~/.bashrc \
     && echo "export MPICH_FC=gfortran" >> ~/.bashrc \
+    && echo "export JOBS={compile_cores}" >> ~/.bashrc \
+    && echo "export LIBMESH_JOB={compile_cores}" >> ~/.bashrc \
+    && echo "export MOOSE_JOBS={compile_cores}" >> ~/.bashrc \
     && ./scripts/get-dependencies.sh \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
