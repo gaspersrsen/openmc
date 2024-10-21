@@ -544,7 +544,7 @@ class CoupledOperator(OpenMCOperator):
                 #g_corr = ((P_fiss_prompt/target + P_fiss_delayed + P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs
                 #Decrease the swing of conc
                 if M > 10:
-                    g = (1+5/(M-10)*corr)/(1+5/(M-10))
+                    g = (1+1/(M-10)*corr)/(1+1/(M-10))
                 else:
                     g = corr
                 if g <= 0:
