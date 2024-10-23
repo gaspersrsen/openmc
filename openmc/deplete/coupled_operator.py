@@ -581,7 +581,7 @@ class CoupledOperator(OpenMCOperator):
                 #print(corr)
                 print(g)
                 #f *= g
-                print(f*initial_value)
+                print(f*initial_value, f*initial_value*(p**(1/2)))
                 #g = 1
                 # Determine change of concentration
                 # if invert_k*(k[0]-target) < 0: 
