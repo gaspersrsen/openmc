@@ -486,6 +486,7 @@ class CoupledOperator(OpenMCOperator):
         # direction = 0
         f = 1
         g = 1
+        f_prev = 1
         res_avg = []
         prev_res = []
         prev_leak = 0
@@ -499,7 +500,7 @@ class CoupledOperator(OpenMCOperator):
             # Only change concentrations during the additional batches
             if M < batches:
                 print(M)
-                k = openmc.lib.keff()[0]
+                k = openmc.lib.keff()
                 print(k)
                 talliez = copy.copy(openmc.lib.tallies)
                 curr_res = []
@@ -534,7 +535,24 @@ class CoupledOperator(OpenMCOperator):
                 print(P_fiss_prompt, P_fiss_delayed, P_nxn, L_leak, L_abs, L_abs_nucs)
                 #Calculate the conc change for this batch only
                 corr = ((P_fiss_prompt/target + P_fiss_delayed + P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs
+                g = corr
+                if g <= 0:
+                    g = 0.5
+                #Optimal following:
+                p_measure = (np.absolute(k[0]-target)/target + k[1]/k[0])**2
+                z = f_prev * g
+                if M == 1:
+                    x = 0
+                    p = p_measure
+                    p_n = p_measure
+                else:
+                    p_n = 1/(1/p + 1/p_measure)
+                x = x + p_n/p*(z - x)
+                p = p_n
                 
+                f = x
+                g = f/f_prev
+                f_prev = f
                 # if M > 5:
                 #     #Guesstimate the 
                 #     res_avg += [[P_fiss_prompt*target, P_fiss_delayed, P_nxn, L_leak, L_abs*corr, L_abs_nucs*corr]]
@@ -543,12 +561,12 @@ class CoupledOperator(OpenMCOperator):
                 
                 #g_corr = ((P_fiss_prompt/target + P_fiss_delayed + P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs
                 #Decrease the swing of conc
-                if M > 10:
-                    g = (1+1/(M-10)*corr)/(1+1/(M-10))
-                else:
-                    g = corr
-                if g <= 0:
-                    g = 0.5
+                # if M > 10:
+                #     g = (1+1/(M-10)*corr)/(1+1/(M-10))
+                # else:
+                #     g = corr
+                # if g <= 0:
+                #     g = 0.5
                 # if M <= 5:
                 #     g = g_corr
                 #     if g <= 0: g=0.5
@@ -560,9 +578,9 @@ class CoupledOperator(OpenMCOperator):
                 #     else:
                 #         f_all += [f*0.5]
                 #         g = 0.5
-                print(corr)
+                #print(corr)
                 print(g)
-                f *= g
+                #f *= g
                 print(f*initial_value)
                 #g = 1
                 # Determine change of concentration
