@@ -500,7 +500,7 @@ class CoupledOperator(OpenMCOperator):
             # Only change concentrations during the additional batches
             if M < batches:
                 print(M)
-                k = openmc.lib.keff()
+                k = openmc.lib.keff()[0]
                 print(k)
                 talliez = copy.copy(openmc.lib.tallies)
                 curr_res = []
