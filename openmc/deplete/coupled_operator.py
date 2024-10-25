@@ -537,10 +537,10 @@ class CoupledOperator(OpenMCOperator):
                 corr = ((P_fiss_prompt/target + P_fiss_delayed + P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs
                 g = corr
                 if g <= 0:
-                    g = 0.5
+                    g = 0.1
                 #Optimal following:
-                p_measure = (np.absolute(k[0]/target - 1)**2 + 1/self.model.settings.particles) if not (np.absolute(k[0]/target - 1) < self.model.settings.particles) else (2/self.model.settings.particles)
-                z = f_prev
+                p_measure = (np.absolute(k[0]/target - 1)**2) if not (np.absolute(k[0]/target - 1) < (1/self.model.settings.particles)**(1/2)) else (1/self.model.settings.particles)
+                z = f_prev * g 
                 if M == 1:
                     x = 0
                     p = p_measure
