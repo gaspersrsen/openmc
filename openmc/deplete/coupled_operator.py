@@ -534,7 +534,7 @@ class CoupledOperator(OpenMCOperator):
                 L_abs_nucs = np.sum(np.sum(np.array(curr_res[1][0]).T, axis=1))
                 print(P_fiss_prompt, P_fiss_delayed, P_nxn, L_leak, L_abs, L_abs_nucs)
                 #Calculate the conc change for this batch only
-                k = (P_fiss_prompt/target + P_fiss_delayed)/((P_fiss_prompt/target + P_fiss_delayed)*(1-leak)+L_abs)
+                k = (P_fiss_prompt/target + P_fiss_delayed)/((P_fiss_prompt/target + P_fiss_delayed)*(leak)+L_abs)
                 dk = (curr_res[0][0][0][2]/curr_res[0][0][0][1] + curr_res[0][0][1][2]/curr_res[0][0][1][1] + curr_res[0][0][2][2]/curr_res[0][0][2][1])*k
                    
                 print(f"k={k} +/- {dk}")
@@ -543,7 +543,7 @@ class CoupledOperator(OpenMCOperator):
                 if g <= 0:
                     g = 0.1
                 #Optimal following:
-                p_measure = (np.absolute(k[0]/target - 1)**2) if not (np.absolute(k[0]/target - 1) < (1/self.model.settings.particles)**(1/2)) else (1/self.model.settings.particles)
+                p_measure = (np.absolute(k[0]/target - 1)**2) if not (np.absolute(k/target - 1) < (1/self.model.settings.particles)**(1/2)) else (1/self.model.settings.particles)
                 z = f_prev * g 
                 if M == 1:
                     x = 0
