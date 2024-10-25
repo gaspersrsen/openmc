@@ -535,15 +535,15 @@ class CoupledOperator(OpenMCOperator):
                 print(P_fiss_prompt, P_fiss_delayed, P_nxn, L_leak, L_abs, L_abs_nucs)
                 #Calculate the conc change for this batch only
                 k = (P_fiss_prompt/target + P_fiss_delayed)/((P_fiss_prompt/target + P_fiss_delayed)*(leak)+L_abs)
-                dk = (curr_res[0][0][0][2]/curr_res[0][0][0][1] + curr_res[0][0][1][2]/curr_res[0][0][1][1] + curr_res[0][0][2][2]/curr_res[0][0][2][1])*k
+                dk = ((curr_res[0][0][0][2] + curr_res[0][0][1][2])/(curr_res[0][0][0][1] + curr_res[0][0][1][1]) + curr_res[0][0][2][2]/curr_res[0][0][2][1])
                    
-                print(f"k={k} +/- {dk}")
+                print(f"k={k} +/- {dk*k}")
                 corr = ((P_fiss_prompt/target + P_fiss_delayed + 0*P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs
                 g = corr
                 if g <= 0:
                     g = 0.1
                 #Optimal following:
-                p_measure = (np.absolute(k[0]/target - 1)**2) if not (np.absolute(k/target - 1) < (1/self.model.settings.particles)**(1/2)) else (1/self.model.settings.particles)
+                p_measure = (np.absolute(k/target - 1) + dk)**2
                 z = f_prev * g 
                 if M == 1:
                     x = 0
