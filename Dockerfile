@@ -80,7 +80,7 @@ ENV PATH=/openmc_venv/bin:$PATH
 
 # Update system-provided pip
 RUN pip install --upgrade pip
-RUN pip install noisyopt
+RUN pip install vtk
 
 # Clone and install NJOY2016
 RUN cd $HOME \
