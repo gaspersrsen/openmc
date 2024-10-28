@@ -540,7 +540,7 @@ class CoupledOperator(OpenMCOperator):
                 if g <= 0:
                     g = 0.1
                 #Optimal following:
-                p_measure = (np.abs(k-target)/target + 1/np.sqrt(self.model.settings.particles))**2
+                p_measure = (np.abs(k-target)/target)**2 + (1/np.sqrt(self.model.settings.particles))**2
                 z = f_prev * g 
                 if M == 1:
                     x = 0
