@@ -521,10 +521,18 @@ class CoupledOperator(OpenMCOperator):
                     i += 1
                 print(curr_res)
                 
-                glob_tall = copy.copy(openmc.lib.global_tallies())
-                print(glob_tall)
-                k = (glob_tall[0][0]+glob_tall[1][0]+glob_tall[2][0])/3
-                dk = 1/np.sqrt(1/(glob_tall[0][1]**2)+1/(glob_tall[1][1]**2)+1/(glob_tall[2][1]**2))
+                #glob_tall = copy.copy(openmc.lib.global_tallies())
+                #print(glob_tall)
+                print(copy.copy(openmc.lib.global_tallies()))
+                if M != 1:
+                    glob_tall = glob_tall*M - prev_glob_tall
+                    print(glob_tall)
+                    prev_glob_tall = glob_tall*M
+                    k = (glob_tall[0][0]+glob_tall[1][0]+glob_tall[2][0])/3
+                    dk = 1/np.sqrt(1/(glob_tall[0][1]**2)+1/(glob_tall[1][1]**2)+1/(glob_tall[2][1]**2))
+                else:
+                    k = openmc.lib.keff()[0]
+                    dk = k/np.sqrt(self.model.settings.particles)
                 leak = glob_tall[3][0]*M - prev_leak
                 prev_leak = glob_tall[3][0]*M
                 
