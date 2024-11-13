@@ -501,8 +501,7 @@ class CoupledOperator(OpenMCOperator):
             if M < batches:
                 print(M)
                 k = openmc.lib.keff()[0]
-                dk = openmc.lib.keff()[1]
-                print(k,dk)
+                print(k)
                 talliez = copy.copy(openmc.lib.tallies)
                 curr_res = []
                 if M == 1:
@@ -520,25 +519,13 @@ class CoupledOperator(OpenMCOperator):
                     curr_res += [tally_.results - prev_res[i]]
                     prev_res[i] = copy.copy(tally_.results)
                     i += 1
-                print(curr_res)
+                #print(curr_res)
                 
-                glob_tall2 = copy.copy(openmc.lib.global_tallies())
-                print(glob_tall2)
-                #if M != 1:
-                glob_tall = np.array(glob_tall2)*M - np.array(prev_glob_tall)
-                print(glob_tall)
-                prev_glob_tall = np.array(glob_tall2)*1.0*M
-                k = (glob_tall[0][0]+glob_tall[1][0]+glob_tall[2][0])/3
-                #dk = 1/np.sqrt(1/(glob_tall[0][1]**2)+1/(glob_tall[1][1]**2)+1/(glob_tall[2][1]**2))
-                #else:
-                #k = openmc.lib.keff()[0]
-                #dk = k/np.sqrt(self.model.settings.particles)
-                #prev_glob_tall = np.array(glob_tall2)
-                #prev_glob_tall[:,1] = 0
-                #print(k, dk)
-                leak = glob_tall2[3][0]
-                #leak = glob_tall2[3][0]*M - prev_leak
-                #prev_leak = glob_tall2[3][0]*M
+                glob_tall = copy.copy(openmc.lib.global_tallies())
+                #print(glob_tall)
+                leak = glob_tall[3][0]
+                #leak = glob_tall[3][0]*M - prev_leak
+                #prev_leak = glob_tall[3][0]*M
                 
                 P_fiss_prompt = curr_res[0][0][0][1]
                 P_fiss_delayed = curr_res[0][0][1][1]
@@ -553,7 +540,7 @@ class CoupledOperator(OpenMCOperator):
                 if g <= 0:
                     g = 0.1
                 #Optimal following:
-                p_measure = (np.abs(k-target)/target)**2 + 1/self.model.settings.particles
+                p_measure = (np.abs(k-target)/target + 1/np.sqrt(self.model.settings.particles))**2
                 z = f_prev * g 
                 if M == 1:
                     x = 0
