@@ -501,7 +501,8 @@ class CoupledOperator(OpenMCOperator):
             if M < batches:
                 print(M)
                 k = openmc.lib.keff()[0]
-                print(k)
+                dk = openmc.lib.keff()[1]
+                print(k,dk)
                 talliez = copy.copy(openmc.lib.tallies)
                 curr_res = []
                 if M == 1:
@@ -533,6 +534,8 @@ class CoupledOperator(OpenMCOperator):
                     k = openmc.lib.keff()[0]
                     dk = k/np.sqrt(self.model.settings.particles)
                     prev_glob_tall = np.array(glob_tall2)
+                    prev_glob_tall[:,:,1] = 0
+                print(k, dk)
                 leak = glob_tall2[3][0]*M - prev_leak
                 prev_leak = glob_tall2[3][0]*M
                 
@@ -549,7 +552,7 @@ class CoupledOperator(OpenMCOperator):
                 if g <= 0:
                     g = 0.1
                 #Optimal following:
-                p_measure = (dk/k)**2#(np.abs(k-target)/target)**2 + (1/np.sqrt(M*self.model.settings.particles))**2
+                p_measure = (dk/k)**2+(np.abs(k-target)/target)**2# + (1/np.sqrt(M*self.model.settings.particles))**2
                 z = f_prev * g 
                 if M == 1:
                     x = 0
