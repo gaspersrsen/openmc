@@ -526,13 +526,13 @@ class CoupledOperator(OpenMCOperator):
                 if M != 1:
                     glob_tall = np.array(glob_tall2)*1.0*M - np.array(prev_glob_tall)
                     print(glob_tall)
-                    prev_glob_tall = glob_tall*M
+                    prev_glob_tall = np.array(glob_tall)*1.0*M
                     k = (glob_tall[0][0]+glob_tall[1][0]+glob_tall[2][0])/3
                     dk = 1/np.sqrt(1/(glob_tall[0][1]**2)+1/(glob_tall[1][1]**2)+1/(glob_tall[2][1]**2))
                 else:
                     k = openmc.lib.keff()[0]
                     dk = k/np.sqrt(self.model.settings.particles)
-                    prev_glob_tall = glob_tall2
+                    prev_glob_tall = np.array(glob_tall2)
                 leak = glob_tall2[3][0]*M - prev_leak
                 prev_leak = glob_tall2[3][0]*M
                 
