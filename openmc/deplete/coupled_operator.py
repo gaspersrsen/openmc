@@ -521,8 +521,8 @@ class CoupledOperator(OpenMCOperator):
                     i += 1
                 print(curr_res)
                 
-                #glob_tall = copy.copy(openmc.lib.global_tallies())
-                #print(glob_tall)
+                glob_tall2 = copy.copy(openmc.lib.global_tallies())
+                print(glob_tall2)
                 print(copy.copy(openmc.lib.global_tallies()))
                 if M != 1:
                     glob_tall = glob_tall*M - prev_glob_tall
@@ -533,8 +533,8 @@ class CoupledOperator(OpenMCOperator):
                 else:
                     k = openmc.lib.keff()[0]
                     dk = k/np.sqrt(self.model.settings.particles)
-                leak = glob_tall[3][0]*M - prev_leak
-                prev_leak = glob_tall[3][0]*M
+                leak = glob_tall2[3][0]*M - prev_leak
+                prev_leak = glob_tall2[3][0]*M
                 
                 P_fiss_prompt = curr_res[0][0][0][1]
                 P_fiss_delayed = curr_res[0][0][1][1]
