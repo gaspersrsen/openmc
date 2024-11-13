@@ -524,7 +524,7 @@ class CoupledOperator(OpenMCOperator):
                 glob_tall2 = copy.copy(openmc.lib.global_tallies())
                 print(glob_tall2)
                 if M != 1:
-                    glob_tall = glob_tall2*M - prev_glob_tall
+                    glob_tall = np.array(glob_tall2)*1.0*M - np.array(prev_glob_tall)
                     print(glob_tall)
                     prev_glob_tall = glob_tall*M
                     k = (glob_tall[0][0]+glob_tall[1][0]+glob_tall[2][0])/3
