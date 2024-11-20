@@ -613,7 +613,7 @@ class CoupledOperator(OpenMCOperator):
                     for nuc in all_nuc:
                         val = float((all_dens[all_nuc==str(nuc)])[0])
                         # If nuclide is zero, do not add to the problem.
-                        if val > 1e-36:
+                        if val > 0.0:#1e-36:
                             if str(nuc) in iso:
                                 # val *= conc / conc_prev
                                 val *= g
