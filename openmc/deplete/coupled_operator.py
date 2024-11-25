@@ -538,14 +538,14 @@ class CoupledOperator(OpenMCOperator):
                 L_abs_nucs = np.sum(np.sum(np.array(curr_res[1][0]).T, axis=1))
                 print(P_fiss_prompt, P_fiss_delayed, P_nxn, L_leak, L_abs, L_abs_nucs)
                 #Calculate the conc change for this batch only
-                corr = ((P_fiss_prompt/target + P_fiss_delayed + 1*P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs *(1+(k-target))
+                corr = ((P_fiss_prompt/target + P_fiss_delayed + 1*P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs))/ L_abs_nucs * (1+(k-target))
                 g = corr
                 if g <= 0:
                     g = 0.1
                     p_measure = 1
                 #Optimal following:
-                else:
-                    p_measure = (np.abs(k-target)/target + 1/np.sqrt(self.model.settings.particles))**2
+                else: #8 factors of which are all dependant on number of particles (but they are correlated), conservative estimate
+                    p_measure = (np.abs(k-target)/target + 8/np.sqrt(self.model.settings.particles))**2
                 z = f_prev * g 
                 if M == 1:
                     x = 0
