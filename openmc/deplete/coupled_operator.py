@@ -502,9 +502,7 @@ class CoupledOperator(OpenMCOperator):
             M = openmc.lib.current_batch()
             # Only change concentrations during the additional batches
             if M < batches:
-                print(M)
                 k = openmc.lib.keff()[0]
-                print(k)
                 talliez = copy.copy(openmc.lib.tallies)
                 curr_res = []
                 if M == 1:
@@ -518,17 +516,12 @@ class CoupledOperator(OpenMCOperator):
                 for tally_ in talliez.values():
                     if i == 2:
                         break
-                    #print(tally_.results)
                     curr_res += [tally_.results - prev_res[i]]
                     prev_res[i] = copy.copy(tally_.results)
                     i += 1
-                print(curr_res)
                 
                 glob_tall = copy.copy(openmc.lib.global_tallies())
-                #print(glob_tall)
                 leak = glob_tall[3][0]
-                #leak = glob_tall[3][0]*M - prev_leak
-                #prev_leak = glob_tall[3][0]*M
                 
                 P_fiss_prompt = curr_res[0][0][0][1]
                 P_fiss_delayed = curr_res[0][0][1][1]
@@ -536,7 +529,6 @@ class CoupledOperator(OpenMCOperator):
                 L_leak = leak # Fraction
                 L_abs = curr_res[0][0][2][1]
                 L_abs_nucs = np.sum(np.sum(np.array(curr_res[1][0]).T, axis=1))
-                print(P_fiss_prompt, P_fiss_delayed, P_nxn, L_leak, L_abs, L_abs_nucs)
                 #Calculate the conc change for this batch only
                 corr = ((P_fiss_prompt/target + P_fiss_delayed + 1*P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs))/ L_abs_nucs * (1+(k-target))
                 g = corr
@@ -559,6 +551,14 @@ class CoupledOperator(OpenMCOperator):
                 f = x
                 g = f/f_prev
                 f_prev = f
+                if debug or True:
+                    print(f"Batch: {M}")
+                    print(f"k_eff:{k}")
+                    print(f"Search algorithm internal tally:\n{curr_res}")
+                    print(f"Correction coefficients: {P_fiss_prompt, P_fiss_delayed, P_nxn, L_leak, L_abs, L_abs_nucs}")
+                    print(f"Batch concentration correction:{g}")
+                    print(f"Batch estimated concentration:{f*initial_value} +/- {f*initial_value*(p**(1/2))}")
+                ### BISECTION
                 # if M > 5:
                 #     #Guesstimate the 
                 #     res_avg += [[P_fiss_prompt*target, P_fiss_delayed, P_nxn, L_leak, L_abs*corr, L_abs_nucs*corr]]
@@ -585,9 +585,7 @@ class CoupledOperator(OpenMCOperator):
                 #         f_all += [f*0.5]
                 #         g = 0.5
                 #print(corr)
-                print(g)
                 #f *= g
-                print(f*initial_value, f*initial_value*(p**(1/2)))
                 #g = 1
                 # Determine change of concentration
                 # if invert_k*(k[0]-target) < 0: 
@@ -620,8 +618,11 @@ class CoupledOperator(OpenMCOperator):
                         # If nuclide is zero, do not add to the problem.
                         if val > 1e-17: # 1 atom/barn-cm
                             if str(nuc) in iso:
-                                # val *= conc / conc_prev
                                 val *= g
+                            nuclides.append(nuc)
+                            densities.append(val)
+                        elif str(nuc) in iso:
+                            val *= g
                             nuclides.append(nuc)
                             densities.append(val)
                     # Update densities on C API side
@@ -735,7 +736,7 @@ class CoupledOperator(OpenMCOperator):
                         val = 1.0e-24 * number_i.get_atom_density(mat, nuc)
 
                         # If nuclide is zero, do not add to the problem.
-                        if val > 1e-17: # 1 atom/barn-cm
+                        if val > 1e-17: # 1e9 atom/barn-cm
                             if self.round_number:
                                 val_magnitude = np.floor(np.log10(val))
                                 val_scaled = val / 10**val_magnitude
