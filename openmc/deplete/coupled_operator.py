@@ -410,7 +410,7 @@ class CoupledOperator(OpenMCOperator):
         self.materials.export_to_xml(nuclides_to_ignore=self._decay_nucs)
     
     def search_crit_conc(self, vec, source_rate, iso=None, batches=None, bracket=None, 
-                         initial_value=None, target=1., invert=False):
+                         initial_value=None, target=1., invert=False, debug=False):
         """
         Runs a simulation where 'iso' nuclide values converge in such a way to obtain the desired k_eff.
         Operator.model materials are updated 
@@ -423,26 +423,29 @@ class CoupledOperator(OpenMCOperator):
         vec : list of numpy.ndarray
             Total atoms to be used in function.
         source_rate : float
-            Power in [W] or source rate in [neutron/sec]
+            Power in [W] or source rate in [neutron/sec].
         iso: array of str
             Nuclide name, ex. ["B10", "B11"]
         batches: int
             Number of inactive batches added to the begining of simulation where 'iso' concentration converges.
-            Defaults to 50 extra inactive cycles
+            Defaults to 50 extra inactive cycles.
         bracket: array of 2 floats > 0, optional
             Lower and upper bounds for concentrations.
-            Needs to be used with initial_value.
+            Needs to be used in tandem with initial_value.
         initial_value: float > 0, optional
-            Only used in first call, used for prettier critical concentration message.
+            Only used in first call, used for intermediate critical concentration message output.
         target: float
             Target k_eff, defaults to 1.0
         invert: Bool
             If increase in nuclide concentration leads to increase in k_eff.
             Defaults to False.
+        debug: Bool
+            Wether to print out batch number, tally results of each batch, k_eff and current concentration.
+            Defaults to False.
 
         Returns
         -------
-        Nothing
+        openmc.OperatorResult
 
         """
         if iso is None:
@@ -535,7 +538,7 @@ class CoupledOperator(OpenMCOperator):
                 L_abs_nucs = np.sum(np.sum(np.array(curr_res[1][0]).T, axis=1))
                 print(P_fiss_prompt, P_fiss_delayed, P_nxn, L_leak, L_abs, L_abs_nucs)
                 #Calculate the conc change for this batch only
-                corr = ((P_fiss_prompt/target + P_fiss_delayed + 1*P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs *(1+(k-target))
+                corr = ((P_fiss_prompt/target + P_fiss_delayed + 1*P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs *k/target
                 g = corr
                 if g <= 0:
                     g = 0.1
