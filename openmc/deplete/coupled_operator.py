@@ -533,7 +533,7 @@ class CoupledOperator(OpenMCOperator):
                 corr = ((P_fiss_prompt/target + P_fiss_delayed + 1*P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs))/ L_abs_nucs * (1+(k-target))
                 g = corr
                 if g <= 0:
-                    g = 0.1
+                    g = 0.5
                     p_measure = 1
                 #Optimal following:
                 else: #8 factors of which are all dependant on number of particles (but they are correlated), conservative estimate
