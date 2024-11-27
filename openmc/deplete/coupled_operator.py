@@ -410,7 +410,7 @@ class CoupledOperator(OpenMCOperator):
         self.materials.export_to_xml(nuclides_to_ignore=self._decay_nucs)
     
     def search_crit_conc(self, vec, source_rate, iso=None, batches=None, bracket=None, 
-                         initial_value=None, target=1., invert=False, debug=False):
+                         initial_value=None, target=1., debug=False):
         """
         Runs a simulation where 'iso' nuclide values converge in such a way to obtain the desired k_eff.
         Operator.model materials are updated 
@@ -420,13 +420,13 @@ class CoupledOperator(OpenMCOperator):
 
         Parameters
         ----------
-        vec : list of numpy.ndarray
+        vec : list of numpy.ndarray, required
             Total atoms to be used in function.
-        source_rate : float
+        source_rate : float, required
             Power in [W] or source rate in [neutron/sec].
-        iso: array of str
+        iso: array of str, required
             Nuclide name, ex. ["B10", "B11"]
-        batches: int
+        batches: int, optional
             Number of inactive batches added to the begining of simulation where 'iso' concentration converges.
             Defaults to 50 extra inactive cycles.
         bracket: array of 2 floats > 0, optional
@@ -434,12 +434,9 @@ class CoupledOperator(OpenMCOperator):
             Needs to be used in tandem with initial_value.
         initial_value: float > 0, optional
             Only used in first call, used for intermediate critical concentration message output.
-        target: float
+        target: float, optional
             Target k_eff, defaults to 1.0
-        invert: Bool
-            If increase in nuclide concentration leads to increase in k_eff.
-            Defaults to False.
-        debug: Bool
+        debug: Bool, optional
             Wether to print out batch number, tally results of each batch, k_eff and current concentration.
             Defaults to False.
 
@@ -473,20 +470,9 @@ class CoupledOperator(OpenMCOperator):
             self.concs = [initial_value]
         initial_value = self.initial_value
         
-        # Inverted k means an increasing k_eff with increasing nuclide density (opposite of Boron)
-        # if invert:
-        #     invert_k = -1 
-        # else:
-        #     invert_k = 1
-        
         self._update_materials_and_nuclides(vec)
         self.model.materials.export_to_xml()
 
-        # conc = 1
-        # conc_prev = 1
-        # multi = 0.999
-        # # Direction of concentration change: 0-decreasing, 1-increasing
-        # direction = 0
         f = 1
         g = 1
         f_prev = 1
@@ -494,8 +480,6 @@ class CoupledOperator(OpenMCOperator):
         prev_leak = 0
         p_measure_next=1e16
         openmc.lib.reset()
-        # if self._n_calls > 0:
-        #     openmc.lib.reset_timers()
         openmc.lib.simulation_init()
         # Run simulation
         for _ in openmc.lib.iter_batches():
@@ -562,6 +546,16 @@ class CoupledOperator(OpenMCOperator):
                     print(f"Batch concentration correction:{g}")
                     print(f"Batch estimated concentration:{f*initial_value} +/- {f*initial_value*(p**(1/2))}")
                 ### BISECTION
+                # # Inverted k means an increasing k_eff with increasing nuclide density (opposite of Boron)
+                # # if invert:
+                # #     invert_k = -1 
+                # # else:
+                # #     invert_k = 1
+                # # conc = 1
+                # # conc_prev = 1
+                # # multi = 0.999
+                # # # Direction of concentration change: 0-decreasing, 1-increasing
+                # # direction = 0
                 # if M > 5:
                 #     #Guesstimate the 
                 #     res_avg += [[P_fiss_prompt*target, P_fiss_delayed, P_nxn, L_leak, L_abs*corr, L_abs_nucs*corr]]
@@ -609,6 +603,8 @@ class CoupledOperator(OpenMCOperator):
                 #         conc = bracket[1] / initial_value
                 # else:
                 #     if conc < 0: conc = 0
+                # # conc_prev=conc
+                # # prev_g = g
                 # Update densities on C API side
                 for mat in openmc.lib.materials:
                     nuclides=[]
@@ -631,14 +627,11 @@ class CoupledOperator(OpenMCOperator):
                     # Update densities on C API side
                     mat_internal = openmc.lib.materials[int(mat)]
                     mat_internal.set_densities(nuclides, densities)
-                #conc_prev=conc
-                prev_g = g
             if M == batches:
                 openmc.lib.reset()
         openmc.lib.simulation_finalize()
 
         # Set the new initial concentrations for the future concentration searches
-        #self.initial_value = conc*initial_value
         self.initial_value *= f
         self.concs += [self.initial_value]
             
@@ -664,7 +657,6 @@ class CoupledOperator(OpenMCOperator):
         rates = self._calculate_reaction_rates(source_rate)
         op_result = OperatorResult(keff, rates)
         self._n_calls += 1
-        #self.initial_condition()
         
         return copy.deepcopy(op_result)
         
