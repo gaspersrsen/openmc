@@ -490,9 +490,9 @@ class CoupledOperator(OpenMCOperator):
         f = 1
         g = 1
         f_prev = 1
-        res_avg = []
         prev_res = []
         prev_leak = 0
+        p_measure_next=1e16
         openmc.lib.reset()
         # if self._n_calls > 0:
         #     openmc.lib.reset_timers()
@@ -534,17 +534,18 @@ class CoupledOperator(OpenMCOperator):
                 corr = (((P_fiss)/target+ 1*P_nxn)
                         - (L_abs - L_abs_nucs) - (P_fiss + 1*P_nxn)*L_leak) / L_abs_nucs * k/target
                 g = corr
+                p_measure=p_measure_next
                 if g < 0.75:
                     g = 0.75
-                    p_measure = 1
+                    p_measure_next = 1e16
                 #Optimal following:
                 else: #8 factors of which are all dependant on number of particles (but they are correlated), conservative estimate
-                    p_measure = (np.abs(k-target)/target + 8/np.sqrt(self.model.settings.particles))**2
+                    p_measure_next = (np.abs(k-target)/target + 8/np.sqrt(self.model.settings.particles))**2
                 z = f_prev * g 
                 if M == 1:
                     x = 0
-                    p = 1#p_measure
-                    p_n = 1# p_measure
+                    p = 1e16#p_measure
+                    p_n = 1e16# p_measure
                 else:
                     p_n = 1/(1/p + 1/p_measure)
                 x = x + p_n/p_measure*(z - x)
