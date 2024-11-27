@@ -524,20 +524,18 @@ class CoupledOperator(OpenMCOperator):
                 leak = glob_tall[3][0]*M - prev_leak
                 prev_leak = glob_tall[3][0]*M
                 
-                P_fiss_prompt = curr_res[0][0][0][1]
-                P_fiss_delayed = curr_res[0][0][1][1]
-                print(f"nu-fission delta:{curr_res[0][0][-1][1]-P_fiss_delayed-P_fiss_prompt}")
-                P_nxn = curr_res[0][0][3][1] - curr_res[0][0][4][1]
+                P_fiss = curr_res[0][0][0][1]
+                P_nxn = curr_res[0][0][2][1] - curr_res[0][0][3][1]
                 L_leak = leak # Fraction
-                L_abs = curr_res[0][0][2][1]
+                L_abs = curr_res[0][0][1][1]
                 L_abs_nucs = np.sum(np.sum(np.array(curr_res[1][0]).T, axis=1))
                 #Calculate the conc change for this batch only
-                k = (P_fiss_prompt + P_fiss_delayed) / (L_abs + (P_fiss_prompt + P_fiss_delayed + 1*P_nxn)*L_leak - 1*P_nxn)
-                corr = (((P_fiss_prompt)/target + P_fiss_delayed + 1*P_nxn)
-                        - (L_abs - L_abs_nucs) - (P_fiss_prompt + P_fiss_delayed + 1*P_nxn)*L_leak) / L_abs_nucs
+                k = (P_fiss) / (L_abs + (P_fiss + 1*P_nxn)*L_leak - 1*P_nxn)
+                corr = (((P_fiss)/target+ 1*P_nxn)
+                        - (L_abs - L_abs_nucs) - (P_fiss + 1*P_nxn)*L_leak) / L_abs_nucs * k/target
                 g = corr
-                if g <= 0:
-                    g = 0.5
+                if g < 0.75:
+                    g = 0.75
                     p_measure = 1
                 #Optimal following:
                 else: #8 factors of which are all dependant on number of particles (but they are correlated), conservative estimate
@@ -559,7 +557,7 @@ class CoupledOperator(OpenMCOperator):
                     print(f"Batch: {M}")
                     print(f"k_eff:{k}")
                     print(f"Search algorithm internal tally:\n{curr_res}")
-                    print(f"Correction coefficients: {P_fiss_prompt, P_fiss_delayed, P_nxn, L_leak, L_abs, L_abs_nucs}")
+                    print(f"Correction coefficients: {P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs}")
                     print(f"Batch concentration correction:{g}")
                     print(f"Batch estimated concentration:{f*initial_value} +/- {f*initial_value*(p**(1/2))}")
                 ### BISECTION
