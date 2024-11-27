@@ -526,14 +526,15 @@ class CoupledOperator(OpenMCOperator):
                 
                 P_fiss_prompt = curr_res[0][0][0][1]
                 P_fiss_delayed = curr_res[0][0][1][1]
+                print(f"nu-fission delta:{curr_res[0][0][-1][1]-P_fiss_delayed-P_fiss_prompt}")
                 P_nxn = curr_res[0][0][3][1] - curr_res[0][0][4][1]
                 L_leak = leak # Fraction
                 L_abs = curr_res[0][0][2][1]
                 L_abs_nucs = np.sum(np.sum(np.array(curr_res[1][0]).T, axis=1))
                 #Calculate the conc change for this batch only
-                k = (P_fiss_prompt ) / (L_abs + (P_fiss_prompt + P_fiss_delayed + 0*P_nxn)*L_leak - 0*P_nxn - P_fiss_delayed)
-                corr = (((P_fiss_prompt)/target + P_fiss_delayed + 0*P_nxn)
-                        - (L_abs - L_abs_nucs + (P_fiss_prompt + P_fiss_delayed + 0*P_nxn)*L_leak)) / L_abs_nucs
+                k = (P_fiss_prompt + P_fiss_delayed) / (L_abs + (P_fiss_prompt + P_fiss_delayed + 1*P_nxn)*L_leak - 1*P_nxn)
+                corr = (((P_fiss_prompt)/target + P_fiss_delayed + 1*P_nxn)
+                        - (L_abs - L_abs_nucs) - (P_fiss_prompt + P_fiss_delayed + 1*P_nxn)*L_leak) / L_abs_nucs
                 g = corr
                 if g <= 0:
                     g = 0.5
