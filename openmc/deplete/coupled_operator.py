@@ -504,8 +504,8 @@ class CoupledOperator(OpenMCOperator):
                     i += 1
                 
                 glob_tall = copy.copy(openmc.lib.global_tallies())
-                leak = glob_tall[3][0]*M - prev_leak
-                prev_leak = glob_tall[3][0]*M
+                leak = glob_tall[3][0]#*M - prev_leak
+                #prev_leak = glob_tall[3][0]*M
                 
                 P_fiss = curr_res[0][0][0][1]
                 P_nxn = curr_res[0][0][2][1] - curr_res[0][0][3][1]
@@ -513,9 +513,10 @@ class CoupledOperator(OpenMCOperator):
                 L_abs = curr_res[0][0][1][1]
                 L_abs_nucs = np.sum(np.sum(np.array(curr_res[1][0]).T, axis=1))
                 #Calculate the conc change for this batch only
-                k = (P_fiss) / (L_abs + (P_fiss + 1*P_nxn)*L_leak - 1*P_nxn)
-                corr = (((P_fiss)/target+ 1*P_nxn)
-                        - (L_abs - L_abs_nucs) - (P_fiss + 1*P_nxn)*L_leak) / L_abs_nucs * k/target
+                nxn = 1
+                k = (P_fiss) / (L_abs + (P_fiss + nxn*P_nxn)*L_leak - nxn*P_nxn)
+                corr = ((P_fiss/target + nxn*P_nxn)
+                        - (L_abs - L_abs_nucs) - (P_fiss + nxn*P_nxn)*L_leak) / L_abs_nucs * k/target
                 g = corr
                 if g < 0.75:
                     g = 0.75
