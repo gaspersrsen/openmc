@@ -515,11 +515,13 @@ class CoupledOperator(OpenMCOperator):
                 #Calculate the conc change for this batch only
                 nxn = 1
                 k = (P_fiss) / (L_abs + (P_fiss + nxn*P_nxn)*L_leak - nxn*P_nxn)
-                corr = ((P_fiss/target + nxn*P_nxn)
+                g = ((P_fiss/target + nxn*P_nxn)
                         - (L_abs - L_abs_nucs) - (P_fiss + nxn*P_nxn)*L_leak) / L_abs_nucs * k/target
-                g = corr
                 if g < 0.75:
                     g = 0.75
+                    p_measure = 1e16
+                elif g > 2:
+                    g = 2
                     p_measure = 1e16
                 #Optimal following:
                 else: #8 factors of which are all dependant on number of particles (but they are correlated), conservative estimate
@@ -537,73 +539,14 @@ class CoupledOperator(OpenMCOperator):
                 f = x
                 g = f/f_prev
                 f_prev = f
-                if debug or True:
+                if debug is True:
                     print(f"Batch: {M}")
                     print(f"k_eff:{k}")
                     print(f"Search algorithm internal tally:\n{curr_res}")
                     print(f"Correction coefficients: {P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs}")
                     print(f"Batch concentration correction:{g}")
                     print(f"Batch estimated concentration:{f*initial_value} +/- {f*initial_value*(p**(1/2))}")
-                ### BISECTION
-                # # Inverted k means an increasing k_eff with increasing nuclide density (opposite of Boron)
-                # # if invert:
-                # #     invert_k = -1 
-                # # else:
-                # #     invert_k = 1
-                # # conc = 1
-                # # conc_prev = 1
-                # # multi = 0.999
-                # # # Direction of concentration change: 0-decreasing, 1-increasing
-                # # direction = 0
-                # if M > 5:
-                #     #Guesstimate the 
-                #     res_avg += [[P_fiss_prompt*target, P_fiss_delayed, P_nxn, L_leak, L_abs*corr, L_abs_nucs*corr]]
-                #     [P_fiss_prompt, P_fiss_delayed, P_nxn, L_leak, L_abs, L_abs_nucs] = np.average(np.array(res_avg).T, axis=1)
-                # print(P_fiss_prompt, P_fiss_delayed, P_nxn, L_leak, L_abs, L_abs_nucs)
-                
-                #g_corr = ((P_fiss_prompt/target + P_fiss_delayed + P_nxn) * (1-L_leak) - (L_abs-L_abs_nucs)) / L_abs_nucs
-                #Decrease the swing of conc
-                # if M > 10:
-                #     g = (1+1/(M-10)*corr)/(1+1/(M-10))
-                # else:
-                #     g = corr
-                # if g <= 0:
-                #     g = 0.5
-                # if M <= 5:
-                #     g = g_corr
-                #     if g <= 0: g=0.5
-                # else:
-                #     if g_corr > 0:
-                #         f_all += [f*g_corr]
-                #         #g = np.average(np.array(f_all))/f
-                #         g = (0.9 + 0.1*g_corr)
-                #     else:
-                #         f_all += [f*0.5]
-                #         g = 0.5
-                #print(corr)
-                #f *= g
-                #g = 1
-                # Determine change of concentration
-                # if invert_k*(k[0]-target) < 0: 
-                #     if direction != 0:
-                #         multi *= 0.7
-                #         direction = 0
-                #     conc *= (1-multi)
-                # else:
-                #     if direction != 1:
-                #         multi *= 0.7
-                #         direction = 1
-                #     conc *= (1+multi)
-                # # Check the limits of the concentration
-                # if bracket:
-                #     if conc*initial_value < bracket[0]:
-                #         conc = bracket[0] / initial_value
-                #     if conc*initial_value > bracket[1]:
-                #         conc = bracket[1] / initial_value
-                # else:
-                #     if conc < 0: conc = 0
-                # # conc_prev=conc
-                # # prev_g = g
+
                 # Update densities on C API side
                 for mat in openmc.lib.materials:
                     nuclides=[]
