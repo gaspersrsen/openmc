@@ -504,7 +504,7 @@ class CoupledOperator(OpenMCOperator):
                     i += 1
                 
                 glob_tall = copy.copy(openmc.lib.global_tallies())
-                leak = glob_tall[3][0]*M - prev_leak
+                leak = glob_tall[3][0]#*M - prev_leak
                 prev_leak = glob_tall[3][0]*M
                 
                 P_fiss = curr_res[0][0][0][1]
