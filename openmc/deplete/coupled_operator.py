@@ -533,6 +533,7 @@ class CoupledOperator(OpenMCOperator):
                     x = 0
                     p = 1e16#p_measure
                     p_n = 1e16# p_measure
+                    p_measure = 1e16
                 else:
                     p_n = 1/(1/p + 1/p_measure)
                 x = x + p_n/p_measure*(z - x)
