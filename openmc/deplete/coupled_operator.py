@@ -527,6 +527,7 @@ class CoupledOperator(OpenMCOperator):
                     p_measure = 1e16
                 else: #8 factors of which are all dependant on number of particles (but they are correlated), conservative estimate
                     p_measure = (np.abs(k-target)/target + 8/np.sqrt(self.model.settings.particles))**2
+                print(g)
                 z = f_prev * g 
                 if M == 1:
                     x = 0
