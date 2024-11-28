@@ -517,7 +517,6 @@ class CoupledOperator(OpenMCOperator):
                 k = (P_fiss) / (L_abs + (P_fiss + nxn*P_nxn)*L_leak - nxn*P_nxn)
                 g = ((P_fiss/target + nxn*P_nxn)
                         - (L_abs - L_abs_nucs) - (P_fiss + nxn*P_nxn)*L_leak) / L_abs_nucs * k/target
-                print(g)
                 #Optimal following:
                 if g < 0.75:
                     g = 0.75
@@ -527,7 +526,6 @@ class CoupledOperator(OpenMCOperator):
                     p_measure = 1e16
                 else: #8 factors of which are all dependant on number of particles (but they are correlated), conservative estimate
                     p_measure = (np.abs(k-target)/target + 1/np.sqrt(self.model.settings.particles))**2
-                print(g)
                 z = f_prev * g 
                 if M == 1:
                     x = 0
