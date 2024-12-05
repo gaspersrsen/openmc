@@ -483,12 +483,13 @@ class CoupledOperator(OpenMCOperator):
         # Run simulation
         for _ in openmc.lib.iter_batches():
             M = openmc.lib.current_batch()
+            if M < 5: continue
             # Only change concentrations during the additional batches
             if M < batches:
                 k = openmc.lib.keff()[0]
                 talliez = copy.copy(openmc.lib.tallies)
                 curr_res = []
-                if M == 1:
+                if M == 5:
                     i = 0
                     for tally_ in talliez.values():
                         if i == 2:
@@ -519,7 +520,7 @@ class CoupledOperator(OpenMCOperator):
                         - (L_abs - L_abs_nucs) - (P_fiss + nxn*P_nxn)*L_leak) / L_abs_nucs * k/target
                 print(g)
                 #Optimal following:
-                if M == 1:
+                if M == 5:
                     x = 1
                     p = 1e16#p_measure
                     p_n = 1e16# p_measure
