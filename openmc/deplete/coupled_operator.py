@@ -519,16 +519,15 @@ class CoupledOperator(OpenMCOperator):
                         - (L_abs - L_abs_nucs) - (P_fiss + nxn*P_nxn)*L_leak) / L_abs_nucs * k/target
                 print(g)
                 #Optimal following:
-                if (g >= 0.75 and g <= 2) or M==1:
+                if M == 1:
+                    x = 1
+                    p = 1e16#p_measure
+                    p_n = 1e16# p_measure
+                    p_measure = 1e16
+                if (g >= 0.75 and g <= 2):
                     z = f_prev * g
                     p_measure = (np.abs(k-target)/target + 1/np.sqrt(self.model.settings.particles))**2
-                    if M == 1:
-                        x = 0
-                        p = 1e16#p_measure
-                        p_n = 1e16# p_measure
-                        p_measure = 1e16
-                    else:
-                        p_n = 1/(1/p + 1/p_measure)
+                    p_n = 1/(1/p + 1/p_measure)
                     x = x + p_n/p_measure*(z - x)
                     p = p_n
                 else:
