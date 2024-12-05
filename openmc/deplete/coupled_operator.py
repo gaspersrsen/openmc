@@ -560,7 +560,7 @@ class CoupledOperator(OpenMCOperator):
                     for nuc in all_nuc:
                         val = float((all_dens[all_nuc==str(nuc)])[0])
                         # If nuclide is zero, do not add to the problem.
-                        if val > 1e-17: # 1 atom/barn-cm
+                        if val > 0: # 1 atom/barn-cm
                             if str(nuc) in iso:
                                 val *= g
                             nuclides.append(nuc)
@@ -676,7 +676,7 @@ class CoupledOperator(OpenMCOperator):
                         val = 1.0e-24 * number_i.get_atom_density(mat, nuc)
 
                         # If nuclide is zero, do not add to the problem.
-                        if val > 1e-17: # 1e9 atom/barn-cm
+                        if val > 0: # 1e9 atom/barn-cm
                             if self.round_number:
                                 val_magnitude = np.floor(np.log10(val))
                                 val_scaled = val / 10**val_magnitude
@@ -713,7 +713,7 @@ class CoupledOperator(OpenMCOperator):
                     for nuc in all_nuc:
                         val = (all_dens[all_nuc==str(nuc)])[0]
                         self.model.materials[i].remove_nuclide(nuc)
-                        if val > 1e-17: # 1e9 atom/barn-cm
+                        if val > 0: # 1e9 atom/barn-cm
                             self.model.materials[i].add_nuclide(nuc,val)
                 i += 1
 
