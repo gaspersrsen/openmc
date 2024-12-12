@@ -517,7 +517,7 @@ class CoupledOperator(OpenMCOperator):
                 nxn = 1
                 k = (P_fiss) / (L_abs + (P_fiss + 1*nxn*P_nxn)*L_leak - 1*nxn*P_nxn)
                 g = ((P_fiss/target + nxn*P_nxn)
-                        - (L_abs - L_abs_nucs) - (P_fiss + nxn*P_nxn)*L_leak) / L_abs_nucs * np.exp(1/np.sqrt(self.model.settings.particles*M))#k/target
+                        - (L_abs - L_abs_nucs) - (P_fiss + nxn*P_nxn)*L_leak) / L_abs_nucs * np.exp((k-target)/target/np.sqrt(M))#k/target
                 print(g)
                 #Optimal following:
                 if M == 5:
