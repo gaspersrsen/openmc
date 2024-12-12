@@ -511,7 +511,7 @@ class CoupledOperator(OpenMCOperator):
                 P_fiss = (curr_res[0][0][0][1])# + curr_res[0][0][0][2])/2
                 P_nxn = curr_res[0][0][2][1] - curr_res[0][0][3][1]
                 L_leak = leak # Fraction
-                L_abs = (curr_res[0][0][1][1])#+curr_res[0][0][1][1])/2
+                L_abs = (curr_res[0][0][1][1])#+curr_res[0][0][1][2])/2
                 L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
                 #Calculate the conc change for this batch only
                 k = (P_fiss) / (L_abs + (P_fiss + P_nxn)*L_leak - P_nxn)
