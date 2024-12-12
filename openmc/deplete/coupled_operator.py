@@ -527,7 +527,7 @@ class CoupledOperator(OpenMCOperator):
                     p_measure = 1e16
                 if (g >= 0.75 and g <= 2):
                     z = f_prev * g
-                    p_measure = (np.abs(k-target)/target + 10/np.sqrt(self.model.settings.particles))**2
+                    p_measure = (L_abs_nucs/L_abs*np.abs(k-target)/target + 1/np.sqrt(self.model.settings.particles))**2
                     p_n = 1/(1/p + 1/p_measure)
                     x = x + p_n/p_measure*(z - x)
                     p = p_n
