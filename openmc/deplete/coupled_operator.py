@@ -505,19 +505,18 @@ class CoupledOperator(OpenMCOperator):
                     i += 1
                 
                 glob_tall = copy.copy(openmc.lib.global_tallies())
-                leak = glob_tall[3][0]#*M - prev_leak
+                leak = glob_tall[3][0]*M - prev_leak
                 prev_leak = glob_tall[3][0]*M
                 
-                P_fiss = curr_res[0][0][0][1]
+                P_fiss = (curr_res[0][0][0][1] + curr_res[0][0][0][2])/2
                 P_nxn = curr_res[0][0][2][1] - curr_res[0][0][3][1]
                 L_leak = leak # Fraction
-                L_abs = curr_res[0][0][1][1]
+                L_abs = (curr_res[0][0][1][1]+curr_res[0][0][1][1])/2
                 L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
                 #Calculate the conc change for this batch only
-                nxn = 1
-                k = (P_fiss) / (L_abs + (P_fiss + 1*nxn*P_nxn)*L_leak - 1*nxn*P_nxn)
-                g = ((P_fiss/target + nxn*P_nxn)
-                        - (L_abs - L_abs_nucs) - (P_fiss + nxn*P_nxn)*L_leak) / L_abs_nucs * np.exp((k-target)/target/np.sqrt(M))#k/target
+                k = (P_fiss) / (L_abs + (P_fiss + P_nxn)*L_leak - P_nxn)
+                g = ((P_fiss/target + P_nxn)
+                        - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs #* np.exp(1/np.sqrt(M*self.model.settings.particles))#k/target
                 print(g)
                 #Optimal following:
                 if M == 5:
@@ -527,7 +526,7 @@ class CoupledOperator(OpenMCOperator):
                     p_measure = 1e16
                 if (g >= 0.75 and g <= 2):
                     z = f_prev * g
-                    p_measure = (L_abs_nucs/L_abs*np.abs(k-target)/target + 1/np.sqrt(self.model.settings.particles))**2
+                    p_measure = (np.exp(np.abs(k-target)/target/np.sqrt(self.model.settings.particles)) * 1/np.sqrt(self.model.settings.particles))**2
                     p_n = 1/(1/p + 1/p_measure)
                     x = x + p_n/p_measure*(z - x)
                     p = p_n
