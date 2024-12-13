@@ -524,19 +524,16 @@ class CoupledOperator(OpenMCOperator):
                     p = 1e16#p_measure
                     p_n = 1e16# p_measure
                     p_measure = 1e16
-                if (g >= 0.75 and g <= 2):
-                    z = f_prev * g
-                    #Higher number of particles want a better precision
+                if (g >= 0.75 and g <= 2): #TRY GAUSSIAN
                     p_measure = 1/self.model.settings.particles * (1 + ((k-target)/target)**2)**2
-                    p_n = 1/(1/p + 1/p_measure)
-                    x = x + p_n/p_measure * (z - x)
-                    p = p_n
                 else:
                     if g < 0.75: g = 0.75
                     elif g > 2.0: g = 2.0
-                    x *= g
-                    p = 1e16
-
+                    p_measure = 1e16
+                z = f_prev * g
+                p_n = 1/(1/p + 1/p_measure)
+                x = x + p_n/p_measure * (z - x)
+                p = p_n
                 f = x
                 g = f/f_prev
                 f_prev = f
