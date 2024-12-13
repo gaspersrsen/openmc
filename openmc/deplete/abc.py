@@ -836,8 +836,8 @@ class Integrator(ABC):
 
     def custom_integrate(
             self,
-            conc_run = False,
-            conc_args = {},
+            conc_run: bool = False,
+            conc_args: dict = {},
             final_step: bool = True,
             output: bool = True,
             path: PathLike = 'depletion_results.h5'
