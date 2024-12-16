@@ -518,6 +518,9 @@ class CoupledOperator(OpenMCOperator):
                 g = ((P_fiss/target + P_nxn)
                         - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs #* k/target
                 print(g)
+                print(g**2*(((curr_res[0][0][0][2]/target)**2 + curr_res[0][0][2][2]**2 - curr_res[0][0][3][2]**2 - 2*curr_res[0][0][2][2]*curr_res[0][0][3][2]) * (1-L_leak) +
+                            curr_res[0][0][1][2]**2 + np.sum(np.array(curr_res[1][0]).T, axis=1)[2]**2 - 2*curr_res[0][0][1][2]*np.sum(np.array(curr_res[1][0]).T, axis=1)[2])/(g*L_abs_nucs)**2+
+                      np.sum(np.array(curr_res[1][0]).T, axis=1)[2]**2/L_abs_nucs**2 - 2*np.sum(np.array(curr_res[1][0]).T, axis=1)[2]*(curr_res[0][0][1][2]**2 + np.sum(np.array(curr_res[1][0]).T, axis=1)[2]**2 - 2*curr_res[0][0][1][2]*np.sum(np.array(curr_res[1][0]).T, axis=1)[2]/(g*L_abs_nucs**2)))
                 #Optimal following:
                 if (k-target < 0) != (g < 1):
                     print("WIERD")
@@ -526,7 +529,7 @@ class CoupledOperator(OpenMCOperator):
                     p = 1e16#p_measure
                     p_n = 1e16# p_measure
                     p_measure = 1e16
-                if (g >= 0.75 and g <= 1.5): #TRY GAUSSIAN
+                if (g >= 0.75 and g <= 1.5):
                     p_measure = 10/self.model.settings.particles
                 else:
                     if g < 0.75: g = 0.75
