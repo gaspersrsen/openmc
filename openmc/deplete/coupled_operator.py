@@ -533,7 +533,7 @@ class CoupledOperator(OpenMCOperator):
                     elif g > 2.0: g = 2.0
                     p_measure = 1e16
                 z = f_prev * g
-                if p == 1e16 and p_n == 1e16:
+                if p == 1e16 and p_measure == 1e16:
                     pass
                 else:
                     p_n = 1/(1/p + 1/p_measure)
