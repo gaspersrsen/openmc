@@ -527,7 +527,7 @@ class CoupledOperator(OpenMCOperator):
                     p_n = 1e16# p_measure
                     p_measure = 1e16
                 if (g >= 0.75 and g <= 2): #TRY GAUSSIAN
-                    p_measure = 1/self.model.settings.particles * (1 + self.model.settings.particles*((k-target)/target)**2)**2
+                    p_measure = (L_abs/L_abs_nucs) * 1/self.model.settings.particles * (1 + self.model.settings.particles*((k-target)/target)**2)**2 if L_abs_nucs != 0 else 1e16
                 else:
                     if g < 0.75: g = 0.75
                     elif g > 2.0: g = 2.0
