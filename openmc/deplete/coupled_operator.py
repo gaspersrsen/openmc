@@ -516,10 +516,10 @@ class CoupledOperator(OpenMCOperator):
                 #Calculate the conc change for this batch only
                 k = (P_fiss) / (L_abs + (P_fiss + P_nxn)*L_leak - P_nxn)
                 g = ((P_fiss/target + P_nxn)
-                        - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs * np.exp(k/target-1)
+                        - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs #* np.exp(k/target-1)
                 print(g)
                 #Optimal following:
-                if k-target < 0 != g < 1:
+                if (k-target < 0) != (g < 1):
                     print("WIERD")
                 if M == 5:
                     x = 1
@@ -527,7 +527,7 @@ class CoupledOperator(OpenMCOperator):
                     p_n = 1e16# p_measure
                     p_measure = 1e16
                 if (g >= 0.75 and g <= 2): #TRY GAUSSIAN
-                    p_measure = 1/self.model.settings.particles * (1 + ((k-target)/target)**2)**2
+                    p_measure = 1/self.model.settings.particles * (1 + self.model.settings.particles*((k-target)/target)**2)**2
                 else:
                     if g < 0.75: g = 0.75
                     elif g > 2.0: g = 2.0
