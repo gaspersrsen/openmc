@@ -514,9 +514,9 @@ class CoupledOperator(OpenMCOperator):
                 L_abs = (curr_res[0][0][1][1])#+curr_res[0][0][1][2])/2
                 L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
                 #Calculate the conc change for this batch only
-                k = (P_fiss) / (L_abs + (P_fiss + 0*P_nxn)*L_leak - 0*P_nxn)
+                k = (P_fiss) / (L_abs + (P_fiss + P_nxn)*L_leak - P_nxn)
                 g = ((P_fiss/target + P_nxn)
-                        - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs #* np.exp(k/target-1)
+                        - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs * k/target
                 print(g)
                 #Optimal following:
                 if (k-target < 0) != (g < 1):
