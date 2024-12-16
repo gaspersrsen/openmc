@@ -519,9 +519,9 @@ class CoupledOperator(OpenMCOperator):
                         - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs #* k/target
                 print(g)
                 nucs_err= np.sum(np.array(curr_res[1][0]).T, axis=1)[2]
-                print(g**2*(((curr_res[0][0][0][2]/target)**2 + curr_res[0][0][2][2]**2 + curr_res[0][0][3][2]**2 - 2*curr_res[0][0][2][2]*curr_res[0][0][3][2]) * (1-L_leak) +
-                            curr_res[0][0][1][2]**2 + nucs_err**2 - 2*curr_res[0][0][1][2]*nucs_err)/(g*L_abs_nucs)**2 + nucs_err**2/L_abs_nucs**2 -
-                      2*(nucs_err*np.sqrt(curr_res[0][0][1][2]**2 + nucs_err**2 - 2*nucs_err*curr_res[0][0][1][2]))/(g*L_abs_nucs**2))
+                print(g**2*(((curr_res[0][0][0][2]/target)**2 + curr_res[0][0][2][2]**2 + curr_res[0][0][3][2]**2 - 2*curr_res[0][0][2][2]*curr_res[0][0][3][2]) * (1-L_leak)))# +
+                print((curr_res[0][0][1][2]**2 + nucs_err**2 - 2*curr_res[0][0][1][2]*nucs_err)/(g*L_abs_nucs)**2 + nucs_err**2/L_abs_nucs**2)# -
+                print(2*(nucs_err*np.sqrt(curr_res[0][0][1][2]**2 + nucs_err**2 - 2*nucs_err*curr_res[0][0][1][2]))/(g*L_abs_nucs**2))
                 #Optimal following:
                 if (k-target < 0) != (g < 1):
                     print("WIERD")
