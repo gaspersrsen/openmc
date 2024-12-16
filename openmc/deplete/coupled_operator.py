@@ -520,7 +520,8 @@ class CoupledOperator(OpenMCOperator):
                 print(g)
                 print(g**2*(((curr_res[0][0][0][2]/target)**2 + curr_res[0][0][2][2]**2 - curr_res[0][0][3][2]**2 - 2*curr_res[0][0][2][2]*curr_res[0][0][3][2]) * (1-L_leak) +
                             curr_res[0][0][1][2]**2 + np.sum(np.array(curr_res[1][0]).T, axis=1)[2]**2 - 2*curr_res[0][0][1][2]*np.sum(np.array(curr_res[1][0]).T, axis=1)[2])/(g*L_abs_nucs)**2+
-                      np.sum(np.array(curr_res[1][0]).T, axis=1)[2]**2/L_abs_nucs**2 - 2*np.sum(np.array(curr_res[1][0]).T, axis=1)[2]*(curr_res[0][0][1][2]**2 + np.sum(np.array(curr_res[1][0]).T, axis=1)[2]**2 - 2*curr_res[0][0][1][2]*np.sum(np.array(curr_res[1][0]).T, axis=1)[2]/(g*L_abs_nucs**2)))
+                      np.sum(np.array(curr_res[1][0]).T, axis=1)[2]**2/L_abs_nucs**2 -
+                      2*(np.sum(np.array(curr_res[1][0]).T, axis=1)[2]*(curr_res[0][0][1][2]**2 + np.sum(np.array(curr_res[1][0]).T, axis=1)[2]**2 - 2*curr_res[0][0][1][2]*np.sum(np.array(curr_res[1][0]).T, axis=1)[2])/(g*L_abs_nucs**2)))
                 #Optimal following:
                 if (k-target < 0) != (g < 1):
                     print("WIERD")
