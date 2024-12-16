@@ -400,11 +400,11 @@ BoundaryInfo distance_to_boundary(GeometryState& p)
       d_lat = lattice_distance.first;
       level_lat_trans = lattice_distance.second;
 
-      if (d_lat < 0) {
-        p.mark_as_lost(fmt::format("Particle {} had a negative distance "
-                                   "to a lattice boundary.",
-          p.id()));
-      }
+      // if (d_lat < 0) {
+      //   p.mark_as_lost(fmt::format("Particle {} had a negative distance "
+      //                              "to a lattice boundary.",
+      //     p.id()));
+      // }
     }
 
     // If the boundary on this coordinate level is coincident with a boundary on
