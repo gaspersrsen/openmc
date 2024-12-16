@@ -521,8 +521,9 @@ class CoupledOperator(OpenMCOperator):
                 nucs_err1 = np.sum(np.array(curr_res[1][0]).T, axis=1)[2]
                 fiss_err = (curr_res[0][0][0][2]/target)**2
                 nxn_err = curr_res[0][0][2][2]**2 + curr_res[0][0][3][2]**2 - 2*curr_res[0][0][2][2]*curr_res[0][0][3][2]
+                prod_err = (fiss_err + nxn_err - 2*(np.sqrt(fiss_err*nxn_err)))*(1-leak)**2
                 abs_err = curr_res[0][0][1][2]**2 + nucs_err1**2 - 2*curr_res[0][0][1][2]*nucs_err1
-                top_err = (fiss_err + nxn_err + abs_err - 2*(np.sqrt(fiss_err*nxn_err) + np.sqrt(fiss_err*abs_err) + np.sqrt(nxn_err*abs_err)))*(1-leak)**2
+                top_err = (prod_err + abs_err - 2*np.sqrt(prod_err*abs_err))
                 #print(g**2*(top_err/(g*L_abs_nucs)**2 + (nucs_err1/L_abs_nucs)**2 - 2*np.sqrt(top_err)*nucs_err1/(g*L_abs_nucs**2)))
                 print(top_err/(g*L_abs_nucs)**2,(nucs_err1/L_abs_nucs)**2, 2*np.sqrt(top_err)*nucs_err1/(g*L_abs_nucs**2))
                 #Optimal following:
