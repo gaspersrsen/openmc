@@ -40,11 +40,10 @@ fi
 apt-get update -y
 # Install ParMETIS
 cd /tmp/
-wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3-7.debian.tar.xz
-tar -xf parmetis_4.0.3-7.debian.tar.xz
-cd debian
-echo $(ls)
-cd parmetis_4.0.3/
+wget http://glaros.dtc.umn.edu/gkhome/fetch/sw/parmetis/parmetis-4.0.3.tar.gz 
+gunzip parmetis-4.0.3.tar.gz 
+tar -x parmetis-4.0.3.tar
+cd parmetis-4.0.3/
 make config prefix=/tmp/parmetis
 make install
 cd /tmp/
