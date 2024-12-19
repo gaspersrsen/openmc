@@ -185,7 +185,7 @@ FROM dependencies AS build
 ENV HOME=/root
 #ENV DAGMC_DIR = $HOME/DAGMC
 
-ARG openmc_branch=develop
+ARG openmc_branch=th
 ENV OPENMC_REPO='https://github.com/gaspersrsen/openmc.git'
 
 ARG compile_cores
