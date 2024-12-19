@@ -183,7 +183,7 @@ RUN if [ "$build_libmesh" = "on" ]; then \
 FROM dependencies AS build
 
 ENV HOME=/root
-ENV DAGMC_DIR = $HOME/DAGMC
+#ENV DAGMC_DIR = $HOME/DAGMC
 
 ARG openmc_branch=develop
 ENV OPENMC_REPO='https://github.com/gaspersrsen/openmc.git'
@@ -198,7 +198,8 @@ ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH
 # clone and install openmc
 RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
     && git clone --shallow-submodules --recurse-submodules --single-branch -b ${openmc_branch} --depth=1 ${OPENMC_REPO} \
-    && ls
+    && echo "export DAGMC_DIR=$HOME/DAGMC" >> ~/.bashrc \
+    && echo $DAGMC_DIR
     # if [ "$build_dagmc" = "on" ]; then \
     #     make-openmc-dagmc-embree-wheel.sh --build-wheels=true ; \
     # fi
