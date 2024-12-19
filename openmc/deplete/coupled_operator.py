@@ -518,24 +518,23 @@ class CoupledOperator(OpenMCOperator):
                 g = ((P_fiss/target + P_nxn)
                         - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs #* k/target
                 print(g)
-                nucs_err1 = np.sum(np.array(curr_res[1][0]).T, axis=1)[2]
-                fiss_err = (curr_res[0][0][0][2]/target)**2
-                nxn_err = curr_res[0][0][2][2]**2 + curr_res[0][0][3][2]**2 - 2*curr_res[0][0][2][2]*curr_res[0][0][3][2]
-                prod_err = (fiss_err + nxn_err - 2*(np.sqrt(fiss_err*nxn_err)))*(1-leak)**2
-                abs_err = curr_res[0][0][1][2]**2 + nucs_err1**2 - 2*curr_res[0][0][1][2]*nucs_err1
-                top_err = (prod_err + abs_err - 2*np.sqrt(prod_err*abs_err))
+                # nucs_err1 = np.sum(np.array(curr_res[1][0]).T, axis=1)[2]
+                # fiss_err = (curr_res[0][0][0][2]/target)**2
+                # nxn_err = curr_res[0][0][2][2]**2 + curr_res[0][0][3][2]**2 - 2*curr_res[0][0][2][2]*curr_res[0][0][3][2]
+                # prod_err = (fiss_err + nxn_err - 2*(np.sqrt(fiss_err*nxn_err)))*(1-leak)**2
+                # abs_err = curr_res[0][0][1][2]**2 + nucs_err1**2 - 2*curr_res[0][0][1][2]*nucs_err1
+                # top_err = (prod_err + abs_err - 2*np.sqrt(prod_err*abs_err))
                 #print(g**2*(top_err/(g*L_abs_nucs)**2 + (nucs_err1/L_abs_nucs)**2 - 2*np.sqrt(top_err)*nucs_err1/(g*L_abs_nucs**2)))
-                print(top_err/(g*L_abs_nucs)**2,(nucs_err1/L_abs_nucs)**2, 2*np.sqrt(top_err)*nucs_err1/(g*L_abs_nucs**2))
+                #print(top_err/(g*L_abs_nucs)**2,(nucs_err1/L_abs_nucs)**2, 2*np.sqrt(top_err)*nucs_err1/(g*L_abs_nucs**2))
                 #Optimal following:
-                if (k-target < 0) != (g < 1):
-                    print("WIERD")
                 if M == 5:
                     x = 1
                     p = 1e16#p_measure
                     p_n = 1e16# p_measure
                     p_measure = 1e16
                 if (g >= 0.75 and g <= 1.5):
-                    p_measure = 10/self.model.settings.particles
+                    #p_measure = top_err/(g*L_abs_nucs)**2 +(nucs_err1/L_abs_nucs)**2 - 2*np.sqrt(top_err)*nucs_err1/(g*L_abs_nucs**2)
+                    p_measure = (1 + self.model.settings.particles * (k/target-1)**2)**2
                 else:
                     if g < 0.75: g = 0.75
                     elif g > 1.5: g = 1.5
