@@ -545,8 +545,7 @@ class CoupledOperator(OpenMCOperator):
                     print(f"Batch: {M}")
                     print(f"k_eff:{k}")
                     print(f"Search algorithm internal tally:\n{curr_res}")
-                    print(f"Correction coefficients [P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs]:
-                          {P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs}")
+                    print(f"Correction coefficients [P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs]: {P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs}")
                     print(f"Batch concentration correction:{g}")
                     print(f"Batch estimated concentration:{f*initial_value} +/- {f*initial_value*(p**(1/2))}")
 
