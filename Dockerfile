@@ -197,7 +197,7 @@ ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH
 
 # clone and install openmc
 RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
-    && git clone --shallow-submodules --recurse-submodules --single-branch -b ${openmc_branch} --depth=1 ${OPENMC_REPO} ; \
+    && git clone --shallow-submodules --recurse-submodules --single-branch -b ${openmc_branch} --depth=1 ${OPENMC_REPO} \
     && ls
     # if [ "$build_dagmc" = "on" ]; then \
     #     make-openmc-dagmc-embree-wheel.sh --build-wheels=true ; \
