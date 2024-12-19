@@ -200,12 +200,11 @@ RUN echo "$CACHEBUST"
 # clone and install openmc
 RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
     && git clone --shallow-submodules --recurse-submodules --single-branch -b ${openmc_branch} --depth=1 ${OPENMC_REPO} \
-    && cd openmc \
-    && ls
+    && cd openmc ; \
     #&& echo "export DAGMC_DIR=$HOME/DAGMC" >> ~/.bashrc \
-    # if [ "$build_dagmc" = "on" ]; then \
-    #     make-openmc-dagmc-embree-wheel.sh --build-wheels=true ; \
-    # fi
+    if [ "$build_dagmc" = "on" ]; then \
+        make-openmc-dagmc-embree-wheel.sh --build-wheels=true ; \
+    fi
 #     fi ; \
 #     mkdir build && cd build ; \
 #     if [ ${build_dagmc} = "on" ] && [ ${build_libmesh} = "on" ]; then \
