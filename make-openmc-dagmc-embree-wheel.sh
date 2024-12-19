@@ -39,16 +39,16 @@ fi
 
 apt-get update -y
 # Install ParMETIS
-cd /tmp/
+cd $HOME
 wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3.orig.tar.gz
 #gunzip parmetis_4.0.3.orig.tar.gz
 #echo $(ls)
 tar -xvzf parmetis_4.0.3.orig.tar.gz
 echo $(ls)
 cd parmetis-4.0.3/
-make config prefix=/tmp/parmetis shared=1
+make config shared=1
 make install
-cd /tmp/
+cd $HOME
 # mkdir metis
 # cd parmetis_4.0.3/metis
 # make config prefix=/tmp/metis
