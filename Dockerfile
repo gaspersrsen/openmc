@@ -93,64 +93,64 @@ RUN cd $HOME \
     && rm -rf $HOME/NJOY2016
 
 
-RUN if [ "$build_dagmc" = "on" ]; then \
-        make-openmc-dagmc-embree-wheel.sh ; \
-        # # Install addition packages required for DAGMC
-        # apt-get -y install libeigen3-dev libnetcdf-dev libtbb-dev libglfw3-dev \
-        # && pip install --upgrade numpy \
-        # # Clone and install EMBREE
-        # && mkdir -p $HOME/EMBREE && cd $HOME/EMBREE \
-        # && git clone --single-branch -b ${EMBREE_TAG} --depth 1 ${EMBREE_REPO} \
-        # && mkdir build && cd build \
-        # && cmake ../embree \
-        #             -DCMAKE_INSTALL_PREFIX=${EMBREE_INSTALL_DIR} \
-        #             -DEMBREE_MAX_ISA=NONE \
-        #             -DEMBREE_ISA_SSE42=ON \
-        #             -DEMBREE_ISPC_SUPPORT=OFF \
-        # && make 2>/dev/null -j${compile_cores} install \
-        # && rm -rf ${EMBREE_INSTALL_DIR}/build ${EMBREE_INSTALL_DIR}/embree ; \
-        # # Clone and install MOAB
-        # mkdir -p $HOME/MOAB && cd $HOME/MOAB \
-        # && git clone  --single-branch -b ${MOAB_TAG} --depth 1 ${MOAB_REPO} \
-        # && mkdir build && cd build \
-        # && cmake ../moab -DCMAKE_BUILD_TYPE=Release \
-        #               -DENABLE_HDF5=ON \
-        #               -DENABLE_NETCDF=ON \
-        #               -DBUILD_SHARED_LIBS=OFF \
-        #               -DENABLE_FORTRAN=OFF \
-        #               -DENABLE_BLASLAPACK=OFF \
-        # && make 2>/dev/null -j${compile_cores} install \
-        # && cmake ../moab \
-        #             -DENABLE_PYMOAB=ON \
-        #             -DBUILD_SHARED_LIBS=ON \
-        # && make 2>/dev/null -j${compile_cores} install \
-        # && cd pymoab && bash install.sh \
-        # && python setup.py install \
-        # && python -c "import pymoab" \
-        # && rm -rf $HOME/MOAB ; \
-        # # Clone and install Double-Down
-        # mkdir -p $HOME/Double_down && cd $HOME/Double_down \
-        # && git clone --single-branch -b ${DD_TAG} --depth 1 ${DD_REPO} \
-        # && mkdir build && cd build \
-        # && cmake ../double-down -DCMAKE_INSTALL_PREFIX=${DD_INSTALL_DIR} \
-        #                      -DMOAB_DIR=/usr/local \
-        #                      -DEMBREE_DIR=${EMBREE_INSTALL_DIR} \
-        # && make 2>/dev/null -j${compile_cores} install \
-        # && rm -rf ${DD_INSTALL_DIR}/build ${DD_INSTALL_DIR}/double-down ; \
-        # # Clone and install DAGMC
-        # mkdir -p $HOME/DAGMC && cd $HOME/DAGMC \
-        # && git clone --single-branch -b ${DAGMC_BRANCH} --depth 1 ${DAGMC_REPO} \
-        # && mkdir build && cd build \
-        # && cmake ../DAGMC -DBUILD_TALLY=ON \
-        #                -DCMAKE_INSTALL_PREFIX=${DAGMC_INSTALL_DIR} \
-        #                -DMOAB_DIR=/usr/local \
-        #                -DDOUBLE_DOWN=ON \
-        #                -DDOUBLE_DOWN_DIR=${DD_INSTALL_DIR} \
-        #                -DCMAKE_PREFIX_PATH=${DD_INSTALL_DIR}/lib \
-        #                -DBUILD_STATIC_LIBS=OFF \
-        # && make 2>/dev/null -j${compile_cores} install \
-        # && rm -rf ${DAGMC_INSTALL_DIR}/DAGMC ${DAGMC_INSTALL_DIR}/build ; \
-    fi
+# RUN if [ "$build_dagmc" = "on" ]; then \
+#         make-openmc-dagmc-embree-wheel.sh ; \
+#         # # Install addition packages required for DAGMC
+#         # apt-get -y install libeigen3-dev libnetcdf-dev libtbb-dev libglfw3-dev \
+#         # && pip install --upgrade numpy \
+#         # # Clone and install EMBREE
+#         # && mkdir -p $HOME/EMBREE && cd $HOME/EMBREE \
+#         # && git clone --single-branch -b ${EMBREE_TAG} --depth 1 ${EMBREE_REPO} \
+#         # && mkdir build && cd build \
+#         # && cmake ../embree \
+#         #             -DCMAKE_INSTALL_PREFIX=${EMBREE_INSTALL_DIR} \
+#         #             -DEMBREE_MAX_ISA=NONE \
+#         #             -DEMBREE_ISA_SSE42=ON \
+#         #             -DEMBREE_ISPC_SUPPORT=OFF \
+#         # && make 2>/dev/null -j${compile_cores} install \
+#         # && rm -rf ${EMBREE_INSTALL_DIR}/build ${EMBREE_INSTALL_DIR}/embree ; \
+#         # # Clone and install MOAB
+#         # mkdir -p $HOME/MOAB && cd $HOME/MOAB \
+#         # && git clone  --single-branch -b ${MOAB_TAG} --depth 1 ${MOAB_REPO} \
+#         # && mkdir build && cd build \
+#         # && cmake ../moab -DCMAKE_BUILD_TYPE=Release \
+#         #               -DENABLE_HDF5=ON \
+#         #               -DENABLE_NETCDF=ON \
+#         #               -DBUILD_SHARED_LIBS=OFF \
+#         #               -DENABLE_FORTRAN=OFF \
+#         #               -DENABLE_BLASLAPACK=OFF \
+#         # && make 2>/dev/null -j${compile_cores} install \
+#         # && cmake ../moab \
+#         #             -DENABLE_PYMOAB=ON \
+#         #             -DBUILD_SHARED_LIBS=ON \
+#         # && make 2>/dev/null -j${compile_cores} install \
+#         # && cd pymoab && bash install.sh \
+#         # && python setup.py install \
+#         # && python -c "import pymoab" \
+#         # && rm -rf $HOME/MOAB ; \
+#         # # Clone and install Double-Down
+#         # mkdir -p $HOME/Double_down && cd $HOME/Double_down \
+#         # && git clone --single-branch -b ${DD_TAG} --depth 1 ${DD_REPO} \
+#         # && mkdir build && cd build \
+#         # && cmake ../double-down -DCMAKE_INSTALL_PREFIX=${DD_INSTALL_DIR} \
+#         #                      -DMOAB_DIR=/usr/local \
+#         #                      -DEMBREE_DIR=${EMBREE_INSTALL_DIR} \
+#         # && make 2>/dev/null -j${compile_cores} install \
+#         # && rm -rf ${DD_INSTALL_DIR}/build ${DD_INSTALL_DIR}/double-down ; \
+#         # # Clone and install DAGMC
+#         # mkdir -p $HOME/DAGMC && cd $HOME/DAGMC \
+#         # && git clone --single-branch -b ${DAGMC_BRANCH} --depth 1 ${DAGMC_REPO} \
+#         # && mkdir build && cd build \
+#         # && cmake ../DAGMC -DBUILD_TALLY=ON \
+#         #                -DCMAKE_INSTALL_PREFIX=${DAGMC_INSTALL_DIR} \
+#         #                -DMOAB_DIR=/usr/local \
+#         #                -DDOUBLE_DOWN=ON \
+#         #                -DDOUBLE_DOWN_DIR=${DD_INSTALL_DIR} \
+#         #                -DCMAKE_PREFIX_PATH=${DD_INSTALL_DIR}/lib \
+#         #                -DBUILD_STATIC_LIBS=OFF \
+#         # && make 2>/dev/null -j${compile_cores} install \
+#         # && rm -rf ${DAGMC_INSTALL_DIR}/DAGMC ${DAGMC_INSTALL_DIR}/build ; \
+#     fi
 
 
 RUN if [ "$build_libmesh" = "on" ]; then \
@@ -196,7 +196,7 @@ ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH
 
 # clone and install openmc
 RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
-    && git clone --shallow-submodules --recurse-submodules --single-branch -b ${openmc_branch} --depth=1 ${OPENMC_REPO} \
+    && git clone --shallow-submodules --recurse-submodules --single-branch -b ${openmc_branch} --depth=1 ${OPENMC_REPO} ; \
     if [ "$build_dagmc" = "on" ]; then \
         make-openmc-dagmc-embree-wheel.sh ; \
     fi
