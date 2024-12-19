@@ -200,7 +200,7 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
     if [ "$build_dagmc" = "on" ]; then \
         make-openmc-dagmc-embree-wheel.sh ; \
     fi ; \
-    && mkdir build && cd build ; \
+    mkdir build && cd build ; \
     if [ ${build_dagmc} = "on" ] && [ ${build_libmesh} = "on" ]; then \
         cmake ../openmc \
             -DCMAKE_CXX_COMPILER=mpicxx \
