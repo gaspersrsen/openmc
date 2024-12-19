@@ -534,7 +534,7 @@ class CoupledOperator(OpenMCOperator):
                     p_measure = 1e16
                 if (g >= 0.75 and g <= 1.5):
                     #p_measure = top_err/(g*L_abs_nucs)**2 +(nucs_err1/L_abs_nucs)**2 - 2*np.sqrt(top_err)*nucs_err1/(g*L_abs_nucs**2)
-                    p_measure = (1 + self.model.settings.particles * (k/target-1)**2)**2
+                    p_measure = (1 + self.model.settings.particles * (k/target-1)**2)**2 / np.sqrt(self.model.settings.particles)
                 else:
                     if g < 0.75: g = 0.75
                     elif g > 1.5: g = 1.5
