@@ -59,6 +59,7 @@ apt-get install -y cmake \
                         libscotchparmetis-dev \
                         libpng-dev \
                         libtbb-dev \
+                        parmetis \
                         mpich \
                         wget
 
