@@ -94,7 +94,7 @@ RUN cd $HOME \
 
 
 RUN if [ "$build_dagmc" = "on" ]; then \
-        git archive --remote=https://github.com/gaspersrsen/openmc.git HEAD make-openmc-dagmc-embree-wheel.sh | tar -x make-openmc-dagmc-embree-wheel.sh \
+        git archive --remote=https://github.com/gaspersrsen/openmc.git HEAD make-openmc-dagmc-embree-wheel.sh | tar -x \
         && make-openmc-dagmc-embree-wheel.sh ; \
         # # Install addition packages required for DAGMC
         # apt-get -y install libeigen3-dev libnetcdf-dev libtbb-dev libglfw3-dev \
