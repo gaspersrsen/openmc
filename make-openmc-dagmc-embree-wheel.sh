@@ -63,8 +63,8 @@ apt-get install -y cmake \
 
 # Install ParMETIS
 cd /tmp/
-wget http://glaros.dtc.umn.edu/gkhome/fetch/sw/parmetis/parmetis-4.0.3.tar.gz
-tar -xf parmetis-4.0.3.tar.gz
+wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3-7.debian.tar.xz
+tar -xf parmetis_4.0.3-7.debian.tar.xz
 mkdir parmetis
 cd parmetis-4.0.3/
 make config prefix=/tmp/parmetis
