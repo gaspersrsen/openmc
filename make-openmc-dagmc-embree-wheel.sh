@@ -41,9 +41,9 @@ apt-get update -y
 # Install ParMETIS
 cd /tmp/
 wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3.orig.tar.gz
-gunzip parmetis_4.0.3.orig.tar.gz
-echo $(ls)
-tar -x parmetis_4.0.3.orig.tar
+#gunzip parmetis_4.0.3.orig.tar.gz
+#echo $(ls)
+tar -xvzf parmetis_4.0.3.orig.tar.gz
 echo $(ls)
 cd parmetis-4.0.3/
 make config prefix=/tmp/parmetis shared=1
