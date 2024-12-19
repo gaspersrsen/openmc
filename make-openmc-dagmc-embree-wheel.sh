@@ -42,6 +42,7 @@ apt-get update -y
 cd /tmp/
 wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3.orig.tar.gz
 gunzip parmetis_4.0.3.orig.tar.gz
+echo $(ls)
 tar -x parmetis_4.0.3.orig.tar
 echo $(ls)
 cd parmetis-4.0.3/
