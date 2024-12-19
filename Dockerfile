@@ -183,6 +183,7 @@ RUN if [ "$build_libmesh" = "on" ]; then \
 FROM dependencies AS build
 
 ENV HOME=/root
+ENV DAGMC_DIR = $HOME/DAGMC
 
 ARG openmc_branch=develop
 ENV OPENMC_REPO='https://github.com/gaspersrsen/openmc.git'
