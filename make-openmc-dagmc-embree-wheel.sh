@@ -40,17 +40,23 @@ fi
 apt-get update -y
 # Install ParMETIS
 cd /tmp/
-wget http://glaros.dtc.umn.edu/gkhome/fetch/sw/parmetis/parmetis-4.0.3.tar.gz 
-gunzip parmetis-4.0.3.tar.gz 
-tar -x parmetis-4.0.3.tar
+wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3.orig.tar.gz
+gunzip parmetis_4.0.3.orig.tar.gz
+tar -x parmetis_4.0.3.orig.tar
+echo $(ls)
 cd parmetis-4.0.3/
-make config prefix=/tmp/parmetis
+make config prefix=/tmp/parmetis shared=1
 make install
 cd /tmp/
 mkdir metis
 cd parmetis_4.0.3/metis
 make config prefix=/tmp/metis
 make install
+pip3 install metis
+export METIS_DLL=/usr/local/lib/libparmetis.so >> ~/.bashrc
+export METIS_IDXTYPEWIDTH=64  >> ~/.bashrc
+export METIS_REALTYPEWIDTH=64  >> ~/.bashrc
+
 # Install system dependencies
 apt-get install -y cmake \
                         g++ \
