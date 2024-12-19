@@ -56,10 +56,9 @@ apt-get install -y cmake \
                         libnetcdf-dev \
                         libnetcdf-mpi-dev \
                         libopenblas-dev \
-                        libscotchparmetis-dev \
+                        libparmetis-dev \
                         libpng-dev \
                         libtbb-dev \
-                        parmetis-doc \
                         mpich \
                         wget
 
