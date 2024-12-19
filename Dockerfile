@@ -94,7 +94,7 @@ RUN cd $HOME \
 
 
 RUN if [ "$build_dagmc" = "on" ]; then \
-        install_openmc_with_embree.sh --build-wheels=true \
+        install_openmc_with_embree.sh --build-wheels=true; \
         # # Install addition packages required for DAGMC
         # apt-get -y install libeigen3-dev libnetcdf-dev libtbb-dev libglfw3-dev \
         # && pip install --upgrade numpy \
