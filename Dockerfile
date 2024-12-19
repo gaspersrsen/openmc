@@ -194,6 +194,8 @@ ARG build_libmesh
 
 ENV DAGMC_INSTALL_DIR=$HOME/DAGMC/
 ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH
+ARG CACHEBUST=1
+RUN echo "$CACHEBUST"
 
 # clone and install openmc
 RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
