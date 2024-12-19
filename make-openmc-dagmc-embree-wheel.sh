@@ -43,7 +43,7 @@ cd /tmp/
 wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3-7.debian.tar.xz
 mkdir parmetis_4.0.3
 tar -xf parmetis_4.0.3-7.debian.tar.xz -C parmetis_4.0.3 --strip-components 1
-echo ($ls)
+echo $(ls)
 cd parmetis_4.0.3/
 make config prefix=/tmp/parmetis
 make install
