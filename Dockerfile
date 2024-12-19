@@ -220,7 +220,7 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
         -DBUILD_TESTING=OFF \
         -DOPENMC_USE_LIBMESH=on \
         -DCMAKE_CXX_COMPILER=mpicxx \
-        -DCMAKE_PREFIX_PATH=/usr/local;${LIBMESH_INSTALL_DIR} \
+        -DCMAKE_PREFIX_PATH="/usr/local;${LIBMESH_INSTALL_DIR}" \
         -DXTENSOR_USE_TBB=OFF \
         -DXTENSOR_USE_OPENMP=ON \
         -DXTENSOR_USE_XSIMD=OFF \
