@@ -41,14 +41,14 @@ apt-get update -y
 # Install ParMETIS
 cd /tmp/
 wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3-7.debian.tar.xz
-tar -xf parmetis_4.0.3-7.debian.tar.xz
-mkdir parmetis
-cd parmetis_4.0.3-7.debian/
+mkdir parmetis_4.0.3
+tar -xf parmetis_4.0.3-7.debian.tar.xz -C parmetis_4.0.3 --strip-components 1
+cd parmetis_4.0.3/
 make config prefix=/tmp/parmetis
 make install
 cd /tmp/
 mkdir metis
-cd parmetis_4.0.3-7.debian/metis
+cd parmetis_4.0.3/metis
 make config prefix=/tmp/metis
 make install
 # Install system dependencies
