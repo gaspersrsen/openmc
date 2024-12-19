@@ -413,10 +413,11 @@ class CoupledOperator(OpenMCOperator):
                          initial_value=None, target=1., debug=False):
         """
         Runs a simulation where 'iso' nuclide values converge in such a way to obtain the desired k_eff.
-        Operator.model materials are updated 
-        Initial value is the value given in your material building process, must be bigger than 0.
+        Operator.model materials are updated in the process
+        Optional initial value is the value given in your material building process, must be strictly bigger than 0.
         All 'iso' nuclides are multiplied by the same scaling factor.
-        Higher (>100 000) particle numbers in 'openmc.settings' are recommended for more accurate simulation.
+        Higher (>10 000) particle numbers in 'openmc.settings' are recommended for more accurate simulation.
+        Atleast 30 batches are required for convergence, recommended >50.
 
         Parameters
         ----------
@@ -504,36 +505,29 @@ class CoupledOperator(OpenMCOperator):
                     prev_res[i] = copy.copy(tally_.results)
                     i += 1
                 
+                # Talliy results are added (summed) in each batch - measurement is the difference
                 glob_tall = copy.copy(openmc.lib.global_tallies())
                 leak = glob_tall[3][0]*M - prev_leak
                 prev_leak = glob_tall[3][0]*M
                 
-                P_fiss = (curr_res[0][0][0][1])# + curr_res[0][0][0][2])/2
-                P_nxn = curr_res[0][0][2][1] - curr_res[0][0][3][1]
-                L_leak = leak # Fraction
-                L_abs = (curr_res[0][0][1][1])#+curr_res[0][0][1][2])/2
-                L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
-                #Calculate the conc change for this batch only
+                P_fiss = curr_res[0][0][0][1]                               # Neutrons produced by fission (prompt and delayed)
+                P_nxn = curr_res[0][0][2][1] - curr_res[0][0][3][1]         # Additional neutrons produced by (n,xn) reactions
+                L_leak = leak                                               # Neutron leakage fraction
+                L_abs = curr_res[0][0][1][1]                                # Total neutron absorption
+                L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]  # Total flagged nuclide absorption
+                # Predict concentration change
                 k = (P_fiss) / (L_abs + (P_fiss + P_nxn)*L_leak - P_nxn)
                 g = ((P_fiss/target + P_nxn)
-                        - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs #* k/target
+                        - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs * np.exp(k-target)
                 print(g)
-                # nucs_err1 = np.sum(np.array(curr_res[1][0]).T, axis=1)[2]
-                # fiss_err = (curr_res[0][0][0][2]/target)**2
-                # nxn_err = curr_res[0][0][2][2]**2 + curr_res[0][0][3][2]**2 - 2*curr_res[0][0][2][2]*curr_res[0][0][3][2]
-                # prod_err = (fiss_err + nxn_err - 2*(np.sqrt(fiss_err*nxn_err)))*(1-leak)**2
-                # abs_err = curr_res[0][0][1][2]**2 + nucs_err1**2 - 2*curr_res[0][0][1][2]*nucs_err1
-                # top_err = (prod_err + abs_err - 2*np.sqrt(prod_err*abs_err))
-                #print(g**2*(top_err/(g*L_abs_nucs)**2 + (nucs_err1/L_abs_nucs)**2 - 2*np.sqrt(top_err)*nucs_err1/(g*L_abs_nucs**2)))
-                #print(top_err/(g*L_abs_nucs)**2,(nucs_err1/L_abs_nucs)**2, 2*np.sqrt(top_err)*nucs_err1/(g*L_abs_nucs**2))
-                #Optimal following:
+                # Optimal following (Kalman filter for narrowing to a scalar value):
                 if M == 5:
                     x = 1
-                    p = 1e16#p_measure
-                    p_n = 1e16# p_measure
+                    p = 1e16
+                    p_n = 1e16
                     p_measure = 1e16
                 if (g >= 0.75 and g <= 1.5):
-                    #p_measure = top_err/(g*L_abs_nucs)**2 +(nucs_err1/L_abs_nucs)**2 - 2*np.sqrt(top_err)*nucs_err1/(g*L_abs_nucs**2)
+                    # Estimate the accuracy of the measurement with a quadratic difference of k and target
                     p_measure = (1 + self.model.settings.particles * (k-target)**2)**2 / np.sqrt(self.model.settings.particles)
                 else:
                     if g < 0.75: g = 0.75
@@ -551,7 +545,8 @@ class CoupledOperator(OpenMCOperator):
                     print(f"Batch: {M}")
                     print(f"k_eff:{k}")
                     print(f"Search algorithm internal tally:\n{curr_res}")
-                    print(f"Correction coefficients: {P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs}")
+                    print(f"Correction coefficients [P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs]:
+                          {P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs}")
                     print(f"Batch concentration correction:{g}")
                     print(f"Batch estimated concentration:{f*initial_value} +/- {f*initial_value*(p**(1/2))}")
 
