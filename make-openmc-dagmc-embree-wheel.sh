@@ -42,6 +42,7 @@ apt-get update -y
 cd /tmp/
 wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3-7.debian.tar.xz
 tar -xf parmetis_4.0.3-7.debian.tar.xz
+cd debian
 echo $(ls)
 cd parmetis_4.0.3/
 make config prefix=/tmp/parmetis
