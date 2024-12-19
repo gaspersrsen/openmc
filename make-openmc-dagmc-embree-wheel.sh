@@ -66,8 +66,13 @@ cd /tmp/
 wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3-7.debian.tar.xz
 tar -xf parmetis_4.0.3-7.debian.tar.xz
 mkdir parmetis
-cd parmetis/
+cd parmetis-4.0.3-7/
 make config prefix=/tmp/parmetis
+make install
+cd /tmp/
+mkdir metis
+cd parmetis-4.0.3-7/metis
+make config prefix=/tmp/metis
 make install
 # Function to check if a build already exists
 function build_exists {
