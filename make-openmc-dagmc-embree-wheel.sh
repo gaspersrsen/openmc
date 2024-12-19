@@ -38,6 +38,19 @@ if [ "$BUILD_WHEELS" = true ]; then
 fi
 
 apt-get update -y
+# Install ParMETIS
+cd /tmp/
+wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3-7.debian.tar.xz
+tar -xf parmetis_4.0.3-7.debian.tar.xz
+mkdir parmetis
+cd parmetis-4.0.3-7.debian/
+make config prefix=/tmp/parmetis
+make install
+cd /tmp/
+mkdir metis
+cd parmetis-4.0.3-7.debian/metis
+make config prefix=/tmp/metis
+make install
 # Install system dependencies
 apt-get install -y cmake \
                         g++ \
@@ -61,19 +74,7 @@ apt-get install -y cmake \
                         mpich \
                         wget
 
-# Install ParMETIS
-cd /tmp/
-wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3-7.debian.tar.xz
-tar -xf parmetis_4.0.3-7.debian.tar.xz
-mkdir parmetis
-cd parmetis-4.0.3-7/
-make config prefix=/tmp/parmetis
-make install
-cd /tmp/
-mkdir metis
-cd parmetis-4.0.3-7/metis
-make config prefix=/tmp/metis
-make install
+
 # Function to check if a build already exists
 function build_exists {
     local build_dir="$1"
