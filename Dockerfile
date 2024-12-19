@@ -204,7 +204,7 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
     && ls; \
     #&& echo "export DAGMC_DIR=$HOME/DAGMC" >> ~/.bashrc \
     if [ "$build_dagmc" = "on" ]; then \
-        make-openmc-dagmc-embree-wheel.sh --build-wheels=true ; \
+        ./make-openmc-dagmc-embree-wheel.sh --build-wheels=true ; \
     fi
 #     fi ; \
 #     mkdir build && cd build ; \
