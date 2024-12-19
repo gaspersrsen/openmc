@@ -484,13 +484,13 @@ class CoupledOperator(OpenMCOperator):
         # Run simulation
         for _ in openmc.lib.iter_batches():
             M = openmc.lib.current_batch()
-            if M < 5: continue
+            if M < 10: continue
             # Only change concentrations during the additional batches
-            if M < batches:
+            if M < batches+10:
                 k = openmc.lib.keff()[0]
                 talliez = copy.copy(openmc.lib.tallies)
                 curr_res = []
-                if M == 5:
+                if M == 10:
                     i = 0
                     for tally_ in talliez.values():
                         if i == 2:
@@ -518,10 +518,10 @@ class CoupledOperator(OpenMCOperator):
                 # Predict concentration change
                 k = (P_fiss) / (L_abs + (P_fiss + P_nxn)*L_leak - 0*P_nxn)
                 g = ((P_fiss/target + P_nxn)
-                        - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs #* np.exp(k-target)
+                        - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs * np.exp(k-target)
                 print(g)
                 # Optimal following (Kalman filter for narrowing to a scalar value):
-                if M == 5:
+                if M == 10:
                     x = 1
                     p = 1e16
                     p_n = 1e16
