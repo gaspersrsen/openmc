@@ -516,9 +516,9 @@ class CoupledOperator(OpenMCOperator):
                 L_abs = curr_res[0][0][1][1]                                # Total neutron absorption
                 L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]  # Total flagged nuclide absorption
                 # Predict concentration change
-                k = (P_fiss) / (L_abs + (P_fiss + P_nxn)*L_leak - P_nxn)
+                k = (P_fiss) / (L_abs + (P_fiss + P_nxn)*L_leak - 0*P_nxn)
                 g = ((P_fiss/target + P_nxn)
-                        - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs * np.exp(k-target)
+                        - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs #* np.exp(k-target)
                 print(g)
                 # Optimal following (Kalman filter for narrowing to a scalar value):
                 if M == 5:
