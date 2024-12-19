@@ -37,9 +37,9 @@ if [ "$BUILD_WHEELS" = true ]; then
     mkdir -p $WHEEL_DIR
 fi
 
-sudo apt-get update -y
+apt-get update -y
 # Install system dependencies
-sudo apt-get install -y cmake \
+apt-get install -y cmake \
                         g++ \
                         gfortran \
                         git \
@@ -99,7 +99,7 @@ else
              -DEMBREE_TUTORIALS=OFF \
              -DEMBREE_TUTORIALS_GLFW=OFF
     cmake --build . --parallel "$(nproc)"
-    sudo cmake --install .
+    cmake --install .
 fi
 
 # Install MOAB (with PyMOAB enabled)
@@ -122,13 +122,13 @@ else
              -DENABLE_PARMETIS=ON \
              -DENABLE_PNETCDF=OFF
     cmake --build . --parallel "$(nproc)"
-    sudo cmake --install .
+    cmake --install .
 fi
 
 if [ "$BUILD_WHEELS" = true ]; then
     # Build and install PyMOAB wheel
 
-    sudo chmod -R 777 $SRC_DIR/moab/build
+    chmod -R 777 $SRC_DIR/moab/build
     cd $SRC_DIR/moab/build/pymoab
     python -m build --wheel --outdir "$WHEEL_DIR"
 fi
@@ -146,7 +146,7 @@ else
              -DMOAB_DIR=/usr/local/ \
              -DEMBREE_DIR=/usr/local/
     cmake --build . --parallel "$(nproc)"
-    sudo cmake --install .
+    cmake --install .
 fi
 
 # Install DAGMC
@@ -170,7 +170,7 @@ else
              -DBUILD_STATIC_EXE=OFF \
              -DBUILD_STATIC_LIBS=OFF
     cmake --build . --parallel "$(nproc)"
-    sudo cmake --install .
+    cmake --install .
 fi
 
 # Install OpenMC (C++ core)
@@ -203,7 +203,7 @@ else
     # Continue installation even if the build failed. At the moment, the build fails on 90% because
     # it can not find catch2 lib when building the tests.
     cmake --build . --parallel "$(nproc)" || echo "Build failed, continuing to installation."
-    sudo cmake --install .
+    cmake --install .
 fi
 
 if [ "$BUILD_WHEELS" = true ]; then
