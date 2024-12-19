@@ -49,10 +49,10 @@ cd parmetis-4.0.3/
 make config prefix=/tmp/parmetis shared=1
 make install
 cd /tmp/
-mkdir metis
-cd parmetis_4.0.3/metis
-make config prefix=/tmp/metis
-make install
+# mkdir metis
+# cd parmetis_4.0.3/metis
+# make config prefix=/tmp/metis
+# make install
 pip3 install metis
 export METIS_DLL=/usr/local/lib/libparmetis.so >> ~/.bashrc
 export METIS_IDXTYPEWIDTH=64  >> ~/.bashrc
