@@ -33,30 +33,6 @@ ARG build_libmesh
 # Set default value of HOME to /root
 ENV HOME=/root
 
-# Embree variables
-ENV EMBREE_TAG='v4.3.1'
-ENV EMBREE_REPO='https://github.com/embree/embree'
-ENV EMBREE_INSTALL_DIR=$HOME/EMBREE/
-
-# MOAB variables
-ENV MOAB_TAG='5.5.1'
-ENV MOAB_REPO='https://bitbucket.org/fathomteam/moab/'
-
-# Double-Down variables
-ENV DD_TAG='v1.1.0'
-ENV DD_REPO='https://github.com/pshriwise/double-down'
-ENV DD_INSTALL_DIR=$HOME/Double_down
-
-# DAGMC variables
-ENV DAGMC_BRANCH='v3.2.3'
-ENV DAGMC_REPO='https://github.com/svalinn/DAGMC'
-ENV DAGMC_INSTALL_DIR=$HOME/DAGMC/
-
-# LIBMESH variables
-ENV LIBMESH_TAG='v1.7.1'
-ENV LIBMESH_REPO='https://github.com/libMesh/libmesh'
-ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH
-
 # NJOY variables
 ENV NJOY_REPO='https://github.com/njoy/NJOY2016'
 
@@ -93,66 +69,6 @@ RUN cd $HOME \
     && rm -rf $HOME/NJOY2016
 
 
-# RUN if [ "$build_dagmc" = "on" ]; then \
-#         make-openmc-dagmc-embree-wheel.sh ; \
-#         # # Install addition packages required for DAGMC
-#         # apt-get -y install libeigen3-dev libnetcdf-dev libtbb-dev libglfw3-dev \
-#         # && pip install --upgrade numpy \
-#         # # Clone and install EMBREE
-#         # && mkdir -p $HOME/EMBREE && cd $HOME/EMBREE \
-#         # && git clone --single-branch -b ${EMBREE_TAG} --depth 1 ${EMBREE_REPO} \
-#         # && mkdir build && cd build \
-#         # && cmake ../embree \
-#         #             -DCMAKE_INSTALL_PREFIX=${EMBREE_INSTALL_DIR} \
-#         #             -DEMBREE_MAX_ISA=NONE \
-#         #             -DEMBREE_ISA_SSE42=ON \
-#         #             -DEMBREE_ISPC_SUPPORT=OFF \
-#         # && make 2>/dev/null -j${compile_cores} install \
-#         # && rm -rf ${EMBREE_INSTALL_DIR}/build ${EMBREE_INSTALL_DIR}/embree ; \
-#         # # Clone and install MOAB
-#         # mkdir -p $HOME/MOAB && cd $HOME/MOAB \
-#         # && git clone  --single-branch -b ${MOAB_TAG} --depth 1 ${MOAB_REPO} \
-#         # && mkdir build && cd build \
-#         # && cmake ../moab -DCMAKE_BUILD_TYPE=Release \
-#         #               -DENABLE_HDF5=ON \
-#         #               -DENABLE_NETCDF=ON \
-#         #               -DBUILD_SHARED_LIBS=OFF \
-#         #               -DENABLE_FORTRAN=OFF \
-#         #               -DENABLE_BLASLAPACK=OFF \
-#         # && make 2>/dev/null -j${compile_cores} install \
-#         # && cmake ../moab \
-#         #             -DENABLE_PYMOAB=ON \
-#         #             -DBUILD_SHARED_LIBS=ON \
-#         # && make 2>/dev/null -j${compile_cores} install \
-#         # && cd pymoab && bash install.sh \
-#         # && python setup.py install \
-#         # && python -c "import pymoab" \
-#         # && rm -rf $HOME/MOAB ; \
-#         # # Clone and install Double-Down
-#         # mkdir -p $HOME/Double_down && cd $HOME/Double_down \
-#         # && git clone --single-branch -b ${DD_TAG} --depth 1 ${DD_REPO} \
-#         # && mkdir build && cd build \
-#         # && cmake ../double-down -DCMAKE_INSTALL_PREFIX=${DD_INSTALL_DIR} \
-#         #                      -DMOAB_DIR=/usr/local \
-#         #                      -DEMBREE_DIR=${EMBREE_INSTALL_DIR} \
-#         # && make 2>/dev/null -j${compile_cores} install \
-#         # && rm -rf ${DD_INSTALL_DIR}/build ${DD_INSTALL_DIR}/double-down ; \
-#         # # Clone and install DAGMC
-#         # mkdir -p $HOME/DAGMC && cd $HOME/DAGMC \
-#         # && git clone --single-branch -b ${DAGMC_BRANCH} --depth 1 ${DAGMC_REPO} \
-#         # && mkdir build && cd build \
-#         # && cmake ../DAGMC -DBUILD_TALLY=ON \
-#         #                -DCMAKE_INSTALL_PREFIX=${DAGMC_INSTALL_DIR} \
-#         #                -DMOAB_DIR=/usr/local \
-#         #                -DDOUBLE_DOWN=ON \
-#         #                -DDOUBLE_DOWN_DIR=${DD_INSTALL_DIR} \
-#         #                -DCMAKE_PREFIX_PATH=${DD_INSTALL_DIR}/lib \
-#         #                -DBUILD_STATIC_LIBS=OFF \
-#         # && make 2>/dev/null -j${compile_cores} install \
-#         # && rm -rf ${DAGMC_INSTALL_DIR}/DAGMC ${DAGMC_INSTALL_DIR}/build ; \
-#     fi
-
-
 RUN if [ "$build_libmesh" = "on" ]; then \
         # Install addition packages required for LIBMESH
         apt-get -y install m4 libnetcdf-dev libpnetcdf-dev \
@@ -183,7 +99,8 @@ RUN if [ "$build_libmesh" = "on" ]; then \
 FROM dependencies AS build
 
 ENV HOME=/root
-#ENV DAGMC_DIR = $HOME/DAGMC
+
+
 
 ARG openmc_branch=th
 ENV OPENMC_REPO='https://github.com/gaspersrsen/openmc.git'
@@ -192,8 +109,11 @@ ARG compile_cores
 ARG build_dagmc
 ARG build_libmesh
 
-#ENV DAGMC_INSTALL_DIR=$HOME/DAGMC/
-ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH
+
+ENV EMBREE_INSTALL_DIR=$HOME/src/EMBREE/
+ENV DD_INSTALL_DIR=$HOME/src/double-down/
+ENV DAGMC_INSTALL_DIR=$HOME/src/DAGMC/
+ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH/
 ARG nproc=${compile_cores}
 ARG CACHEBUST=1
 RUN echo "$CACHEBUST"
@@ -217,15 +137,13 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
         -DOPENMC_USE_MPI=ON \
         -DHDF5_PREFER_PARALLEL=ON \
         -DOPENMC_USE_DAGMC=ON \
-        -DOPENMC_USE_LIBMESH=on \
-        -DCMAKE_PREFIX_PATH="/usr/local;${LIBMESH_INSTALL_DIR}" \
-        -DDAGMC_ROOT=$HOME/src/DAGMC \
+        -DOPENMC_USE_LIBMESH=ON \
         -DCPP20=ON \
         -DBUILD_TESTING=OFF \
+        -DCMAKE_PREFIX_PATH="${DAGMC_INSTALL_DIR};${LIBMESH_INSTALL_DIR}" ;
         -DXTENSOR_USE_TBB=OFF \
         -DXTENSOR_USE_OPENMP=ON \
-        -DXTENSOR_USE_XSIMD=OFF \
-    
+        -DXTENSOR_USE_XSIMD=OFF ;
     # Continue installation even if the build failed. At the moment, the build fails on 90% because
     # it can not find catch2 lib when building the tests.
     && make 2>/dev/null -j${compile_cores} install
