@@ -194,6 +194,7 @@ ARG build_libmesh
 
 #ENV DAGMC_INSTALL_DIR=$HOME/DAGMC/
 ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH
+ARG nproc=${compile_cores}
 ARG CACHEBUST=1
 RUN echo "$CACHEBUST"
 
@@ -227,7 +228,7 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
     
     # Continue installation even if the build failed. At the moment, the build fails on 90% because
     # it can not find catch2 lib when building the tests.
-    && make 2>/dev/null -j${compile_cores} install
+    #&& make 2>/dev/null -j${compile_cores} install
     #&& cmake --build . --parallel ${compile_cores} || echo "Build failed, continuing to installation." \
     #&& cmake --install \
     #&& make 2>/dev/null -j${compile_cores} install
