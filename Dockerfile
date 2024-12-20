@@ -210,7 +210,7 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
     git submodule update --init --recursive \
     && mkdir -p build \
     && cd build \
-    && cmake .. -j${compile_cores}\
+    && cmake .. \
         #-DCMAKE_INSTALL_PREFIX=/usr/local/ \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_CXX_COMPILER=mpicxx \
