@@ -46,7 +46,7 @@ wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3.orig.t
 tar -xvzf parmetis_4.0.3.orig.tar.gz
 echo $(ls)
 cd parmetis-4.0.3/
-make config shared=1 --parallel "$(nproc)"
+make config shared=1 -j"$(nproc)"
 make install
 cd $HOME
 # mkdir metis
