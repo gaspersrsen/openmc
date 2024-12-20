@@ -210,9 +210,9 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
     && mkdir -p build \
     && cd build \
     && cmake .. \
-        #-DCMAKE_INSTALL_PREFIX=/usr/local/ \
-        #-DCMAKE_BUILD_TYPE=Release \
-        # -DCMAKE_CXX_COMPILER=mpicxx \
+        -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_CXX_COMPILER=mpicxx \
         # -DOPENMC_USE_MPI=ON \
         # -DHDF5_PREFER_PARALLEL=ON \
         # -DOPENMC_USE_DAGMC=ON \
