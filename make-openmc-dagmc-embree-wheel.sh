@@ -6,6 +6,7 @@
 #  $ .devcontainer/install_openmc_with_embree.sh --build-wheels=true
 # In that case the wheels will be saved in the $HOME/wheels directory.
 set -euo pipefail
+echo $(nproc)
 
 # Default parameter values
 BUILD_WHEELS=false
