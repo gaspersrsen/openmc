@@ -229,8 +229,8 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
     # Continue installation even if the build failed. At the moment, the build fails on 90% because
     # it can not find catch2 lib when building the tests.
     #&& make 2>/dev/null -j${compile_cores} install
-    #&& cmake --build . --parallel ${compile_cores} || echo "Build failed, continuing to installation." \
-    #&& cmake --install \
+    && cmake --build . --parallel ${compile_cores} || echo "Build failed, continuing to installation." \
+    && cmake --install 
     #&& make 2>/dev/null -j${compile_cores} install
 #     fi ; \
 #     mkdir build && cd build ; \
