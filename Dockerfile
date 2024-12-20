@@ -211,7 +211,7 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
     && mkdir -p build \
     && cd build \
     && cmake .. \
-        #-DCMAKE_INSTALL_PREFIX=/usr/local/ \
+        -DCMAKE_INSTALL_PREFIX=/usr/local/ \
         -DCMAKE_BUILD_TYPE=Release \
         -DCMAKE_CXX_COMPILER=mpicxx \
         -DOPENMC_USE_MPI=ON \
@@ -230,7 +230,7 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
     # it can not find catch2 lib when building the tests.
     #&& make 2>/dev/null -j${compile_cores} install
     && cmake --build . --parallel ${compile_cores} || echo "Build failed, continuing to installation." \
-    && cmake --install 
+    && cmake --install .
     #&& make 2>/dev/null -j${compile_cores} install
 #     fi ; \
 #     mkdir build && cd build ; \
