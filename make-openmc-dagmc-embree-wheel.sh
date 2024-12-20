@@ -95,9 +95,9 @@ function build_exists {
 
 
 # Create and activate Python virtual environment
-VENV_DIR="$HOME/venv_openmc"
-python3 -m venv $VENV_DIR
-source $VENV_DIR/bin/activate
+# VENV_DIR="$HOME/venv_openmc"
+# python3 -m venv $VENV_DIR
+# source $VENV_DIR/bin/activate
 
 python3 -m ensurepip --upgrade
 # Upgrade pip and setuptools inside the virtual environment
@@ -234,4 +234,4 @@ fi
 #     ls "$WHEEL_DIR"
 # fi
 
-deactivate
+#deactivate
