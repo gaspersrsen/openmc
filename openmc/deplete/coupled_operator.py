@@ -518,7 +518,7 @@ class CoupledOperator(OpenMCOperator):
                 # Predict concentration change
                 k = (P_fiss + P_nxn) / (L_abs + (P_fiss + P_nxn)*L_leak)
                 g = ((P_fiss/target + P_nxn)
-                        - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs * np.exp(k/target)
+                        - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs * np.exp(k-target)
                 print(g)
                 # Optimal following (Kalman filter for narrowing to a scalar value):
                 if M == 10:
