@@ -206,8 +206,8 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
     if [ "$build_dagmc" = "on" ]; then \
         ./make-openmc-dagmc-embree-wheel.sh --build-wheels=true ; \
     fi ; \
-    git submodule update --init --recursive \
-    && cd \
+    #git submodule update --init --recursive \
+RUN cd \
     && cd src \
     && ls
     # && mkdir -p build \
