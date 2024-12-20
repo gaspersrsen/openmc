@@ -207,27 +207,23 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
         ./make-openmc-dagmc-embree-wheel.sh ; \
     fi ; \
     git submodule update --init --recursive \
-    && cd \
-    && cd src/ \
-    && ls
-    # && mkdir -p build \
-    # && cd build \
-    # && cmake .. \
-    #     #-DCMAKE_INSTALL_PREFIX=/usr/local/ \
-    #     -DCMAKE_BUILD_TYPE=Release \
-    #     -DCMAKE_CXX_COMPILER=mpicxx \
-    #     -DOPENMC_USE_MPI=ON \
-    #     -DHDF5_PREFER_PARALLEL=ON \
-    #     -DOPENMC_USE_DAGMC=ON \
-    #     #-DOPENMC_USE_LIBMESH=on \
-    #     #-DCMAKE_PREFIX_PATH="/usr/local;${LIBMESH_INSTALL_DIR}" \
-    #     -DCMAKE_PREFIX_PATH="/usr/local" \
-    #     -DDAGMC_ROOT=/usr/local/ \
-    #     -DCPP20=ON \
-    #     -DBUILD_TESTING=OFF \
-    #     -DXTENSOR_USE_TBB=OFF \
-    #     -DXTENSOR_USE_OPENMP=ON \
-    #     -DXTENSOR_USE_XSIMD=OFF \
+    && mkdir -p build \
+    && cd build \
+    && cmake .. \
+        #-DCMAKE_INSTALL_PREFIX=/usr/local/ \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_CXX_COMPILER=mpicxx \
+        -DOPENMC_USE_MPI=ON \
+        -DHDF5_PREFER_PARALLEL=ON \
+        -DOPENMC_USE_DAGMC=ON \
+        -DOPENMC_USE_LIBMESH=on \
+        -DCMAKE_PREFIX_PATH="/usr/local;${LIBMESH_INSTALL_DIR}" \
+        -DDAGMC_ROOT=$HOME/src/DAGMC \
+        -DCPP20=ON \
+        -DBUILD_TESTING=OFF \
+        -DXTENSOR_USE_TBB=OFF \
+        -DXTENSOR_USE_OPENMP=ON \
+        -DXTENSOR_USE_XSIMD=OFF \
     
     # Continue installation even if the build failed. At the moment, the build fails on 90% because
     # it can not find catch2 lib when building the tests.
