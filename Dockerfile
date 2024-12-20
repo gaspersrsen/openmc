@@ -204,10 +204,10 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
     && chmod u+r+x make-openmc-dagmc-embree-wheel.sh ; \
     #&& echo "export DAGMC_DIR=$HOME/DAGMC" >> ~/.bashrc \
     if [ "$build_dagmc" = "on" ]; then \
-        ./make-openmc-dagmc-embree-wheel.sh --build-wheels=true ; \
+        ./make-openmc-dagmc-embree-wheel.sh ; \
     fi ; \
     git submodule update --init --recursive \
-    && cd \
+    && cd ../src \
     && ls
     # && mkdir -p build \
     # && cd build \
