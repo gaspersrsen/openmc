@@ -46,8 +46,8 @@ wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3.orig.t
 tar -xvzf parmetis_4.0.3.orig.tar.gz
 echo $(ls)
 cd parmetis-4.0.3/
-make config shared=1
-make install
+make config shared=1 -j{$nproc}
+make install -j{$nproc}
 cd $HOME
 # mkdir metis
 # cd parmetis_4.0.3/metis
@@ -119,7 +119,7 @@ else
              -DEMBREE_TUTORIALS=OFF \
              -DEMBREE_TUTORIALS_GLFW=OFF
     cmake --build . --parallel "$(nproc)"
-    cmake --install .
+    cmake --install . --parallel "$(nproc)"
 fi
 
 # Install MOAB (with PyMOAB enabled)
@@ -142,7 +142,7 @@ else
              -DENABLE_PARMETIS=ON \
              -DENABLE_PNETCDF=OFF
     cmake --build . --parallel "$(nproc)"
-    cmake --install .
+    cmake --install . --parallel "$(nproc)"
 fi
 
 if [ "$BUILD_WHEELS" = true ]; then
@@ -166,7 +166,7 @@ else
              -DMOAB_DIR=/usr/local/ \
              -DEMBREE_DIR=/usr/local/
     cmake --build . --parallel "$(nproc)"
-    cmake --install .
+    cmake --install . --parallel "$(nproc)"
 fi
 
 # Install DAGMC
@@ -190,7 +190,7 @@ else
              -DBUILD_STATIC_EXE=OFF \
              -DBUILD_STATIC_LIBS=OFF
     cmake --build . --parallel "$(nproc)"
-    cmake --install .
+    cmake --install . --parallel "$(nproc)"
 fi
 
 # # Install OpenMC (C++ core)
