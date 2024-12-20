@@ -218,12 +218,12 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
         #-DOPENMC_USE_DAGMC=ON \
         #-DOPENMC_USE_LIBMESH=on \
         -DCMAKE_PREFIX_PATH="/usr/local;${LIBMESH_INSTALL_DIR}" \
-        #-DDAGMC_ROOT=/usr/local/ \
-        # -DCPP20=ON \
-        # -DBUILD_TESTING=OFF \
-        # -DXTENSOR_USE_TBB=OFF \
-        # -DXTENSOR_USE_OPENMP=ON \
-        # -DXTENSOR_USE_XSIMD=OFF \
+        -DDAGMC_ROOT=/usr/local/ \
+        -DCPP20=ON \
+        -DBUILD_TESTING=OFF \
+        -DXTENSOR_USE_TBB=OFF \
+        -DXTENSOR_USE_OPENMP=ON \
+        -DXTENSOR_USE_XSIMD=OFF \
     # Continue installation even if the build failed. At the moment, the build fails on 90% because
     # it can not find catch2 lib when building the tests.
     #&& make 2>/dev/null -j${compile_cores} install
