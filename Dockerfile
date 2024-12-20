@@ -215,10 +215,10 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
         -DCMAKE_CXX_COMPILER=mpicxx \
         -DOPENMC_USE_MPI=ON \
         -DHDF5_PREFER_PARALLEL=ON \
-        #-DOPENMC_USE_DAGMC=ON \
-        -DOPENMC_USE_LIBMESH=on \
-        -DCMAKE_PREFIX_PATH="/usr/local;${LIBMESH_INSTALL_DIR}" \
-        -DCMAKE_PREFIX_PATH="${LIBMESH_INSTALL_DIR}" \
+        -DOPENMC_USE_DAGMC=ON \
+        #-DOPENMC_USE_LIBMESH=on \
+        #-DCMAKE_PREFIX_PATH="/usr/local;${LIBMESH_INSTALL_DIR}" \
+        -DCMAKE_PREFIX_PATH="/usr/local" \
         -DDAGMC_ROOT=/usr/local/ \
         -DCPP20=ON \
         -DBUILD_TESTING=OFF \
