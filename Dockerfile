@@ -208,7 +208,7 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
     fi ; \
     git submodule update --init --recursive \
     && cd \
-    && cd src
+    && cd src \
     && ls
     # && mkdir -p build \
     # && cd build \
