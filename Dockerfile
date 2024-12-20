@@ -213,7 +213,7 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
         -DCMAKE_INSTALL_PREFIX=/usr/local/ \
         -DCMAKE_BUILD_TYPE=Release \
         -DOPENMC_USE_DAGMC=ON \
-        -DDAGMC_ROOT=/usr/local/ \
+        #-DDAGMC_ROOT=/usr/local/ \
         -DOPENMC_USE_MPI=ON \
         -DHDF5_PREFER_PARALLEL=ON \
         -DCPP20=ON \
