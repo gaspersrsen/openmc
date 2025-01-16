@@ -148,9 +148,9 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
         -DCMAKE_PREFIX_PATH="${DAGMC_INSTALL_DIR};${LIBMESH_INSTALL_DIR}" \
         -DXTENSOR_USE_TBB=OFF \
         -DXTENSOR_USE_OPENMP=ON \
-        -DXTENSOR_USE_XSIMD=OFF
-        #; \
+        -DXTENSOR_USE_XSIMD=OFF; \
     #make 2>/dev/null -j${compile_cores} install \
+    echo "HI"
 
 RUN echo ls
     
