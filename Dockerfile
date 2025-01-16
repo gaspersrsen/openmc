@@ -172,7 +172,7 @@ ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH/
 ARG nproc=${compile_cores}
 ARG CACHEBUST=1
 #RUN echo "$CACHEBUST"
-RUN echo ls
+RUN echo $ls
     
     # Continue installation even if the build failed. At the moment, the build fails on 90% because
     # it can not find catch2 lib when building the tests.
