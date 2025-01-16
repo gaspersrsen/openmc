@@ -153,7 +153,7 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
     # it can not find catch2 lib when building the tests.
     #make 2>/dev/null -j${compile_cores} install
     cmake --build . --parallel ${compile_cores} || echo "Build failed, continuing to installation." \
-    && cmake --install . --parallel ${compile_cores}
+    && cmake --install .
     #&& make 2>/dev/null -j${compile_cores} install
 #     fi ; \
 #     mkdir build && cd build ; \
