@@ -121,7 +121,7 @@ ENV DAGMC_INSTALL_DIR=$HOME/src/DAGMC/
 ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH/
 ARG nproc=${compile_cores}
 ARG CACHEBUST=1
-RUN echo "$CACHEBUST"
+#RUN echo "$CACHEBUST"
 
 # clone and install openmc
 RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
@@ -150,7 +150,8 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
         -DXTENSOR_USE_OPENMP=ON \
         -DXTENSOR_USE_XSIMD=OFF ; \
     #make 2>/dev/null -j${compile_cores} install \
-    echo ls
+
+RUN echo ls
     
     # Continue installation even if the build failed. At the moment, the build fails on 90% because
     # it can not find catch2 lib when building the tests.
