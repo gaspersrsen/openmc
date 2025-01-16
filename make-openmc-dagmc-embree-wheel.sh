@@ -192,6 +192,7 @@ else
     cmake --build . --parallel "$(nproc)"
     cmake --install .
 fi
+echo "Script completed"
 
 # # Install OpenMC (C++ core)
 # cd $SRC_DIR
