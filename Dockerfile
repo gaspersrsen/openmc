@@ -141,8 +141,8 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
         -DCMAKE_CXX_COMPILER=mpicxx \
         -DOPENMC_USE_MPI=ON \
         -DHDF5_PREFER_PARALLEL=ON \
-        -DOPENMC_USE_DAGMC=ON \
-        -DOPENMC_USE_LIBMESH=ON \
+        -DOPENMC_USE_DAGMC=$build_dagmc \
+        -DOPENMC_USE_LIBMESH=$build_libmesh \
         -DCPP20=ON \
         -DBUILD_TESTING=OFF \
         -DCMAKE_PREFIX_PATH="${DAGMC_INSTALL_DIR};${LIBMESH_INSTALL_DIR}" \
