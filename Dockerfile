@@ -33,6 +33,11 @@ ARG build_libmesh
 # Set default value of HOME to /root
 ENV HOME=/root
 
+# LIBMESH variables
+ENV LIBMESH_TAG='v1.7.1'
+ENV LIBMESH_REPO='https://github.com/libMesh/libmesh'
+ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH
+
 # NJOY variables
 ENV NJOY_REPO='https://github.com/njoy/NJOY2016'
 
