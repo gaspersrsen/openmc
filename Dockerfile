@@ -115,13 +115,10 @@ ARG build_dagmc
 ARG build_libmesh
 
 
-# ENV EMBREE_INSTALL_DIR=$HOME/src/EMBREE/
-# ENV DD_INSTALL_DIR=$HOME/src/double-down/
-# ENV DAGMC_INSTALL_DIR=$HOME/src/DAGMC/
-# ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH/
-ENV EMBREE_INSTALL_DIR=/usr/local/EMBREE/
-ENV DD_INSTALL_DIR=/usr/local/double-down/
-ENV DAGMC_INSTALL_DIR=/usr/local/DAGMC/
+ENV EMBREE_INSTALL_DIR=$HOME/src/EMBREE/
+ENV DD_INSTALL_DIR=$HOME/src/double-down/
+ENV DAGMC_INSTALL_DIR=$HOME/src/DAGMC/
+ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH/
 ARG nproc=${compile_cores}
 ARG CACHEBUST=1
 RUN echo "$CACHEBUST"
@@ -152,14 +149,13 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
         -DXTENSOR_USE_TBB=OFF \
         -DXTENSOR_USE_OPENMP=ON \
         -DXTENSOR_USE_XSIMD=OFF ; \
-
-RUN cd ${HOME}/OpenMC/openmc/build \
+    #make 2>/dev/null -j${compile_cores} install \
+    echo ls
+    
     # Continue installation even if the build failed. At the moment, the build fails on 90% because
     # it can not find catch2 lib when building the tests.
-    && make 2>/dev/null -j${compile_cores} install \
     # cmake --build . --parallel ${compile_cores} || echo "Build failed, continuing to installation." \
     # && cmake --install .
-    #&& make 2>/dev/null -j${compile_cores} install
 #     fi ; \
 #     mkdir build && cd build ; \
 #     if [ ${build_dagmc} = "on" ] && [ ${build_libmesh} = "on" ]; then \
