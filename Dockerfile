@@ -153,7 +153,25 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
     echo "HI"
 
 FROM dependencies AS build
+ENV HOME=/root
 
+
+
+ARG openmc_branch=th
+ENV OPENMC_REPO='https://github.com/gaspersrsen/openmc.git'
+
+ARG compile_cores
+ARG build_dagmc
+ARG build_libmesh
+
+
+ENV EMBREE_INSTALL_DIR=$HOME/src/EMBREE/
+ENV DD_INSTALL_DIR=$HOME/src/double-down/
+ENV DAGMC_INSTALL_DIR=$HOME/src/DAGMC/
+ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH/
+ARG nproc=${compile_cores}
+ARG CACHEBUST=1
+#RUN echo "$CACHEBUST"
 RUN echo ls
     
     # Continue installation even if the build failed. At the moment, the build fails on 90% because
