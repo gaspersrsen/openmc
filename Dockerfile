@@ -189,8 +189,8 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
 #             -DHDF5_PREFER_PARALLEL=on ; \
 #     fi ; \
 #     make 2>/dev/null -j${compile_cores} install \
-    && cd ../openmc && pip install .[test,depletion-mpi] \
-    && python -c "import openmc"
+    # && cd ../openmc && pip install .[test,depletion-mpi] \
+    # && python -c "import openmc"
 
 # # FROM build AS release
 
