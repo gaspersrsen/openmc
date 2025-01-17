@@ -33,9 +33,9 @@ ARG build_libmesh
 # Set default value of HOME to /root
 ENV HOME=/root
 
-ENV EMBREE_INSTALL_DIR=$HOME/src/EMBREE/build
-ENV DD_INSTALL_DIR=$HOME/src/double-down/build
-ENV DAGMC_INSTALL_DIR=$HOME/src/DAGMC/build
+# ENV EMBREE_INSTALL_DIR=$HOME
+# ENV DD_INSTALL_DIR=$HOME/src
+ENV DAGMC_INSTALL_DIR=$HOME/src
 
 # LIBMESH variables
 ENV LIBMESH_TAG='v1.7.1'
