@@ -203,8 +203,8 @@ else
     #git clone --recurse-submodules --single-branch --branch develop --depth 1 https://github.com/openmc-dev/openmc.git || echo "OpenMC already cloned."
     git clone --recurse-submodules --single-branch --branch $openmc_branch --depth 1 $OPENMC_REPO || echo "OpenMC already cloned."
     cd openmc
-    git fetch --depth 1 origin $PINNED_COMMIT
-    git checkout $PINNED_COMMIT
+    #git fetch --depth 1 origin $PINNED_COMMIT
+    #git checkout $PINNED_COMMIT
     git submodule update --init --recursive
     mkdir -p build
     cd build
