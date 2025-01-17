@@ -153,7 +153,7 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
         -DXTENSOR_USE_TBB=OFF \
         -DXTENSOR_USE_OPENMP=ON \
         -DXTENSOR_USE_XSIMD=OFF; \
-    make 2>/dev/null -j${compile_cores} install \
+    make 2>/dev/null -j${compile_cores} install
 
 FROM dependencies AS build
 ENV HOME=/root
