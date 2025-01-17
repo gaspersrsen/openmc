@@ -33,10 +33,14 @@ ARG build_libmesh
 # Set default value of HOME to /root
 ENV HOME=/root
 
+ENV EMBREE_INSTALL_DIR=$HOME/src/EMBREE/build
+ENV DD_INSTALL_DIR=$HOME/src/double-down/build
+ENV DAGMC_INSTALL_DIR=$HOME/src/DAGMC/build
+
 # LIBMESH variables
 ENV LIBMESH_TAG='v1.7.1'
 ENV LIBMESH_REPO='https://github.com/libMesh/libmesh'
-ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH
+ENV LIBMESH_INSTALL_DIR=$HOME/src/LIBMESH
 
 # NJOY variables
 ENV NJOY_REPO='https://github.com/njoy/NJOY2016'
@@ -78,7 +82,7 @@ RUN if [ "$build_libmesh" = "on" ]; then \
         # Install addition packages required for LIBMESH
         apt-get -y install m4 libnetcdf-dev libpnetcdf-dev \
         # Install LIBMESH
-        && mkdir -p $HOME/LIBMESH && cd $HOME/LIBMESH \
+        && mkdir -p $HOME/src/LIBMESH && cd $HOME/src/LIBMESH \
         && git clone --shallow-submodules --recurse-submodules --single-branch -b ${LIBMESH_TAG} --depth 1 ${LIBMESH_REPO} \
         && mkdir build && cd build \
         && ../libmesh/configure \
@@ -104,26 +108,6 @@ RUN if [ "$build_libmesh" = "on" ]; then \
 #FROM dependencies AS build
 
 ENV HOME=/root
-
-
-
-ARG openmc_branch=th
-ENV OPENMC_REPO='https://github.com/gaspersrsen/openmc.git'
-
-ARG compile_cores
-ARG build_dagmc
-ARG build_libmesh
-
-
-# ENV EMBREE_INSTALL_DIR=$HOME/src/EMBREE/
-# ENV DD_INSTALL_DIR=$HOME/src/double-down/
-# ENV DAGMC_INSTALL_DIR=$HOME/src/DAGMC/
-ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH/
-
-ENV EMBREE_INSTALL_DIR=$HOME/src/EMBREE/build
-ENV DD_INSTALL_DIR=$HOME/src/double-down/build
-ENV DAGMC_INSTALL_DIR=$HOME/src/DAGMC/build
-ARG nproc=${compile_cores}
 ARG CACHEBUST=1
 #RUN echo "$CACHEBUST"
 

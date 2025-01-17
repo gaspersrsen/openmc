@@ -217,7 +217,8 @@ else
         -DHDF5_PREFER_PARALLEL=ON \
         -DCPP20=ON \
         -DBUILD_TESTING=OFF \
-        -DCMAKE_PREFIX_PATH=/usr/local \
+        -DOPENMC_USE_LIBMESH=$build_libmesh \
+        -DCMAKE_PREFIX_PATH="/usr/local;${LIBMESH_INSTALL_DIR}" \
         -DXTENSOR_USE_TBB=OFF \
         -DXTENSOR_USE_OPENMP=ON \
         -DXTENSOR_USE_XSIMD=OFF
