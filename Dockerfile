@@ -115,10 +115,14 @@ ARG build_dagmc
 ARG build_libmesh
 
 
-ENV EMBREE_INSTALL_DIR=$HOME/src/EMBREE/
-ENV DD_INSTALL_DIR=$HOME/src/double-down/
-ENV DAGMC_INSTALL_DIR=$HOME/src/DAGMC/
+# ENV EMBREE_INSTALL_DIR=$HOME/src/EMBREE/
+# ENV DD_INSTALL_DIR=$HOME/src/double-down/
+# ENV DAGMC_INSTALL_DIR=$HOME/src/DAGMC/
 ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH/
+
+ENV EMBREE_INSTALL_DIR=$HOME/src/EMBREE/build
+ENV DD_INSTALL_DIR=$HOME/src/double-down/build
+ENV DAGMC_INSTALL_DIR=$HOME/src/DAGMC/build
 ARG nproc=${compile_cores}
 ARG CACHEBUST=1
 #RUN echo "$CACHEBUST"
@@ -149,8 +153,7 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
         -DXTENSOR_USE_TBB=OFF \
         -DXTENSOR_USE_OPENMP=ON \
         -DXTENSOR_USE_XSIMD=OFF; \
-    #make 2>/dev/null -j${compile_cores} install \
-    echo "HI"
+    make 2>/dev/null -j${compile_cores} install \
 
 FROM dependencies AS build
 ENV HOME=/root
@@ -171,8 +174,7 @@ ENV DAGMC_INSTALL_DIR=$HOME/src/DAGMC/build
 #ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH/build
 ARG nproc=${compile_cores}
 ARG CACHEBUST=1
-#RUN echo "$CACHEBUST"
-RUN echo $ls
+RUN echo "$CACHEBUST"
     
     # Continue installation even if the build failed. At the moment, the build fails on 90% because
     # it can not find catch2 lib when building the tests.
