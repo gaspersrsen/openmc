@@ -136,24 +136,24 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
     if [ "$build_dagmc" = "on" ]; then \
         ./make-openmc-dagmc-embree-wheel.sh ; \
     fi ; \
-    git submodule update --init --recursive \
-    && mkdir -p build \
-    && cd build \
-    && cmake .. \
-        -DCMAKE_INSTALL_PREFIX=/usr/local/ \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DCMAKE_CXX_COMPILER=mpicxx \
-        -DOPENMC_USE_MPI=ON \
-        -DHDF5_PREFER_PARALLEL=ON \
-        -DOPENMC_USE_DAGMC=$build_dagmc \
-        -DOPENMC_USE_LIBMESH=$build_libmesh \
-        -DCPP20=ON \
-        -DBUILD_TESTING=OFF \
-        -DCMAKE_PREFIX_PATH="${DAGMC_INSTALL_DIR};${LIBMESH_INSTALL_DIR}" \
-        -DXTENSOR_USE_TBB=OFF \
-        -DXTENSOR_USE_OPENMP=ON \
-        -DXTENSOR_USE_XSIMD=OFF; \
-    make 2>/dev/null -j${compile_cores} install
+    # git submodule update --init --recursive \
+    # && mkdir -p build \
+    # && cd build \
+    # && cmake .. \
+    #     -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+    #     -DCMAKE_BUILD_TYPE=Release \
+    #     -DCMAKE_CXX_COMPILER=mpicxx \
+    #     -DOPENMC_USE_MPI=ON \
+    #     -DHDF5_PREFER_PARALLEL=ON \
+    #     -DOPENMC_USE_DAGMC=$build_dagmc \
+    #     -DOPENMC_USE_LIBMESH=$build_libmesh \
+    #     -DCPP20=ON \
+    #     -DBUILD_TESTING=OFF \
+    #     -DCMAKE_PREFIX_PATH="${DAGMC_INSTALL_DIR};${LIBMESH_INSTALL_DIR}" \
+    #     -DXTENSOR_USE_TBB=OFF \
+    #     -DXTENSOR_USE_OPENMP=ON \
+    #     -DXTENSOR_USE_XSIMD=OFF; \
+    # make 2>/dev/null -j${compile_cores} install
 
 FROM dependencies AS build
 ENV HOME=/root
