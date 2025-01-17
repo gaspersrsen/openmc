@@ -226,7 +226,7 @@ else
     # Continue installation even if the build failed. At the moment, the build fails on 90% because
     # it can not find catch2 lib when building the tests.
     cmake --build . --parallel "$(nproc)" || echo "Build failed, continuing to installation."
-    cmake --install .
+    #cmake --install .
 fi
 
 # if [ "$BUILD_WHEELS" = true ]; then
