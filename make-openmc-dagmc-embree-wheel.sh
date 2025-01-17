@@ -154,21 +154,21 @@ if [ "$BUILD_WHEELS" = true ]; then
     python -m build --wheel --outdir "$WHEEL_DIR"
 fi
 
-# # Install Double-Down
-# cd $SRC_DIR
-# if build_exists "$SRC_DIR/double-down/build"; then
-#     echo "Double-Down already built."
-# else
-#     git clone --shallow-submodules --single-branch --branch v1.1.0 --depth 1 https://github.com/pshriwise/double-down.git || echo "Double-Down already cloned."
-#     mkdir -p double-down/build
-#     cd double-down/build
-#     cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/ \
-#              -DCMAKE_BUILD_TYPE=Release \
-#              -DMOAB_DIR=/usr/local/ \
-#              -DEMBREE_DIR=/usr/local/
-#     cmake --build . --parallel "$(nproc)"
-#     cmake --install .
-# fi
+# Install Double-Down
+cd $SRC_DIR
+if build_exists "$SRC_DIR/double-down/build"; then
+    echo "Double-Down already built."
+else
+    git clone --shallow-submodules --single-branch --branch v1.1.0 --depth 1 https://github.com/pshriwise/double-down.git || echo "Double-Down already cloned."
+    mkdir -p double-down/build
+    cd double-down/build
+    cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+             -DCMAKE_BUILD_TYPE=Release \
+             -DMOAB_DIR=/usr/local/ \
+             -DEMBREE_DIR=/usr/local/
+    cmake --build . --parallel "$(nproc)"
+    cmake --install .
+fi
 
 # # Install DAGMC
 # cd $SRC_DIR
