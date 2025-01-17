@@ -107,6 +107,9 @@ RUN if [ "$build_libmesh" = "on" ]; then \
 
 #FROM dependencies AS build
 
+ARG openmc_branch=th
+ENV OPENMC_REPO='https://github.com/gaspersrsen/openmc.git'
+
 ENV HOME=/root
 ARG CACHEBUST=1
 #RUN echo "$CACHEBUST"
@@ -142,22 +145,6 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
 
 FROM dependencies AS build
 ENV HOME=/root
-
-
-
-ARG openmc_branch=th
-ENV OPENMC_REPO='https://github.com/gaspersrsen/openmc.git'
-
-ARG compile_cores
-ARG build_dagmc
-ARG build_libmesh
-
-
-ENV EMBREE_INSTALL_DIR=$HOME/src/EMBREE/build
-ENV DD_INSTALL_DIR=$HOME/src/double-down/build
-ENV DAGMC_INSTALL_DIR=$HOME/src/DAGMC/build
-#ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH/build
-ARG nproc=${compile_cores}
 ARG CACHEBUST=1
 RUN echo "$CACHEBUST"
     
