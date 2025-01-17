@@ -115,7 +115,7 @@ ARG CACHEBUST=1
 #RUN echo "$CACHEBUST"
 
 # clone and install openmc
-RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
+RUN mkdir -p ${HOME}/src/OpenMC && cd ${HOME}/src/OpenMC \
     && git clone --shallow-submodules --recurse-submodules --single-branch -b ${openmc_branch} --depth=1 ${OPENMC_REPO} \
     && cd openmc \
     && chmod u+r+x make-openmc-dagmc-embree-wheel.sh ; \
