@@ -208,24 +208,24 @@ else
     git submodule update --init --recursive
     mkdir -p build
     cd build
-    # cmake .. \
-    #     -DCMAKE_INSTALL_PREFIX=/usr/local/ \
-    #     -DCMAKE_BUILD_TYPE=Release \
-    #     -DOPENMC_USE_DAGMC=ON \
-    #     -DDAGMC_ROOT=/usr/local/ \
-    #     -DOPENMC_USE_MPI=ON \
-    #     -DHDF5_PREFER_PARALLEL=ON \
-    #     -DCPP20=ON \
-    #     -DBUILD_TESTING=OFF \
-    #     -DOPENMC_USE_LIBMESH=$build_libmesh \
-    #     -DCMAKE_PREFIX_PATH="/usr/local;${LIBMESH_INSTALL_DIR}" \
-    #     -DXTENSOR_USE_TBB=OFF \
-    #     -DXTENSOR_USE_OPENMP=ON \
-    #     -DXTENSOR_USE_XSIMD=OFF
-    # # Continue installation even if the build failed. At the moment, the build fails on 90% because
-    # # it can not find catch2 lib when building the tests.
-    # cmake --build . --parallel "$(nproc)" || echo "Build failed, continuing to installation."
-    # cmake --install .
+    cmake .. \
+        -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DOPENMC_USE_DAGMC=ON \
+        -DDAGMC_ROOT=/usr/local/ \
+        -DOPENMC_USE_MPI=ON \
+        -DHDF5_PREFER_PARALLEL=ON \
+        -DCPP20=ON \
+        -DBUILD_TESTING=OFF \
+        -DOPENMC_USE_LIBMESH=$build_libmesh \
+        -DCMAKE_PREFIX_PATH="/usr/local;${LIBMESH_INSTALL_DIR}" \
+        -DXTENSOR_USE_TBB=OFF \
+        -DXTENSOR_USE_OPENMP=ON \
+        -DXTENSOR_USE_XSIMD=OFF
+    # Continue installation even if the build failed. At the moment, the build fails on 90% because
+    # it can not find catch2 lib when building the tests.
+    cmake --build . --parallel "$(nproc)" || echo "Build failed, continuing to installation."
+    cmake --install .
 fi
 
 # if [ "$BUILD_WHEELS" = true ]; then
