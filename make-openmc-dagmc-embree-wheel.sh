@@ -81,7 +81,7 @@ apt-get install -y cmake \
                         mpich \
                         wget \
                         doxygen \
-                        catch2=2.*
+                        catch2
 
 
 # Function to check if a build already exists
