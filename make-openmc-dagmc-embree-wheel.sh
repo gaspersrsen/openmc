@@ -67,7 +67,7 @@ apt-get install -y cmake \
 # Install ParMETIS
 cd $SRC_DIR
 wget http://ftp.debian.org/debian/pool/non-free/p/parmetis/libparmetis4.0_4.0.3-7+b2_amd64.deb
-dpkg -i libparmetis4.0_4.0.3-7+b2_amd64.deb
+apt install ./libparmetis4.0_4.0.3-7+b2_amd64.deb
 wget http://ftp.debian.org/debian/pool/non-free/p/parmetis/libparmetis-dev_4.0.3-7+b2_amd64.deb
 dpkg -i libparmetis-dev_4.0.3-7+b2_amd64.deb
 # wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3.orig.tar.gz
