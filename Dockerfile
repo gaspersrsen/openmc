@@ -125,6 +125,7 @@ RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
     if [ "$build_dagmc" = "on" ]; then \
         ./make-openmc-dagmc-embree-wheel.sh ; \
     fi ; \
+    echo "Hi"
     # git submodule update --init --recursive \
     # && mkdir -p build \
     # && cd build \
@@ -142,12 +143,12 @@ RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
     #     -DXTENSOR_USE_TBB=OFF \
     #     -DXTENSOR_USE_OPENMP=ON \
     #     -DXTENSOR_USE_XSIMD=OFF; \
-    make 2>/dev/null -j${compile_cores} install
+    #make 2>/dev/null -j${compile_cores} install
 
-FROM dependencies AS build
-ENV HOME=/root
-ARG CACHEBUST=1
-RUN echo "$CACHEBUST"
+# FROM dependencies AS build
+# ENV HOME=/root
+# ARG CACHEBUST=1
+# RUN echo "$CACHEBUST"
     
     # Continue installation even if the build failed. At the moment, the build fails on 90% because
     # it can not find catch2 lib when building the tests.
