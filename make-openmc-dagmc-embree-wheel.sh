@@ -37,22 +37,21 @@ if [ "$BUILD_WHEELS" = true ]; then
     mkdir -p $WHEEL_DIR
 fi
 
-apt-get update -y
+#apt-get update -y
 # Install ParMETIS
-# cd $SRC_DIR
-# wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3.orig.tar.gz
-# #gunzip parmetis_4.0.3.orig.tar.gz
-# #echo $(ls)
-# tar -xvzf parmetis_4.0.3.orig.tar.gz
-# echo $(ls)
-# cd parmetis-4.0.3/
-# make config shared=1 -j"$(nproc)"
-# make install
-# cd $SRC_DIR
-# # mkdir metis
-# # cd parmetis_4.0.3/metis
-# # make config prefix=/tmp/metis
-# # make install
+cd $SRC_DIR
+wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3.orig.tar.gz
+#gunzip parmetis_4.0.3.orig.tar.gz
+#echo $(ls)
+tar -xvzf parmetis_4.0.3.orig.tar.gz
+cd parmetis-4.0.3/
+make config shared=1 -j"$(nproc)"
+make install
+cd $SRC_DIR
+mkdir metis
+cd parmetis_4.0.3/metis
+make config prefix=$SRC_DIR/metis
+make install
 # pip3 install metis
 # export METIS_DLL=/usr/local/lib/libparmetis.so >> ~/.bashrc
 # export METIS_IDXTYPEWIDTH=64  >> ~/.bashrc
@@ -76,12 +75,11 @@ apt-get install -y cmake \
                         libnetcdf-dev \
                         libnetcdf-mpi-dev \
                         libopenblas-dev \
-                        libscotchparmetis-dev \
                         libpng-dev \
                         libtbb-dev \
                         mpich \
                         wget \
-                        doxygen
+                        doxygen \
 
 
 # Function to check if a build already exists
