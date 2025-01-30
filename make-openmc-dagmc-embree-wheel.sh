@@ -37,23 +37,23 @@ if [ "$BUILD_WHEELS" = true ]; then
     mkdir -p $WHEEL_DIR
 fi
 
-#apt-get update -y
-# Install ParMETIS
-cd $SRC_DIR
-wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3.orig.tar.gz
-#gunzip parmetis_4.0.3.orig.tar.gz
-#echo $(ls)
-tar -xvzf parmetis_4.0.3.orig.tar.gz
-cd parmetis-4.0.3/
-make config shared=1 -j"$(nproc)"
-make install
-cd metis
-make config prefix=$SRC_DIR/metis
-make install
-# pip3 install metis
-# export METIS_DLL=/usr/local/lib/libparmetis.so >> ~/.bashrc
-# export METIS_IDXTYPEWIDTH=64  >> ~/.bashrc
-# export METIS_REALTYPEWIDTH=64  >> ~/.bashrc
+# #apt-get update -y
+# # Install ParMETIS
+# cd $SRC_DIR
+# wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3.orig.tar.gz
+# #gunzip parmetis_4.0.3.orig.tar.gz
+# #echo $(ls)
+# tar -xvzf parmetis_4.0.3.orig.tar.gz
+# cd parmetis-4.0.3/
+# make config shared=1 -j"$(nproc)"
+# make install
+# cd metis
+# make config prefix=$SRC_DIR/metis
+# make install
+# # pip3 install metis
+# # export METIS_DLL=/usr/local/lib/libparmetis.so >> ~/.bashrc
+# # export METIS_IDXTYPEWIDTH=64  >> ~/.bashrc
+# # export METIS_REALTYPEWIDTH=64  >> ~/.bashrc
 
 # Install system dependencies
 apt-get install -y cmake \
@@ -78,6 +78,7 @@ apt-get install -y cmake \
                         mpich \
                         wget \
                         doxygen \
+                        parmetis
 
 
 # Function to check if a build already exists
