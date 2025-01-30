@@ -62,7 +62,8 @@ apt-get install -y cmake \
                         doxygen \
                         debhelper-compat=13 \
                         mpi-default-bin \
-                        libc6-dev
+                        libc6-dev \
+                        apt-utils
 
 
 #apt-get update -y
