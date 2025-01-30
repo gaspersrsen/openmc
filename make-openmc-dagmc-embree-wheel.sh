@@ -52,7 +52,6 @@ apt-get install -y cmake \
                         libhdf5-serial-dev \
                         libmpich-dev \
                         libmetis-dev \
-                        libparmetis4.0 \
                         libnetcdf-dev \
                         libnetcdf-mpi-dev \
                         libopenblas-dev \
