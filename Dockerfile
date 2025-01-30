@@ -38,7 +38,7 @@ ENV HOME=/root
 ENV DAGMC_INSTALL_DIR=$HOME/src
 
 # LIBMESH variables
-ENV LIBMESH_TAG='v1.7.1'
+ENV LIBMESH_TAG='v1.8.0'
 ENV LIBMESH_REPO='https://github.com/libMesh/libmesh'
 ENV LIBMESH_INSTALL_DIR=$HOME/src/LIBMESH
 
@@ -82,7 +82,7 @@ RUN if [ "$build_libmesh" = "on" ]; then \
         # Install addition packages required for LIBMESH
         apt-get -y install m4 libnetcdf-dev libpnetcdf-dev \
         # Install LIBMESH
-        && mkdir -p $HOME/src/LIBMESH && cd $HOME/src/LIBMESH \
+        && mkdir -p $HOME/LIBMESH && cd $HOME/LIBMESH \
         && git clone --shallow-submodules --recurse-submodules --single-branch -b ${LIBMESH_TAG} --depth 1 ${LIBMESH_REPO} \
         && mkdir build && cd build \
         && ../libmesh/configure \
