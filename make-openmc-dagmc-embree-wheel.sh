@@ -234,50 +234,50 @@ make 2>/dev/null -j${compile_cores} install
 rm -rf ${LIBMESH_INSTALL_DIR}/build ${LIBMESH_INSTALL_DIR}/libmesh
 
 
-# Install OpenMC (C++ core)
-cd $SRC_DIR
-if build_exists "$SRC_DIR/openmc/build"; then
-    echo "OpenMC already built."
-else
-    PINNED_COMMIT="de8132a5a431660f5ff515cc7894ea0f283d3bec"
-    #git clone --recurse-submodules --single-branch --branch develop --depth 1 https://github.com/openmc-dev/openmc.git || echo "OpenMC already cloned."
-    #git clone --recurse-submodules --single-branch --branch $openmc_branch --depth 1 $OPENMC_REPO || echo "OpenMC already cloned."
-    cd openmc
-    #git fetch --depth 1 origin $PINNED_COMMIT
-    #git checkout $PINNED_COMMIT
-    git submodule update --init --recursive
-    mkdir -p build
-    cd build
-    cmake .. \
-        -DCMAKE_INSTALL_PREFIX=/usr/local/ \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DOPENMC_USE_DAGMC=ON \
-        -DDAGMC_ROOT=${DAGMC_INSTALL_DIR} \
-        -DOPENMC_USE_MPI=ON \
-        -DHDF5_PREFER_PARALLEL=ON \
-        -DCPP20=ON \
-        -DBUILD_TESTING=OFF \
-        -DOPENMC_USE_LIBMESH=$build_libmesh \
-        -DCMAKE_PREFIX_PATH="/usr/local/;;${LIBMESH_INSTALL_DIR}" \
-        -DXTENSOR_USE_TBB=OFF \
-        -DXTENSOR_USE_OPENMP=ON \
-        -DXTENSOR_USE_XSIMD=OFF
-    # -DCMAKE_PREFIX_PATH="/usr/local;${LIBMESH_INSTALL_DIR}" \
-    # Continue installation even if the build failed. At the moment, the build fails on 90% because
-    # it can not find catch2 lib when building the tests.
-    make
-    make install
-    #cmake --build . --parallel "$(nproc)"
-    #|| echo "Build failed, continuing to installation."
-    #cmake --install .
-fi
-
-# if [ "$BUILD_WHEELS" = true ]; then
-#     # Build and install OpenMC wheel
-#     cd $SRC_DIR/openmc
-#     python -m build --wheel --outdir "$WHEEL_DIR"
-
-#     ls "$WHEEL_DIR"
+# # Install OpenMC (C++ core)
+# cd $SRC_DIR
+# if build_exists "$SRC_DIR/openmc/build"; then
+#     echo "OpenMC already built."
+# else
+#     PINNED_COMMIT="de8132a5a431660f5ff515cc7894ea0f283d3bec"
+#     #git clone --recurse-submodules --single-branch --branch develop --depth 1 https://github.com/openmc-dev/openmc.git || echo "OpenMC already cloned."
+#     #git clone --recurse-submodules --single-branch --branch $openmc_branch --depth 1 $OPENMC_REPO || echo "OpenMC already cloned."
+#     cd openmc
+#     #git fetch --depth 1 origin $PINNED_COMMIT
+#     #git checkout $PINNED_COMMIT
+#     git submodule update --init --recursive
+#     mkdir -p build
+#     cd build
+#     cmake .. \
+#         -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+#         -DCMAKE_BUILD_TYPE=Release \
+#         -DOPENMC_USE_DAGMC=ON \
+#         -DDAGMC_ROOT=${DAGMC_INSTALL_DIR} \
+#         -DOPENMC_USE_MPI=ON \
+#         -DHDF5_PREFER_PARALLEL=ON \
+#         -DCPP20=ON \
+#         -DBUILD_TESTING=OFF \
+#         -DOPENMC_USE_LIBMESH=$build_libmesh \
+#         -DCMAKE_PREFIX_PATH="/usr/local/;${LIBMESH_INSTALL_DIR}" \
+#         -DXTENSOR_USE_TBB=OFF \
+#         -DXTENSOR_USE_OPENMP=ON \
+#         -DXTENSOR_USE_XSIMD=OFF
+#     # -DCMAKE_PREFIX_PATH="/usr/local;${LIBMESH_INSTALL_DIR}" \
+#     # Continue installation even if the build failed. At the moment, the build fails on 90% because
+#     # it can not find catch2 lib when building the tests.
+#     make 2>/dev/null -j${compile_cores} install
+#     make install
+#     #cmake --build . --parallel "$(nproc)"
+#     #|| echo "Build failed, continuing to installation."
+#     #cmake --install .
 # fi
 
-#deactivate
+# # if [ "$BUILD_WHEELS" = true ]; then
+# #     # Build and install OpenMC wheel
+# #     cd $SRC_DIR/openmc
+# #     python -m build --wheel --outdir "$WHEEL_DIR"
+
+# #     ls "$WHEEL_DIR"
+# # fi
+
+# #deactivate

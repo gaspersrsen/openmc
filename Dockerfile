@@ -35,7 +35,8 @@ ENV HOME=/root
 
 # ENV EMBREE_INSTALL_DIR=$HOME
 # ENV DD_INSTALL_DIR=$HOME/src
-ENV DAGMC_INSTALL_DIR=$HOME/src
+######ENV DAGMC_INSTALL_DIR=$HOME/src
+ENV DAGMC_INSTALL_DIR=$HOME/src/DAGMC
 
 # LIBMESH variables
 ENV LIBMESH_TAG="v1.7.1"
@@ -124,6 +125,12 @@ RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
     #&& echo "export DAGMC_DIR=$HOME/DAGMC" >> ~/.bashrc \
     if [ "$build_dagmc" = "on" ]; then \
         ./make-openmc-dagmc-embree-wheel.sh ; \
+    fi
+
+RUN cd ${HOME}/src/openmc \
+    && chmod u+r+x openmc_installer.sh ; \
+    if [ "$build_dagmc" = "on" ]; then \
+        ./openmc_installer.sh ; \
     fi
 #; \
 #make 2>/dev/null -j${compile_cores} install
