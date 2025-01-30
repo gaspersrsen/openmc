@@ -37,7 +37,7 @@ if [ "$BUILD_WHEELS" = true ]; then
     mkdir -p $WHEEL_DIR
 fi
 
-#apt-get update -y
+apt-get update -y
 # Install ParMETIS
 # cd $SRC_DIR
 # wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3.orig.tar.gz
