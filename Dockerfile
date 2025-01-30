@@ -38,7 +38,8 @@ ENV HOME=/root
 ENV DAGMC_INSTALL_DIR=$HOME/src
 
 # LIBMESH variables
-ENV LIBMESH_TAG='v1.8.0'
+ENV LIBMESH_TAG="master"
+#'v1.8.0'
 ENV LIBMESH_REPO='https://github.com/libMesh/libmesh'
 ENV LIBMESH_INSTALL_DIR=$HOME/src/LIBMESH
 
