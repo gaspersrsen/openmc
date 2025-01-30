@@ -53,7 +53,7 @@ ENV LD_LIBRARY_PATH=${DAGMC_INSTALL_DIR}/lib:$LD_LIBRARY_PATH \
     DEBIAN_FRONTEND=noninteractive
 
 # Install and update dependencies from Debian package manager
-RUN apt-get update -y && \
+RUN apt-get update -y || echo "skipping update"&& \
     apt-get dist-upgrade && \
     apt-get upgrade -y && \
     apt-get install -y \
