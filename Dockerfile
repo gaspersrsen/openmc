@@ -83,7 +83,7 @@ RUN if [ "$build_libmesh" = "on" ]; then \
         # Install addition packages required for LIBMESH
         apt-get -y install m4 libnetcdf-dev libpnetcdf-dev \
         # Install LIBMESH
-        && mkdir -p $LIBMESH_INSTALL_DIR && cd $LIBMESH_INSTALL_DIR \
+        && mkdir -p ${LIBMESH_INSTALL_DIR} && cd ${LIBMESH_INSTALL_DIR} \
         && git clone --shallow-submodules --recurse-submodules --single-branch -b ${LIBMESH_TAG} --depth 1 ${LIBMESH_REPO} \
         && cd libmesh && git submodule update --init --recursive  && cd ..\
         && mkdir build && cd build \
