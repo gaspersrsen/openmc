@@ -219,7 +219,7 @@ else
         -DCPP20=ON \
         -DBUILD_TESTING=OFF \
         -DOPENMC_USE_LIBMESH=$build_libmesh \
-        -DCMAKE_PREFIX_PATH=/usr/local/ \
+        -DCMAKE_PREFIX_PATH="/usr/local/;${DAGMC_INSTALL_DIR};${LIBMESH_INSTALL_DIR}" \
         -DXTENSOR_USE_TBB=OFF \
         -DXTENSOR_USE_OPENMP=ON \
         -DXTENSOR_USE_XSIMD=OFF
