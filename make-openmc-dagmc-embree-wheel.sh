@@ -47,7 +47,7 @@ tar -xvzf parmetis_4.0.3.orig.tar.gz
 cd parmetis-4.0.3/
 make config shared=1 -j"$(nproc)"
 make install
-cd $SRC_DIR
+#cd $SRC_DIR
 mkdir metis
 cd parmetis_4.0.3/metis
 make config prefix=$SRC_DIR/metis
