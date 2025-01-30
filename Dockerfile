@@ -36,24 +36,24 @@ ENV HOME=/root
 # ENV EMBREE_INSTALL_DIR=$HOME
 # ENV DD_INSTALL_DIR=$HOME/src
 ######ENV DAGMC_INSTALL_DIR=$HOME/src
-ENV DAGMC_INSTALL_DIR=$HOME/src/DAGMC
+#ENV DAGMC_INSTALL_DIR=$HOME/src/DAGMC
 
 # LIBMESH variables
-ENV LIBMESH_TAG="v1.7.1"
-#'v1.8.0'
-ENV LIBMESH_REPO='https://github.com/libMesh/libmesh'
-ENV LIBMESH_INSTALL_DIR=$HOME/src/LIBMESH
+# ENV LIBMESH_TAG="v1.7.1"
+# #'v1.8.0'
+# ENV LIBMESH_REPO='https://github.com/libMesh/libmesh'
+# ENV LIBMESH_INSTALL_DIR=$HOME/src/LIBMESH
 
 # NJOY variables
-ENV NJOY_REPO='https://github.com/njoy/NJOY2016'
+#ENV NJOY_REPO='https://github.com/njoy/NJOY2016'
 
 # Setup environment variables for Docker image
-ENV LD_LIBRARY_PATH=${DAGMC_INSTALL_DIR}/lib:$LD_LIBRARY_PATH \
-    OPENMC_ENDF_DATA=/root/endf-b-vii.1 \
-    DEBIAN_FRONTEND=noninteractive
+# ENV LD_LIBRARY_PATH=${DAGMC_INSTALL_DIR}/lib:$LD_LIBRARY_PATH \
+#     OPENMC_ENDF_DATA=/root/endf-b-vii.1 \
+ENV DEBIAN_FRONTEND=noninteractive
 
 # Install and update dependencies from Debian package manager
-RUN apt-get update -y || echo "skipping update"&& \
+RUN apt-get update -y || echo "skipping update" && \
     apt-get dist-upgrade && \
     apt-get upgrade -y && \
     apt-get install -y \
@@ -72,7 +72,7 @@ RUN pip install vtk
 
 # Clone and install NJOY2016
 RUN cd $HOME \
-    && git clone --single-branch --depth 1 ${NJOY_REPO} \
+    && git clone --single-branch --depth 1 'https://github.com/njoy/NJOY2016' \
     && cd NJOY2016 \
     && mkdir build \
     && cd build \
