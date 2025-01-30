@@ -80,7 +80,8 @@ apt-get install -y cmake \
                         libtbb-dev \
                         mpich \
                         wget \
-                        doxygen
+                        doxygen \
+                        catch2
 
 
 # Function to check if a build already exists
@@ -218,7 +219,7 @@ else
         -DCPP20=ON \
         -DBUILD_TESTING=OFF \
         -DOPENMC_USE_LIBMESH=$build_libmesh \
-        -DCMAKE_PREFIX_PATH="${DAGMC_INSTALL_DIR};${LIBMESH_INSTALL_DIR}" \
+        -DCMAKE_PREFIX_PATH=/usr/local/ \
         -DXTENSOR_USE_TBB=OFF \
         -DXTENSOR_USE_OPENMP=ON \
         -DXTENSOR_USE_XSIMD=OFF
