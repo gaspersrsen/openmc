@@ -80,31 +80,6 @@ apt-get install -y cmake \
                         doxygen \
 
 
-apt-get -y install m4 libnetcdf-dev libpnetcdf-dev 
-# Install LIBMESH
-mkdir -p ${LIBMESH_INSTALL_DIR} && cd ${LIBMESH_INSTALL_DIR} 
-git clone --shallow-submodules --recurse-submodules --single-branch -b ${LIBMESH_TAG} --depth 1 ${LIBMESH_REPO} 
-mkdir build && cd build
-../libmesh/configure \
-            --prefix=${LIBMESH_INSTALL_DIR} CXX=mpicxx CC=mpicc FC=mpifort F77=mpif77 \
-            --enable-exodus \
-            --enable-mpi \
-            --enable-silent-rules \
-            --enable-unique-id \
-            --disable-eigen \
-            --disable-fortran \
-            --disable-lapack \
-            --disable-examples \
-            --disable-warnings \
-            --disable-maintainer-mode \
-            --disable-metaphysicl \
-            --with-methods="opt" \
-            --without-gdb-command \
-            --with-cxx-std-min=2014
-make 2>/dev/null -j${compile_cores} install
-rm -rf ${LIBMESH_INSTALL_DIR}/build ${LIBMESH_INSTALL_DIR}/libmesh
-
-
 # Function to check if a build already exists
 function build_exists {
     local build_dir="$1"
@@ -215,6 +190,31 @@ else
     cmake --build . --parallel "$(nproc)"
     cmake --install .
 fi
+
+apt-get -y install m4 libnetcdf-dev libpnetcdf-dev 
+# Install LIBMESH
+mkdir -p ${LIBMESH_INSTALL_DIR} && cd ${LIBMESH_INSTALL_DIR} 
+git clone --shallow-submodules --recurse-submodules --single-branch -b ${LIBMESH_TAG} --depth 1 ${LIBMESH_REPO} 
+mkdir build && cd build
+../libmesh/configure \
+            --prefix=${LIBMESH_INSTALL_DIR} CXX=mpicxx CC=mpicc FC=mpifort F77=mpif77 \
+            --enable-exodus \
+            --enable-mpi \
+            --enable-silent-rules \
+            --enable-unique-id \
+            --disable-eigen \
+            --disable-fortran \
+            --disable-lapack \
+            --disable-examples \
+            --disable-warnings \
+            --disable-maintainer-mode \
+            --disable-metaphysicl \
+            --with-methods="opt" \
+            --without-gdb-command \
+            --with-cxx-std-min=2014
+make 2>/dev/null -j${compile_cores} install
+rm -rf ${LIBMESH_INSTALL_DIR}/build ${LIBMESH_INSTALL_DIR}/libmesh
+
 
 # Install OpenMC (C++ core)
 cd $SRC_DIR
