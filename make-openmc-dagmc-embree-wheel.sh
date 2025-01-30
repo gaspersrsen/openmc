@@ -61,7 +61,8 @@ apt-get install -y cmake \
                         wget \
                         doxygen \
                         debhelper-compat=13 \
-                        mpi-default-bin
+                        mpi-default-bin \
+                        libc6-dev
 
 
 #apt-get update -y
@@ -254,7 +255,7 @@ else
         -DOPENMC_USE_MPI=ON \
         -DHDF5_PREFER_PARALLEL=ON \
         -DCPP20=ON \
-        -DBUILD_TESTING=ON \
+        -DBUILD_TESTING=OFF \
         -DOPENMC_USE_LIBMESH=$build_libmesh \
         -DCMAKE_PREFIX_PATH="/usr/local/;${DAGMC_INSTALL_DIR};${LIBMESH_INSTALL_DIR}" \
         -DXTENSOR_USE_TBB=OFF \
