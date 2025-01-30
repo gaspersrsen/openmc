@@ -252,20 +252,22 @@ else
         -DCMAKE_INSTALL_PREFIX=/usr/local/ \
         -DCMAKE_BUILD_TYPE=Release \
         -DOPENMC_USE_DAGMC=ON \
-        -DDAGMC_ROOT=/usr/local/ \
+        -DDAGMC_ROOT=${DAGMC_INSTALL_DIR} \
         -DOPENMC_USE_MPI=ON \
         -DHDF5_PREFER_PARALLEL=ON \
         -DCPP20=ON \
         -DBUILD_TESTING=OFF \
         -DOPENMC_USE_LIBMESH=$build_libmesh \
-        -DCMAKE_PREFIX_PATH="/usr/local/;${DAGMC_INSTALL_DIR};${LIBMESH_INSTALL_DIR}" \
+        -DCMAKE_PREFIX_PATH="/usr/local/;;${LIBMESH_INSTALL_DIR}" \
         -DXTENSOR_USE_TBB=OFF \
         -DXTENSOR_USE_OPENMP=ON \
         -DXTENSOR_USE_XSIMD=OFF
     # -DCMAKE_PREFIX_PATH="/usr/local;${LIBMESH_INSTALL_DIR}" \
     # Continue installation even if the build failed. At the moment, the build fails on 90% because
     # it can not find catch2 lib when building the tests.
-    cmake --build . --parallel "$(nproc)"
+    make
+    make install
+    #cmake --build . --parallel "$(nproc)"
     #|| echo "Build failed, continuing to installation."
     #cmake --install .
 fi
