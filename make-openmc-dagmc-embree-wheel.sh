@@ -66,23 +66,27 @@ apt-get install -y cmake \
 #apt-get update -y
 # Install ParMETIS
 cd $SRC_DIR
-wget http://ftp.debian.org/debian/pool/non-free/p/parmetis/libparmetis4.0_4.0.3-7+b2_amd64.deb
-echo($ls)
-apt install ./libparmetis4.0_4.0.3-7+b2_amd64.deb
+
+#wget http://ftp.debian.org/debian/pool/non-free/p/parmetis/libparmetis4.0_4.0.3-7+b2_amd64.deb
+#echo($ls)
+#apt install ./libparmetis4.0_4.0.3-7+b2_amd64.deb
 # wget http://ftp.debian.org/debian/pool/non-free/p/parmetis/libparmetis-dev_4.0.3-7+b2_amd64.deb
 # dpkg -i libparmetis-dev_4.0.3-7+b2_amd64.deb
 # # wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3.orig.tar.gz
-# # tar -xvzf parmetis_4.0.3.orig.tar.gz
-# # cd parmetis-4.0.3/
-# # make config shared=1 -j"$(nproc)"
-# # make install
-# # cd metis
-# # make config prefix=$SRC_DIR/metis
-# # make install
-# # pip3 install metis
-# # # export METIS_DLL=/usr/local/lib/libparmetis.so >> ~/.bashrc
-# # # export METIS_IDXTYPEWIDTH=64  >> ~/.bashrc
-# # # export METIS_REALTYPEWIDTH=64  >> ~/.bashrc
+#tar -xvzf parmetis_4.0.3.orig.tar.gz
+#cd parmetis-4.0.3/
+wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3-7.debian.tar.xz
+tar -xvf parmetis_4.0.3-7.debian.tar.xz
+
+# make config shared=1 -j"$(nproc)"
+# make install
+# cd metis
+# make config prefix=$SRC_DIR/metis
+# make install
+# pip3 install metis
+# export METIS_DLL=/usr/local/lib/libparmetis.so >> ~/.bashrc
+# export METIS_IDXTYPEWIDTH=64  >> ~/.bashrc
+# export METIS_REALTYPEWIDTH=64  >> ~/.bashrc
 
 # # Function to check if a build already exists
 # function build_exists {
