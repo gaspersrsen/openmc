@@ -85,6 +85,7 @@ RUN if [ "$build_libmesh" = "on" ]; then \
         # Install LIBMESH
         && mkdir -p $HOME/LIBMESH && cd $HOME/LIBMESH \
         && git clone --shallow-submodules --recurse-submodules --single-branch -b ${LIBMESH_TAG} --depth 1 ${LIBMESH_REPO} \
+        && git submodule update --init --recursive \
         && mkdir build && cd build \
         && ../libmesh/configure \
                     --prefix=${LIBMESH_INSTALL_DIR} CXX=mpicxx CC=mpicc FC=mpifort F77=mpif77 \
