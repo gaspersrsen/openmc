@@ -60,6 +60,8 @@ apt-get install -y cmake \
                         mpich \
                         wget \
                         doxygen \
+                        debhelper-compat=13 \
+                        mpi-default-bin
 
 
 #apt-get update -y
