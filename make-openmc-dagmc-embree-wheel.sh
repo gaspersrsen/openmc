@@ -71,12 +71,16 @@ cd $SRC_DIR
 #apt install ./libparmetis4.0_4.0.3-7+b2_amd64.deb
 # wget http://ftp.debian.org/debian/pool/non-free/p/parmetis/libparmetis-dev_4.0.3-7+b2_amd64.deb
 # dpkg -i libparmetis-dev_4.0.3-7+b2_amd64.deb
-# # wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3.orig.tar.gz
+mkdir parmetis && cd parmetis
+wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3.orig.tar.gz
 #tar -xvzf parmetis_4.0.3.orig.tar.gz
 #cd parmetis-4.0.3/
 wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3-7.debian.tar.xz
-tar -xvf parmetis_4.0.3-7.debian.tar.xz
-
+#tar -xvf parmetis_4.0.3-7.debian.tar.xz
+wget http://ftp.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3-7.dsc
+dpkg-source -x parmetis_4.0.3-7.dsc
+dpkg-buildpackage -rfakeroot -b
+echo($ls)
 # make config shared=1 -j"$(nproc)"
 # make install
 # cd metis
