@@ -79,6 +79,7 @@ wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3-7.debi
 #tar -xvf parmetis_4.0.3-7.debian.tar.xz
 wget http://ftp.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3-7.dsc
 dpkg-source -x parmetis_4.0.3-7.dsc
+cd ..
 dpkg-buildpackage -rfakeroot -b
 dpkg -i ../parmetis_4.0.3-7_amd64.deb
 # make config shared=1 -j"$(nproc)"
