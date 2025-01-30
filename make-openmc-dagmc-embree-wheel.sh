@@ -59,7 +59,7 @@ fi
 # export METIS_REALTYPEWIDTH=64  >> ~/.bashrc
 
 # Install system dependencies
-sudo apt-get install -y cmake \
+apt-get install -y cmake \
                         g++ \
                         gfortran \
                         git \
