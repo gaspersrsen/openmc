@@ -80,32 +80,32 @@ RUN cd $HOME \
     && rm -rf $HOME/NJOY2016
 
 
-RUN if [ "$build_libmesh" = "on" ]; then \
-        # Install addition packages required for LIBMESH
-        apt-get -y install m4 libnetcdf-dev libpnetcdf-dev \
-        # Install LIBMESH
-        && mkdir -p ${LIBMESH_INSTALL_DIR} && cd ${LIBMESH_INSTALL_DIR} \
-        && git clone --shallow-submodules --recurse-submodules --single-branch -b ${LIBMESH_TAG} --depth 1 ${LIBMESH_REPO} \
-        && mkdir build && cd build \
-        && ../libmesh/configure \
-                    --prefix=${LIBMESH_INSTALL_DIR} CXX=mpicxx CC=mpicc FC=mpifort F77=mpif77 \
-                    --enable-exodus \
-                    --enable-mpi \
-                    --enable-silent-rules \
-                    --enable-unique-id \
-                    --disable-eigen \
-                    --disable-fortran \
-                    --disable-lapack \
-                    --disable-examples \
-                    --disable-warnings \
-                    --disable-maintainer-mode \
-                    --disable-metaphysicl \
-                    --with-methods="opt" \
-                    --without-gdb-command \
-                    --with-cxx-std-min=2014 \
-        && make 2>/dev/null -j${compile_cores} install \
-        && rm -rf ${LIBMESH_INSTALL_DIR}/build ${LIBMESH_INSTALL_DIR}/libmesh ; \
-    fi
+# RUN if [ "$build_libmesh" = "on" ]; then \
+#         # Install addition packages required for LIBMESH
+#         apt-get -y install m4 libnetcdf-dev libpnetcdf-dev \
+#         # Install LIBMESH
+#         && mkdir -p ${LIBMESH_INSTALL_DIR} && cd ${LIBMESH_INSTALL_DIR} \
+#         && git clone --shallow-submodules --recurse-submodules --single-branch -b ${LIBMESH_TAG} --depth 1 ${LIBMESH_REPO} \
+#         && mkdir build && cd build \
+#         && ../libmesh/configure \
+#                     --prefix=${LIBMESH_INSTALL_DIR} CXX=mpicxx CC=mpicc FC=mpifort F77=mpif77 \
+#                     --enable-exodus \
+#                     --enable-mpi \
+#                     --enable-silent-rules \
+#                     --enable-unique-id \
+#                     --disable-eigen \
+#                     --disable-fortran \
+#                     --disable-lapack \
+#                     --disable-examples \
+#                     --disable-warnings \
+#                     --disable-maintainer-mode \
+#                     --disable-metaphysicl \
+#                     --with-methods="opt" \
+#                     --without-gdb-command \
+#                     --with-cxx-std-min=2014 \
+#         && make 2>/dev/null -j${compile_cores} install \
+#         && rm -rf ${LIBMESH_INSTALL_DIR}/build ${LIBMESH_INSTALL_DIR}/libmesh ; \
+#     fi
 
 #FROM dependencies AS build
 
