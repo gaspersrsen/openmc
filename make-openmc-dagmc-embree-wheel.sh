@@ -76,7 +76,7 @@ apt-get install -y cmake \
                         libnetcdf-dev \
                         libnetcdf-mpi-dev \
                         libopenblas-dev \
-                        libparmetis-dev \
+                        libscotchparmetis-dev \
                         libpng-dev \
                         libtbb-dev \
                         mpich \
