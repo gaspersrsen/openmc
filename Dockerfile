@@ -135,7 +135,7 @@ RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
             -DHDF5_PREFER_PARALLEL=ON \
             -DCPP20=ON \
             -DBUILD_TESTING=OFF \
-            -DCMAKE_PREFIX_PATH=/usr/local/ \
+            -DCMAKE_PREFIX_PATH=/root/src/DAGMC/build \
             -DXTENSOR_USE_TBB=OFF \
             -DXTENSOR_USE_OPENMP=ON \
             -DXTENSOR_USE_XSIMD=OFF; \
