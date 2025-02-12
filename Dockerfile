@@ -130,7 +130,9 @@ RUN cd ${HOME}/src/openmc \
     && chmod u+r+x openmc_installer.sh ; \
     if [ "$build_dagmc" = "on" ]; then \
         ./openmc_installer.sh ; \
-    fi
+    fi ; \
+    pip install .[test,depletion-mpi] \
+    && python -c "import openmc"
 #make 2>/dev/null -j${compile_cores} install
 #echo "Hi"
 # git submodule update --init --recursive \
