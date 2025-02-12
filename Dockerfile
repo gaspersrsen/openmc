@@ -54,7 +54,6 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 # Install and update dependencies from Debian package manager
 RUN apt-get update -y && \
-    apt-get dist-upgrade && \
     apt-get upgrade -y && \
     apt-get install -y \
         python3-pip python-is-python3 wget git build-essential cmake \
