@@ -546,12 +546,12 @@ class CoupledOperator(OpenMCOperator):
                 # f_prev = f
                 # print(g,f)
                 
-                
+                p=1
                 relax=0.3
                 if g<1:
                     f=0.7
                 elif g!=0:
-                    f=1+relax(g-1)
+                    f=1+relax*(g-1)
                 else:
                     f=1+relax*9
                 g=f
