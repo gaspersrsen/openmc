@@ -217,7 +217,7 @@ cd $SRC_DIR
 if build_exists "$SRC_DIR/libmesh/build"; then
     echo "LIBMESH already built."
 else
-    git clone --shallow-submodules --recurse-submodules --single-branch -b "v1.8.0" --depth 1 "https://github.com/libMesh/libmesh"
+    git clone --shallow-submodules --recurse-submodules --single-branch -b branch_v1_8.x --depth 1 "https://github.com/libMesh/libmesh"
     mkdir build && cd build
     ../libmesh/configure \
                 --prefix=$/usr/local/ CXX=mpicxx CC=mpicc FC=mpifort F77=mpif77 \
