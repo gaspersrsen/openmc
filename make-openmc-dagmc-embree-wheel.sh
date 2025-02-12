@@ -126,7 +126,7 @@ cd $SRC_DIR
 if build_exists "$SRC_DIR/embree/build"; then
     echo "Embree already built."
 else
-    git clone --shallow-submodules --single-branch --branch v3.12.2 --depth 1 https://github.com/embree/embree.git || echo "Embree already cloned."
+    git clone --shallow-submodules --single-branch --branch v4.3.1 --depth 1 https://github.com/embree/embree.git || echo "Embree already cloned."
     mkdir -p embree/build
     cd embree/build
     cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/ \
@@ -143,8 +143,8 @@ cd $SRC_DIR
 if build_exists "$SRC_DIR/moab/build"; then
     echo "MOAB already built."
 else
-    #git clone --single-branch -b 5.5.1 --depth 1 https://bitbucket.org/fathomteam/moab/ || echo "MOAB already cloned."
-    git clone --single-branch -b master --depth 1 https://bitbucket.org/fathomteam/moab/ || echo "MOAB already cloned."
+    git clone --single-branch -b 5.5.1 --depth 1 https://bitbucket.org/fathomteam/moab/ || echo "MOAB already cloned."
+    #git clone --single-branch -b master --depth 1 https://bitbucket.org/fathomteam/moab/ || echo "MOAB already cloned."
     mkdir -p moab/build
     cd moab/build
     cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/ \
@@ -191,8 +191,8 @@ cd $SRC_DIR
 if build_exists "$SRC_DIR/DAGMC/build"; then
     echo "DAGMC already built."
 else
-    #git clone --single-branch --branch v3.2.4 --depth 1 https://github.com/svalinn/DAGMC.git || echo "DAGMC already cloned."
-    git clone --single-branch --branch develop --depth 1 https://github.com/svalinn/DAGMC.git || echo "DAGMC already cloned."
+    git clone --single-branch --branch v3.2.3 --depth 1 https://github.com/svalinn/DAGMC.git || echo "DAGMC already cloned."
+    #git clone --single-branch --branch develop --depth 1 https://github.com/svalinn/DAGMC.git || echo "DAGMC already cloned."
     mkdir -p DAGMC/build
     cd DAGMC/build
     cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/ \
