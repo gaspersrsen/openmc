@@ -126,12 +126,12 @@ RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
         ./make-openmc-dagmc-embree-wheel.sh ; \
     fi
 
-# RUN cd ${HOME}/src/openmc \
-#     && chmod u+r+x openmc_installer.sh ; \
-#     if [ "$build_dagmc" = "on" ]; then \
-#         ./openmc_installer.sh ; \
-#     fi
-#; \
+RUN cd ${HOME}/src/openmc \
+    && chmod u+r+x openmc_installer.sh ; \
+    if [ "$build_dagmc" = "on" ]; then \
+        ./openmc_installer.sh ; \
+    fi
+; \
 #make 2>/dev/null -j${compile_cores} install
 #echo "Hi"
 # git submodule update --init --recursive \
