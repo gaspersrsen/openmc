@@ -204,7 +204,7 @@ else
              -DMOAB_DIR=/usr/local/ \
              -DDOUBLE_DOWN=ON \
              -DDOUBLE_DOWN_DIR=/usr/local/ \
-             -DOpenMP_pthread_LIBRARY=/lib/x86_64-linux-gnu/libpthread.so.0 \
+             #-DOpenMP_pthread_LIBRARY=/lib/x86_64-linux-gnu/libpthread.so.0 \
              -DBUILD_STATIC_EXE=OFF \
              -DBUILD_STATIC_LIBS=OFF
     cmake --build . --parallel "$(nproc)"
