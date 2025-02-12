@@ -62,6 +62,8 @@ else
     # it can not find catch2 lib when building the tests.
     make 2>/dev/null -j${compile_cores} install
     make install
+    cd ../openmc && pip install .[test,depletion-mpi]
+    python -c "import openmc"
     #cmake --build . --parallel "$(nproc)"
     #|| echo "Build failed, continuing to installation."
     #cmake --install .
