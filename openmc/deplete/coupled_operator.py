@@ -517,10 +517,10 @@ class CoupledOperator(OpenMCOperator):
                 L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]  # Total flagged nuclide absorption
                 # Predict concentration change
                 #k_mc = (P_fiss) / (L_abs + P_fiss*L_leak)
-                k_nxn = (P_fiss + P_nxn) / (L_abs + (P_fiss + P_nxn)*L_leak)
+                k = (P_fiss + P_nxn) / (L_abs + (P_fiss + P_nxn)*L_leak)
                 g = ((P_fiss/target + P_nxn)
                         - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs #* np.exp(k-target)
-                print(g, k_nxn)
+                print(g, k)
                 # Optimal following (Kalman filter for narrowing to a scalar value):
                 if M == 10:
                     x = 1
@@ -529,7 +529,7 @@ class CoupledOperator(OpenMCOperator):
                     p_measure = 1e16
                 if (g >= 0.1 and g <= 2.5):
                     # Estimate the accuracy of the measurement with a quadratic difference of k and target
-                    p_measure = (1 + self.model.settings.particles * (k_nxn-target)**2)**2 / np.sqrt(self.model.settings.particles)
+                    p_measure = (1 + self.model.settings.particles * (k-target)**2)**2 / np.sqrt(self.model.settings.particles)
                 else:
                     if g < 0.1: g = x*0.1
                     elif g > 2.5: g = x*2.5
