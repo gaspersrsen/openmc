@@ -118,27 +118,36 @@ ARG CACHEBUST=1
 
 RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
     && git clone --shallow-submodules --recurse-submodules --single-branch -b ${openmc_branch} --depth=1 ${OPENMC_REPO} \
+
+
+
+# clone and install openmc
+RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
+    && git clone --shallow-submodules --recurse-submodules --single-branch -b ${openmc_branch} --depth=1 ${OPENMC_REPO} \
+    && cd openmc \
+    && chmod u+r+x make-openmc-dagmc-embree-wheel.sh ; \
+    #&& echo "export DAGMC_DIR=$HOME/DAGMC" >> ~/.bashrc \
+    if [ "$build_dagmc" = "on" ]; then \
+        ./make-openmc-dagmc-embree-wheel.sh ; \
+    fi
     && mkdir build && cd build ; \
-    if [ ${build_dagmc} = "off" ] && [ ${build_libmesh} = "off" ]; then \
-        cmake ../openmc \
-            -DCMAKE_CXX_COMPILER=mpicxx \
-            -DOPENMC_USE_MPI=on \
-            -DHDF5_PREFER_PARALLEL=on ; \
+    if [ ${build_libmesh} = "off" ]; then \
+        cmake .. \
+            -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DOPENMC_USE_DAGMC=ON \
+            -DOPENMC_USE_MPI=ON \
+            -DHDF5_PREFER_PARALLEL=ON \
+            -DCPP20=ON \
+            -DBUILD_TESTING=OFF \
+            -DCMAKE_PREFIX_PATH=/usr/local/ \
+            -DXTENSOR_USE_TBB=OFF \
+            -DXTENSOR_USE_OPENMP=ON \
+            -DXTENSOR_USE_XSIMD=OFF
     fi ; \
     make 2>/dev/null -j${compile_cores} install \
     && cd ../openmc && pip install .[test,depletion-mpi] \
     && python -c "import openmc"
-
-
-# clone and install openmc
-# RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
-#     && git clone --shallow-submodules --recurse-submodules --single-branch -b ${openmc_branch} --depth=1 ${OPENMC_REPO} \
-#     && cd openmc \
-#     && chmod u+r+x make-openmc-dagmc-embree-wheel.sh ; \
-#     #&& echo "export DAGMC_DIR=$HOME/DAGMC" >> ~/.bashrc \
-#     # if [ "$build_dagmc" = "on" ]; then \
-#     #     ./make-openmc-dagmc-embree-wheel.sh ; \
-#     # fi
 
 # RUN cd ${HOME}/src/openmc \
 #     && chmod u+r+x openmc_installer.sh ; \
