@@ -516,11 +516,12 @@ class CoupledOperator(OpenMCOperator):
                 L_abs = curr_res[0][0][1][1]                                # Total neutron absorption
                 L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]  # Total flagged nuclide absorption
                 # Predict concentration change
-                #k = (P_fiss + P_nxn) / (L_abs + (P_fiss + P_nxn)*L_leak)
-                g = ((P_fiss/target + P_nxn)
+                k_mc = (P_fiss) / (L_abs + P_fiss*L_leak)
+                k_nxn = (P_fiss + P_nxn) / (L_abs + (P_fiss + P_nxn)*L_leak)
+                k_fix = k_nxn/k_mc
+                g = ((P_fiss/target*k_fix + P_nxn)
                         - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs #* np.exp(k-target)
-                print(g, k, P_fiss/(L_abs+(P_fiss + P_nxn)*L_leak),
-                      (P_fiss+P_nxn)/(L_abs+(P_fiss + P_nxn)*L_leak))
+                print(g, k, k_mc, k_nxn, k_fix)
                 # Optimal following (Kalman filter for narrowing to a scalar value):
                 if M == 10:
                     x = 1
@@ -534,7 +535,10 @@ class CoupledOperator(OpenMCOperator):
                     if g < 0.1: g = x*0.1
                     elif g > 2.5: g = x*2.5
                     p_measure = 1e16
-                p_n = 1/(1/p + 1/p_measure)
+                if p_n >= 1e16 and p_measure >= 1e16:
+                    pass
+                else:
+                    p_n = 1/(1/p + 1/p_measure)
                 z = f_prev * g
                 x = x + p_n/p_measure * (z - x)
                 p = p_n
