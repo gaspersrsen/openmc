@@ -53,7 +53,7 @@ ENV HOME=/root
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install and update dependencies from Debian package manager
-RUN apt-get update -y || echo "skipping update" && \
+RUN apt-get update -y && \
     apt-get dist-upgrade && \
     apt-get upgrade -y && \
     apt-get install -y \
