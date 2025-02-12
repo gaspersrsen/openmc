@@ -516,46 +516,35 @@ class CoupledOperator(OpenMCOperator):
                 L_abs = curr_res[0][0][1][1]                                # Total neutron absorption
                 L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]  # Total flagged nuclide absorption
                 # Predict concentration change
-                #k_mc = (P_fiss) / (L_abs + P_fiss*L_leak)
-                k = (P_fiss + P_nxn) / (L_abs + (P_fiss + P_nxn)*L_leak)
+                k = (P_fiss) / (L_abs + P_fiss*L_leak)
+                #k = (P_fiss + P_nxn) / (L_abs + (P_fiss + P_nxn)*L_leak)
                 g = ((P_fiss/target + P_nxn)
                         - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs #* np.exp(k-target)
-                # print(g, k)
-                # # Optimal following (Kalman filter for narrowing to a scalar value):
-                # if M == 10:
-                #     x = 1
-                #     p = 1e16
-                #     p_n = 1e16
-                #     p_measure = 1e16
-                # if (g >= 0.1 and g <= 2.5):
-                #     # Estimate the accuracy of the measurement with a quadratic difference of k and target
-                #     p_measure = (1 + self.model.settings.particles * (k-target)**2)**2 / np.sqrt(self.model.settings.particles)
-                # else:
-                #     if g < 0.1: g = x*0.1
-                #     elif g > 2.5: g = x*2.5
-                #     p_measure = 1e16
-                # if p_n >= 1e16 and p_measure >= 1e16:
-                #     pass
-                # else:
-                #     p_n = 1/(1/p + 1/p_measure)
-                # z = f_prev * g
-                # x = x + p_n/p_measure * (z - x)
-                # p = p_n
-                # f = x
-                # g = f/f_prev
-                # f_prev = f
-                # print(g,f)
-                
-                p=1
-                relax=0.3
-                if g<1:
-                    f=0.7
-                elif g!=0:
-                    f=1+relax*(g-1)
+                print(g, k)
+                # Optimal following (Kalman filter for narrowing to a scalar value):
+                if M == 10:
+                    x = 1
+                    p = 1e16
+                    p_n = 1e16
+                    p_measure = 1e16
+                if (g >= 0.1 and g <= 2.5):
+                    # Estimate the accuracy of the measurement with a quadratic difference of k and target
+                    p_measure = (1 + self.model.settings.particles * (k-target)**2)**2 / np.sqrt(self.model.settings.particles)
                 else:
-                    f=1+relax*9
-                g=f
-                print(g)
+                    if g < 0.1: g = x*0.1
+                    elif g > 2.5: g = x*2.5
+                    p_measure = 1e16
+                if p_n >= 1e16 and p_measure >= 1e16:
+                    pass
+                else:
+                    p_n = 1/(1/p + 1/p_measure)
+                z = f_prev * g
+                x = x + p_n/p_measure * (z - x)
+                p = p_n
+                f = x
+                g = f/f_prev
+                f_prev = f
+                print(g,f)
 
                 if debug is True:
                     print(f"Batch: {M}")
