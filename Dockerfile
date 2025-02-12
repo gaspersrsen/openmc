@@ -129,8 +129,8 @@ RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
     #&& echo "export DAGMC_DIR=$HOME/DAGMC" >> ~/.bashrc \
     if [ "$build_dagmc" = "on" ]; then \
         ./make-openmc-dagmc-embree-wheel.sh ; \
-    fi
-    && mkdir build && cd build ; \
+    fi; \
+    mkdir build && cd build ; \
     if [ ${build_libmesh} = "off" ]; then \
         cmake .. \
             -DCMAKE_INSTALL_PREFIX=/usr/local/ \
