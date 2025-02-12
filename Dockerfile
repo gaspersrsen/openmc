@@ -143,7 +143,7 @@ RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
             -DCMAKE_PREFIX_PATH=/usr/local/ \
             -DXTENSOR_USE_TBB=OFF \
             -DXTENSOR_USE_OPENMP=ON \
-            -DXTENSOR_USE_XSIMD=OFF
+            -DXTENSOR_USE_XSIMD=OFF; \
     fi ; \
     make 2>/dev/null -j${compile_cores} install \
     && cd ../openmc && pip install .[test,depletion-mpi] \
