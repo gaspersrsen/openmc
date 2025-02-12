@@ -123,7 +123,7 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
         -DCMAKE_CXX_COMPILER=mpicxx \
         -DOPENMC_USE_MPI=on \
         -DHDF5_PREFER_PARALLEL=on ; \
-    && make 2>/dev/null -j${compile_cores} install \
+    make 2>/dev/null -j${compile_cores} install \
     && cd ../openmc && pip install .[test,depletion-mpi] \
     && python -c "import openmc"
 
