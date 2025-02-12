@@ -548,6 +548,7 @@ class CoupledOperator(OpenMCOperator):
                 f = x
                 g = f/f_prev
                 f_prev = f
+                print(g)
 
                 if debug is True:
                     print(f"Batch: {M}")
