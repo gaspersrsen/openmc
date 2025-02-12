@@ -518,7 +518,10 @@ class CoupledOperator(OpenMCOperator):
                 # Predict concentration change
                 k_mc = (P_fiss) / (L_abs + P_fiss*L_leak)
                 k_nxn = (P_fiss + P_nxn) / (L_abs + (P_fiss + P_nxn)*L_leak)
-                k_fix = k_nxn/k_mc
+                if k_mc != 0:
+                    k_fix = k_nxn/k_mc
+                else:
+                    k_fix = 1
                 g = ((P_fiss/target*k_fix + P_nxn)
                         - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs #* np.exp(k-target)
                 print(g, k, k_mc, k_nxn, k_fix)
