@@ -131,7 +131,6 @@ RUN cd ${HOME}/src/openmc \
     if [ "$build_dagmc" = "on" ]; then \
         ./openmc_installer.sh ; \
     fi
-; \
 #make 2>/dev/null -j${compile_cores} install
 #echo "Hi"
 # git submodule update --init --recursive \
