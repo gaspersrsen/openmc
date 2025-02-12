@@ -21,7 +21,7 @@
 ARG compile_cores=8
 
 # By default this Dockerfile builds OpenMC without DAGMC and LIBMESH support
-ARG build_dagmc=on
+ARG build_dagmc=off
 ARG build_libmesh=off
 
 FROM debian:bookworm-slim AS dependencies
@@ -119,8 +119,7 @@ ARG CACHEBUST=1
 RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
     && git clone --shallow-submodules --recurse-submodules --single-branch -b ${openmc_branch} --depth=1 ${OPENMC_REPO} \
     && mkdir build && cd build ; \
-    
-    if "a"="a"; then \
+    if [ ${build_dagmc} = "off" ] && [ ${build_libmesh} = "off" ]; then \
         cmake ../openmc \
             -DCMAKE_CXX_COMPILER=mpicxx \
             -DOPENMC_USE_MPI=on \
