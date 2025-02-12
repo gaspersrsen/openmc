@@ -144,7 +144,6 @@ if build_exists "$SRC_DIR/moab/build"; then
     echo "MOAB already built."
 else
     git clone --single-branch -b 5.5.1 --depth 1 https://bitbucket.org/fathomteam/moab/ || echo "MOAB already cloned."
-    #git clone --single-branch -b master --depth 1 https://bitbucket.org/fathomteam/moab/ || echo "MOAB already cloned."
     mkdir -p moab/build
     cd moab/build
     cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/ \
@@ -192,7 +191,6 @@ if build_exists "$SRC_DIR/DAGMC/build"; then
     echo "DAGMC already built."
 else
     git clone --single-branch --branch v3.2.3 --depth 1 https://github.com/svalinn/DAGMC.git || echo "DAGMC already cloned."
-    #git clone --single-branch --branch develop --depth 1 https://github.com/svalinn/DAGMC.git || echo "DAGMC already cloned."
     mkdir -p DAGMC/build
     cd DAGMC/build
     cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/ \
