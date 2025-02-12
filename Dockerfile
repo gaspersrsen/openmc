@@ -116,11 +116,6 @@ ENV HOME=/root
 ARG CACHEBUST=1
 #RUN echo "$CACHEBUST"
 
-RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
-    && git clone --shallow-submodules --recurse-submodules --single-branch -b ${openmc_branch} --depth=1 ${OPENMC_REPO} \
-
-
-
 # clone and install openmc
 RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
     && git clone --shallow-submodules --recurse-submodules --single-branch -b ${openmc_branch} --depth=1 ${OPENMC_REPO} \
