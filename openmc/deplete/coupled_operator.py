@@ -522,7 +522,7 @@ class CoupledOperator(OpenMCOperator):
                     k_fix = k_nxn/k_mc
                 else:
                     k_fix = 1
-                g = ((P_fiss/target*k_fix + P_nxn)
+                g = ((P_fiss/target + P_nxn)
                         - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs #* np.exp(k-target)
                 print(g, k, k_mc, k_nxn, k_fix)
                 # Optimal following (Kalman filter for narrowing to a scalar value):
@@ -548,7 +548,7 @@ class CoupledOperator(OpenMCOperator):
                 f = x
                 g = f/f_prev
                 f_prev = f
-                print(g)
+                print(g,f)
 
                 if debug is True:
                     print(f"Batch: {M}")
