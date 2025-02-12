@@ -166,7 +166,7 @@ if [ "$BUILD_WHEELS" = true ]; then
     # Build and install PyMOAB wheel
 
     chmod -R 777 $SRC_DIR/moab/build
-    cd $SRC_DIR/moab/build/pymoab
+    cd $SRC_DIR/moab/build #/pymoab
     python -m build --wheel --outdir "$WHEEL_DIR"
 fi
 
