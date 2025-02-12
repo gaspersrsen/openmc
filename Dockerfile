@@ -119,10 +119,13 @@ ARG CACHEBUST=1
 RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
     && git clone --shallow-submodules --recurse-submodules --single-branch -b ${openmc_branch} --depth=1 ${OPENMC_REPO} \
     && mkdir build && cd build ; \
-    && cmake ../openmc \
-        -DCMAKE_CXX_COMPILER=mpicxx \
-        -DOPENMC_USE_MPI=on \
-        -DHDF5_PREFER_PARALLEL=on ; \
+    
+    if [${build_libmesh} = "off" ]; then \
+        cmake ../openmc \
+            -DCMAKE_CXX_COMPILER=mpicxx \
+            -DOPENMC_USE_MPI=on \
+            -DHDF5_PREFER_PARALLEL=on ; \
+    fi ; \
     make 2>/dev/null -j${compile_cores} install \
     && cd ../openmc && pip install .[test,depletion-mpi] \
     && python -c "import openmc"
