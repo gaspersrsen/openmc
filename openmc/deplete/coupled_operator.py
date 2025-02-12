@@ -699,10 +699,9 @@ class CoupledOperator(OpenMCOperator):
                             # negative. CRAM does not guarantee positive
                             # values.
                             if val < -1.0e-21:
-                                print(f'WARNING: nuclide {nuc} in material'
-                                      f'{mat} is negative (density = {val}'
-
-                                      ' atom/b-cm)')
+                                # print(f'WARNING: nuclide {nuc} in material'
+                                #       f'{mat} is negative (density = {val}'
+                                #       ' atom/b-cm)')
 
                                 number_i[mat, nuc] = 0.0
                 
