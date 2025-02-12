@@ -116,23 +116,35 @@ ENV HOME=/root
 ARG CACHEBUST=1
 #RUN echo "$CACHEBUST"
 
-# clone and install openmc
-RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
+RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
     && git clone --shallow-submodules --recurse-submodules --single-branch -b ${openmc_branch} --depth=1 ${OPENMC_REPO} \
-    && cd openmc \
-    && chmod u+r+x make-openmc-dagmc-embree-wheel.sh ; \
-    #&& echo "export DAGMC_DIR=$HOME/DAGMC" >> ~/.bashrc \
-    # if [ "$build_dagmc" = "on" ]; then \
-    #     ./make-openmc-dagmc-embree-wheel.sh ; \
-    # fi
-
-RUN cd ${HOME}/src/openmc \
-    && chmod u+r+x openmc_installer.sh ; \
-    if [ "$build_dagmc" = "on" ]; then \
-        ./openmc_installer.sh ; \
-    fi ; \
-    pip install .[test,depletion-mpi] \
+    && mkdir build && cd build ; \
+    && cmake ../openmc \
+        -DCMAKE_CXX_COMPILER=mpicxx \
+        -DOPENMC_USE_MPI=on \
+        -DHDF5_PREFER_PARALLEL=on ; \
+    && make 2>/dev/null -j${compile_cores} install \
+    && cd ../openmc && pip install .[test,depletion-mpi] \
     && python -c "import openmc"
+
+
+# clone and install openmc
+# RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
+#     && git clone --shallow-submodules --recurse-submodules --single-branch -b ${openmc_branch} --depth=1 ${OPENMC_REPO} \
+#     && cd openmc \
+#     && chmod u+r+x make-openmc-dagmc-embree-wheel.sh ; \
+#     #&& echo "export DAGMC_DIR=$HOME/DAGMC" >> ~/.bashrc \
+#     # if [ "$build_dagmc" = "on" ]; then \
+#     #     ./make-openmc-dagmc-embree-wheel.sh ; \
+#     # fi
+
+# RUN cd ${HOME}/src/openmc \
+#     && chmod u+r+x openmc_installer.sh ; \
+#     if [ "$build_dagmc" = "on" ]; then \
+#         ./openmc_installer.sh ; \
+#     fi ; \
+#     pip install .[test,depletion-mpi] \
+#     && python -c "import openmc"
 #make 2>/dev/null -j${compile_cores} install
 #echo "Hi"
 # git submodule update --init --recursive \
