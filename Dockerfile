@@ -53,7 +53,9 @@ ENV HOME=/root
 ENV DEBIAN_FRONTEND=noninteractive
 
 # Install and update dependencies from Debian package manager
-RUN apt-get install -y \
+RUN apt-get update -y && \
+    apt-get upgrade -y && \
+    apt-get install -y \
         python3-pip python-is-python3 wget git build-essential cmake \
         mpich libmpich-dev libhdf5-serial-dev libhdf5-mpich-dev \
         libpng-dev python3-venv && \
