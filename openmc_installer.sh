@@ -52,7 +52,6 @@ else
         -DHDF5_PREFER_PARALLEL=ON \
         -DCPP20=ON \
         -DBUILD_TESTING=OFF \
-        -DOPENMC_USE_LIBMESH=$build_libmesh \
         -DCMAKE_PREFIX_PATH=/usr/local/ \
         -DXTENSOR_USE_TBB=OFF \
         -DXTENSOR_USE_OPENMP=ON \

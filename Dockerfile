@@ -122,9 +122,9 @@ RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
     && cd openmc \
     && chmod u+r+x make-openmc-dagmc-embree-wheel.sh ; \
     #&& echo "export DAGMC_DIR=$HOME/DAGMC" >> ~/.bashrc \
-    if [ "$build_dagmc" = "on" ]; then \
-        ./make-openmc-dagmc-embree-wheel.sh ; \
-    fi
+    # if [ "$build_dagmc" = "on" ]; then \
+    #     ./make-openmc-dagmc-embree-wheel.sh ; \
+    # fi
 
 RUN cd ${HOME}/src/openmc \
     && chmod u+r+x openmc_installer.sh ; \
