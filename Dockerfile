@@ -141,7 +141,7 @@ RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
             -DXTENSOR_USE_XSIMD=OFF; \
     fi ; \
     make 2>/dev/null -j${compile_cores} install \
-    && cd ../openmc && pip install .[test,depletion-mpi] \
+    && cd .. && pip install .[test,depletion-mpi] \
     && python -c "import openmc"
 
 # RUN cd ${HOME}/src/openmc \
