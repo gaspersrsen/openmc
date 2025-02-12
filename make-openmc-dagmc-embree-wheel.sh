@@ -190,7 +190,7 @@ cd $SRC_DIR
 if build_exists "$SRC_DIR/DAGMC/build"; then
     echo "DAGMC already built."
 else
-    git clone --single-branch --branch v3.2.3 --depth 1 https://github.com/svalinn/DAGMC.git || echo "DAGMC already cloned."
+    git clone --single-branch --branch v3.2.4 --depth 1 https://github.com/svalinn/DAGMC.git || echo "DAGMC already cloned."
     mkdir -p DAGMC/build
     cd DAGMC/build
     cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/ \
