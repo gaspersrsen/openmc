@@ -8,7 +8,7 @@
 set -euo pipefail
 
 # Default parameter values
-BUILD_WHEELS=false
+BUILD_WHEELS=true
 # Parse named arguments
 while [[ "$#" -gt 0 ]]; do
     case $1 in
@@ -204,6 +204,7 @@ else
              -DMOAB_DIR=/usr/local/ \
              -DDOUBLE_DOWN=ON \
              -DDOUBLE_DOWN_DIR=/usr/local/ \
+             -DOpenMP_pthread_LIBRARY=/lib/x86_64-linux-gnu/libpthread.so.0 \
              -DBUILD_STATIC_EXE=OFF \
              -DBUILD_STATIC_LIBS=OFF
     cmake --build . --parallel "$(nproc)"
@@ -256,13 +257,13 @@ fi
 #         -DCMAKE_INSTALL_PREFIX=/usr/local/ \
 #         -DCMAKE_BUILD_TYPE=Release \
 #         -DOPENMC_USE_DAGMC=ON \
-#         -DDAGMC_ROOT=${DAGMC_INSTALL_DIR} \
+#         -DDAGMC_ROOT=/usr/local/ \
 #         -DOPENMC_USE_MPI=ON \
 #         -DHDF5_PREFER_PARALLEL=ON \
 #         -DCPP20=ON \
 #         -DBUILD_TESTING=OFF \
 #         -DOPENMC_USE_LIBMESH=$build_libmesh \
-#         -DCMAKE_PREFIX_PATH="/usr/local/;${LIBMESH_INSTALL_DIR}" \
+#         -DCMAKE_PREFIX_PATH=/usr/local \
 #         -DXTENSOR_USE_TBB=OFF \
 #         -DXTENSOR_USE_OPENMP=ON \
 #         -DXTENSOR_USE_XSIMD=OFF
