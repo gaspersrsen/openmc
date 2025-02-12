@@ -7,26 +7,26 @@
 # In that case the wheels will be saved in the $HOME/wheels directory.
 # set -euo pipefail
 
-# # Default parameter values
-# BUILD_WHEELS=false
-# # Parse named arguments
-# while [[ "$#" -gt 0 ]]; do
-#     case $1 in
-#         --build-wheels=*)
-#             BUILD_WHEELS="${1#*=}" # Extract value after '='
-#             ;;
-#         *)
-#             echo "Unknown parameter passed: $1"
-#             exit 1
-#             ;;
-#     esac
-#     shift
-# done
+# Default parameter values
+BUILD_WHEELS=false
+# Parse named arguments
+while [[ "$#" -gt 0 ]]; do
+    case $1 in
+        --build-wheels=*)
+            BUILD_WHEELS="${1#*=}" # Extract value after '='
+            ;;
+        *)
+            echo "Unknown parameter passed: $1"
+            exit 1
+            ;;
+    esac
+    shift
+done
 
-# if [[ "$BUILD_WHEELS" != "true" && "$BUILD_WHEELS" != "false" ]]; then
-#     echo "Invalid value for --build-wheels. Allowed values are 'true' or 'false'."
-#     exit 1
-# fi
+if [[ "$BUILD_WHEELS" != "true" && "$BUILD_WHEELS" != "false" ]]; then
+    echo "Invalid value for --build-wheels. Allowed values are 'true' or 'false'."
+    exit 1
+fi
 
 # Define the source directory in the home folder
 SRC_DIR="$HOME/src"
@@ -66,12 +66,12 @@ else
     #cmake --install .
 fi
 
-# if [ "$BUILD_WHEELS" = true ]; then
-#     # Build and install OpenMC wheel
-#     cd $SRC_DIR/openmc
-#     python -m build --wheel --outdir "$WHEEL_DIR"
+if [ "$BUILD_WHEELS" = true ]; then
+    # Build and install OpenMC wheel
+    cd $SRC_DIR/openmc
+    python -m build --wheel --outdir "$WHEEL_DIR"
 
-#     ls "$WHEEL_DIR"
-# fi
+    ls "$WHEEL_DIR"
+fi
 
 #deactivate
