@@ -529,7 +529,7 @@ class CoupledOperator(OpenMCOperator):
                     p_measure = 1e16
                 if (g >= 0.1 and g <= 2.5):
                     # Estimate the accuracy of the measurement with a quadratic difference of k and target
-                    p_measure = (1 + self.model.settigs.particles * (k_nxn-target)**2)**2 / np.sqrt(self.model.settings.particles)
+                    p_measure = (1 + self.model.settings.particles * (k_nxn-target)**2)**2 / np.sqrt(self.model.settings.particles)
                 else:
                     if g < 0.1: g = x*0.1
                     elif g > 2.5: g = x*2.5
