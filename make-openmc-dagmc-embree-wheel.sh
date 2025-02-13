@@ -54,7 +54,7 @@ fi
 #                         debhelper-compat=13 \
 #                         libc6-dev \
 #                         apt-utils
-apt-get -y install libeigen3-dev libnetcdf-dev libtbb-dev libglfw3-dev libmetis-dev
+apt-get -y install libeigen3-dev libnetcdf-dev libtbb-dev libglfw3-dev libmetis-dev doxygen
 
 
 # #apt-get update -y
@@ -200,31 +200,31 @@ else
 fi
 
 # Install LIBMESH
-apt-get -y install m4 libnetcdf-dev libpnetcdf-dev 
-cd $SRC_DIR
-if build_exists "$SRC_DIR/libmesh/build"; then
-    echo "LIBMESH already built."
-else
-    git clone --shallow-submodules --recurse-submodules --single-branch -b "v1.8.0-rc2" --depth 1 "https://github.com/libMesh/libmesh"
-    mkdir build && cd build
-    ../libmesh/configure \
-                --prefix=$/usr/local/ CXX=mpicxx CC=mpicc FC=mpifort F77=mpif77 \
-                --enable-exodus \
-                --enable-mpi \
-                --enable-silent-rules \
-                --enable-unique-id \
-                --disable-eigen \
-                --disable-fortran \
-                --disable-lapack \
-                --disable-examples \
-                --disable-warnings \
-                --disable-maintainer-mode \
-                --disable-metaphysicl \
-                --with-methods="opt" \
-                --without-gdb-command \
-                --with-cxx-std-min=2014
-    make 2>/dev/null -j${compile_cores} install
-fi
+# apt-get -y install m4 libnetcdf-dev libpnetcdf-dev 
+# cd $SRC_DIR
+# if build_exists "$SRC_DIR/libmesh/build"; then
+#     echo "LIBMESH already built."
+# else
+#     git clone --shallow-submodules --recurse-submodules --single-branch -b "v1.8.0-rc2" --depth 1 "https://github.com/libMesh/libmesh"
+#     mkdir build && cd build
+#     ../libmesh/configure \
+#                 --prefix=$/usr/local/ CXX=mpicxx CC=mpicc FC=mpifort F77=mpif77 \
+#                 --enable-exodus \
+#                 --enable-mpi \
+#                 --enable-silent-rules \
+#                 --enable-unique-id \
+#                 --disable-eigen \
+#                 --disable-fortran \
+#                 --disable-lapack \
+#                 --disable-examples \
+#                 --disable-warnings \
+#                 --disable-maintainer-mode \
+#                 --disable-metaphysicl \
+#                 --with-methods="opt" \
+#                 --without-gdb-command \
+#                 --with-cxx-std-min=2014
+#     make 2>/dev/null -j${compile_cores} install
+# fi
 
 
 # Install OpenMC (C++ core)

@@ -70,21 +70,36 @@ ENV HOME=/root
 ARG CACHEBUST=1
 #RUN echo "$CACHEBUST"
 
+#clone and install MOOSE
+RUN export CC=mpicc CXX=mpicxx FC=mpif90 F90=mpif90 F77=mpif77 \
+    && mkdir -p ${HOME}/src && cd ${HOME}/src \
+    && git clone https://github.com/idaholab/moose.git \
+    && cd moose \
+    && git checkout master \
+    && cd ./scripts \
+    && export MOOSE_JOBS=6 METHODS=opt \
+    && ./update_and_rebuild_petsc.sh   || return \
+    && ./update_and_rebuild_libmesh.sh  || return \
+    && ./update_and_rebuild_wasp.sh  || return \
+    && cd ../test \
+    && make -j${compile_cores}
+    && ./run_tests -j${compile_cores}
+
 # clone and install openmc
-RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
-    && git clone --shallow-submodules --recurse-submodules --single-branch -b ${openmc_branch} --depth=1 ${OPENMC_REPO} \
-    && cd openmc \
-    && chmod u+r+x make-openmc-dagmc-embree-wheel.sh ; \
-    if [ "$build_dagmc" = "on" ]; then \
-        ./make-openmc-dagmc-embree-wheel.sh ; \
-    else cmake ../openmc \
-            -DCMAKE_CXX_COMPILER=mpicxx \
-            -DOPENMC_USE_MPI=on \
-            -DHDF5_PREFER_PARALLEL=on \
-        && make 2>/dev/null -j${compile_cores} install \
-        && cd ../openmc && pip install .[test,depletion-mpi] \
-        && python -c "import openmc"; \
-    fi
+# RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
+#     && git clone --shallow-submodules --recurse-submodules --single-branch -b ${openmc_branch} --depth=1 ${OPENMC_REPO} \
+#     && cd openmc \
+#     && chmod u+r+x make-openmc-dagmc-embree-wheel.sh ; \
+#     if [ "$build_dagmc" = "on" ]; then \
+#         ./make-openmc-dagmc-embree-wheel.sh ; \
+#     else cmake ../openmc \
+#             -DCMAKE_CXX_COMPILER=mpicxx \
+#             -DOPENMC_USE_MPI=on \
+#             -DHDF5_PREFER_PARALLEL=on \
+#         && make 2>/dev/null -j${compile_cores} install \
+#         && cd ../openmc && pip install .[test,depletion-mpi] \
+#         && python -c "import openmc"; \
+#     fi
 
 # # FROM build AS release
 
@@ -93,6 +108,9 @@ RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
 
 # # Download cross sections (NNDC and WMP) and ENDF data needed by test suite
 # # RUN ${HOME}/OpenMC/openmc/tools/ci/download-xs.sh
+
+
+
 # RUN /bin/bash -c 'echo "CMAKE_BUILD_PARALLEL_LEVEL=${compile_cores}" >> ~/.bashrc'
 # RUN printf '#!/bin/sh\nexit 0' > /usr/sbin/policy-rc.d
 # RUN /bin/bash -c 'cd $HOME \
