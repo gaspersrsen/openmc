@@ -506,7 +506,7 @@ class CoupledOperator(OpenMCOperator):
                 if M == 10:
                     i = 0
                     for tally_ in talliez.values():
-                        print(int(tally_))
+                        print(tally_.id)
                         if i == 2:
                             break
                         prev_res += [tally_.results - tally_.results]
