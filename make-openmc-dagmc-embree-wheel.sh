@@ -113,44 +113,44 @@ pip install packaging Cython
 pip install numpy
 
 # Install Embree
-# cd $SRC_DIR
-# if build_exists "$SRC_DIR/embree/build"; then
-#     echo "Embree already built."
-# else
-#     git clone --shallow-submodules --single-branch --branch v4.3.1 --depth 1 https://github.com/embree/embree.git || echo "Embree already cloned."
-#     mkdir -p embree/build
-#     cd embree/build
-#     cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/ \
-#              -DCMAKE_BUILD_TYPE=Release \
-#              -DEMBREE_ISPC_SUPPORT=OFF \
-#              -DEMBREE_TUTORIALS=OFF \
-#              -DEMBREE_TUTORIALS_GLFW=OFF
-#     cmake --build . --parallel "$(nproc)"
-#     cmake --install .
-# fi
+cd $SRC_DIR
+if build_exists "$SRC_DIR/embree/build"; then
+    echo "Embree already built."
+else
+    git clone --shallow-submodules --single-branch --branch v4.3.1 --depth 1 https://github.com/embree/embree.git || echo "Embree already cloned."
+    mkdir -p embree/build
+    cd embree/build
+    cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+             -DCMAKE_BUILD_TYPE=Release \
+             -DEMBREE_ISPC_SUPPORT=OFF \
+             -DEMBREE_TUTORIALS=OFF \
+             -DEMBREE_TUTORIALS_GLFW=OFF
+    cmake --build . --parallel "$(nproc)"
+    cmake --install .
+fi
 
 # Install MOAB (with PyMOAB enabled)
-# cd $SRC_DIR
-# if build_exists "$SRC_DIR/moab/build"; then
-#     echo "MOAB already built."
-# else
-#     git clone --single-branch -b 5.5.1 --depth 1 https://bitbucket.org/fathomteam/moab/ || echo "MOAB already cloned."
-#     mkdir -p moab/build
-#     cd moab/build
-#     cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/ \
-#              -DCMAKE_BUILD_TYPE=Release \
-#              -DENABLE_HDF5=ON \
-#              -DENABLE_PYMOAB=ON \
-#              -DENABLE_BLASLAPACK=OFF \
-#              -DENABLE_FORTRAN=OFF \
-#              -DENABLE_METIS=ON \
-#              -DENABLE_MPI=ON \
-#              -DENABLE_NETCDF=ON \
-#              -DENABLE_PARMETIS=ON \
-#              -DENABLE_PNETCDF=OFF
-#     cmake --build . --parallel "$(nproc)"
-#     cmake --install .
-# fi
+cd $SRC_DIR
+if build_exists "$SRC_DIR/moab/build"; then
+    echo "MOAB already built."
+else
+    git clone --single-branch -b 5.5.1 --depth 1 https://bitbucket.org/fathomteam/moab/ || echo "MOAB already cloned."
+    mkdir -p moab/build
+    cd moab/build
+    cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+             -DCMAKE_BUILD_TYPE=Release \
+             -DENABLE_HDF5=ON \
+             -DENABLE_PYMOAB=ON \
+             -DENABLE_BLASLAPACK=OFF \
+             -DENABLE_FORTRAN=OFF \
+             -DENABLE_METIS=ON \
+             -DENABLE_MPI=ON \
+             -DENABLE_NETCDF=ON \
+             -DENABLE_PARMETIS=ON \
+             -DENABLE_PNETCDF=OFF
+    cmake --build . --parallel "$(nproc)"
+    cmake --install .
+fi
 
 # if [ "$BUILD_WHEELS" = true ]; then
 #     # Build and install PyMOAB wheel
@@ -161,43 +161,43 @@ pip install numpy
 # fi
 
 # Install Double-Down
-# cd $SRC_DIR
-# if build_exists "$SRC_DIR/double-down/build"; then
-#     echo "Double-Down already built."
-# else
-#     git clone --shallow-submodules --single-branch --branch v1.1.0 --depth 1 https://github.com/pshriwise/double-down.git || echo "Double-Down already cloned."
-#     mkdir -p double-down/build
-#     cd double-down/build
-#     cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/ \
-#              -DCMAKE_BUILD_TYPE=Release \
-#              -DMOAB_DIR=/usr/local/ \
-#              -DEMBREE_DIR=/usr/local/
-#     cmake --build . --parallel "$(nproc)"
-#     cmake --install .
-# fi
+cd $SRC_DIR
+if build_exists "$SRC_DIR/double-down/build"; then
+    echo "Double-Down already built."
+else
+    git clone --shallow-submodules --single-branch --branch v1.1.0 --depth 1 https://github.com/pshriwise/double-down.git || echo "Double-Down already cloned."
+    mkdir -p double-down/build
+    cd double-down/build
+    cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+             -DCMAKE_BUILD_TYPE=Release \
+             -DMOAB_DIR=/usr/local/ \
+             -DEMBREE_DIR=/usr/local/
+    cmake --build . --parallel "$(nproc)"
+    cmake --install .
+fi
 
 # # Install DAGMC
-# cd $SRC_DIR
-# if build_exists "$SRC_DIR/DAGMC/build"; then
-#     echo "DAGMC already built."
-# else
-#     git clone --single-branch --branch v3.2.4 --depth 1 https://github.com/svalinn/DAGMC.git || echo "DAGMC already cloned."
-#     mkdir -p DAGMC/build
-#     cd DAGMC/build
-#     cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/ \
-#              -DCMAKE_BUILD_TYPE=Release \
-#              -DBUILD_TALLY=ON \
-#              -DBUILD_TESTS=OFF \
-#              -DBUILD_EXE=OFF \
-#              -DBUILD_BUILD_OBB=OFF \
-#              -DMOAB_DIR=/usr/local/ \
-#              -DDOUBLE_DOWN=ON \
-#              -DDOUBLE_DOWN_DIR=/usr/local/ \
-#              -DBUILD_STATIC_EXE=OFF \
-#              -DBUILD_STATIC_LIBS=OFF
-#     cmake --build . --parallel "$(nproc)"
-#     cmake --install .
-# fi
+cd $SRC_DIR
+if build_exists "$SRC_DIR/DAGMC/build"; then
+    echo "DAGMC already built."
+else
+    git clone --single-branch --branch v3.2.4 --depth 1 https://github.com/svalinn/DAGMC.git || echo "DAGMC already cloned."
+    mkdir -p DAGMC/build
+    cd DAGMC/build
+    cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+             -DCMAKE_BUILD_TYPE=Release \
+             -DBUILD_TALLY=ON \
+             -DBUILD_TESTS=OFF \
+             -DBUILD_EXE=OFF \
+             -DBUILD_BUILD_OBB=OFF \
+             -DMOAB_DIR=/usr/local/ \
+             -DDOUBLE_DOWN=ON \
+             -DDOUBLE_DOWN_DIR=/usr/local/ \
+             -DBUILD_STATIC_EXE=OFF \
+             -DBUILD_STATIC_LIBS=OFF
+    cmake --build . --parallel "$(nproc)"
+    cmake --install .
+fi
 
 # Install LIBMESH
 # apt-get -y install m4 libnetcdf-dev libpnetcdf-dev 
