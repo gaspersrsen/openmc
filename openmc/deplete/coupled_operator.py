@@ -504,20 +504,13 @@ class CoupledOperator(OpenMCOperator):
                 talliez = copy.copy(openmc.lib.tallies)
                 curr_res = []
                 if M == 10:
-                    i = 0
                     for tally_ in talliez.values():
-                        print(tally_.id)
-                        if i == 2:
-                            break
-                        prev_res += [tally_.results - tally_.results]
-                        i += 1
-                i = 0
+                        if tally_.id in [8888,8889]:
+                            prev_res += [tally_.results - tally_.results]
                 for tally_ in talliez.values():
-                    if i == 2:
-                        break
-                    curr_res += [tally_.results - prev_res[i]]
-                    prev_res[i] = copy.copy(tally_.results)
-                    i += 1
+                    if tally_.id in [8888,8889]:
+                        curr_res += [tally_.results - prev_res[i]]
+                        prev_res[i] = copy.copy(tally_.results)
                 
                 # Talliy results are added (summed) in each batch - measurement is the difference
                 glob_tall = copy.copy(openmc.lib.global_tallies())
