@@ -38,22 +38,23 @@ if [ "$BUILD_WHEELS" = true ]; then
 fi
 
 # Install system dependencies
-apt-get install -y g++ \
-                        gfortran \
-                        imagemagick \
-                        libeigen3-dev \
-                        libgles2-mesa-dev \
-                        libglfw3 \
-                        libglfw3-dev \
-                        libmetis-dev \
-                        libnetcdf-dev \
-                        libnetcdf-mpi-dev \
-                        libopenblas-dev \
-                        libtbb-dev \
-                        doxygen \
-                        debhelper-compat=13 \
-                        libc6-dev \
-                        apt-utils
+# apt-get install -y g++ \
+#                         gfortran \
+#                         imagemagick \
+#                         libeigen3-dev \
+#                         libgles2-mesa-dev \
+#                         libglfw3 \
+#                         libglfw3-dev \
+#                         libmetis-dev \
+#                         libnetcdf-dev \
+#                         libnetcdf-mpi-dev \
+#                         libopenblas-dev \
+#                         libtbb-dev \
+#                         doxygen \
+#                         debhelper-compat=13 \
+#                         libc6-dev \
+#                         apt-utils
+apt-get -y install libeigen3-dev libnetcdf-dev libtbb-dev libglfw3-dev
 
 
 #apt-get update -y
