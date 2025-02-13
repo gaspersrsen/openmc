@@ -54,7 +54,7 @@ fi
 #                         debhelper-compat=13 \
 #                         libc6-dev \
 #                         apt-utils
-apt-get -y install libeigen3-dev libnetcdf-dev libtbb-dev libglfw3-dev libmetis-dev
+apt-get -y install libeigen3-dev libnetcdf-dev libtbb-dev libglfw3-dev libmetis-dev libparmetis-dev
 
 
 # #apt-get update -y
@@ -145,7 +145,7 @@ else
              -DENABLE_FORTRAN=OFF \
              -DENABLE_METIS=ON \
              -DENABLE_MPI=ON \
-             -DENABLE_NETCDF=ON \
+             -DENABLE_NETCDF=OFF \
              -DENABLE_PARMETIS=ON \
              -DENABLE_PNETCDF=OFF
     cmake --build . --parallel "$(nproc)"
