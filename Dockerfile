@@ -124,9 +124,10 @@ RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
     #&& echo "export DAGMC_DIR=$HOME/DAGMC" >> ~/.bashrc \
     if [ "$build_dagmc" = "on" ]; then \
         ./make-openmc-dagmc-embree-wheel.sh ; \
-    fi; \
-    cd .. \
-    && mkdir build && cd build ; \
+    fi
+    #; \
+    # cd .. \
+    # && mkdir build && cd build ; \
     # if [ ${build_libmesh} = "off" ]; then \
     #     cmake ../openmc \
     #         -DCMAKE_CXX_COMPILER=mpicxx \
