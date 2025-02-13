@@ -122,21 +122,21 @@ pip install packaging Cython
 pip install numpy
 
 # Install Embree
-cd $SRC_DIR
-if build_exists "$SRC_DIR/embree/build"; then
-    echo "Embree already built."
-else
-    git clone --shallow-submodules --single-branch --branch v4.3.1 --depth 1 https://github.com/embree/embree.git || echo "Embree already cloned."
-    mkdir -p embree/build
-    cd embree/build
-    cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/ \
-             -DCMAKE_BUILD_TYPE=Release \
-             -DEMBREE_ISPC_SUPPORT=OFF \
-             -DEMBREE_TUTORIALS=OFF \
-             -DEMBREE_TUTORIALS_GLFW=OFF
-    cmake --build . --parallel "$(nproc)"
-    cmake --install .
-fi
+# cd $SRC_DIR
+# if build_exists "$SRC_DIR/embree/build"; then
+#     echo "Embree already built."
+# else
+#     git clone --shallow-submodules --single-branch --branch v4.3.1 --depth 1 https://github.com/embree/embree.git || echo "Embree already cloned."
+#     mkdir -p embree/build
+#     cd embree/build
+#     cmake .. -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+#              -DCMAKE_BUILD_TYPE=Release \
+#              -DEMBREE_ISPC_SUPPORT=OFF \
+#              -DEMBREE_TUTORIALS=OFF \
+#              -DEMBREE_TUTORIALS_GLFW=OFF
+#     cmake --build . --parallel "$(nproc)"
+#     cmake --install .
+# fi
 
 # Install MOAB (with PyMOAB enabled)
 # cd $SRC_DIR
