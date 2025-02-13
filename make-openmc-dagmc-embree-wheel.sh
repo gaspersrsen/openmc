@@ -152,13 +152,13 @@ else
     cmake --install .
 fi
 
-# if [ "$BUILD_WHEELS" = true ]; then
-#     # Build and install PyMOAB wheel
+if [ "$BUILD_WHEELS" = true ]; then
+    # Build and install PyMOAB wheel
 
-#     chmod -R 777 $SRC_DIR/moab/build
-#     cd $SRC_DIR/moab/build/pymoab
-#     python -m build --wheel --outdir "$WHEEL_DIR"
-# fi
+    chmod -R 777 $SRC_DIR/moab/build
+    cd $SRC_DIR/moab/build/pymoab
+    python -m build --wheel --outdir "$WHEEL_DIR"
+fi
 
 # Install Double-Down
 cd $SRC_DIR
@@ -200,31 +200,31 @@ else
 fi
 
 # Install LIBMESH
-# apt-get -y install m4 libnetcdf-dev libpnetcdf-dev 
-# cd $SRC_DIR
-# if build_exists "$SRC_DIR/libmesh/build"; then
-#     echo "LIBMESH already built."
-# else
-#     git clone --shallow-submodules --recurse-submodules --single-branch -b "v1.8.0-rc2" --depth 1 "https://github.com/libMesh/libmesh"
-#     mkdir build && cd build
-#     ../libmesh/configure \
-#                 --prefix=$/usr/local/ CXX=mpicxx CC=mpicc FC=mpifort F77=mpif77 \
-#                 --enable-exodus \
-#                 --enable-mpi \
-#                 --enable-silent-rules \
-#                 --enable-unique-id \
-#                 --disable-eigen \
-#                 --disable-fortran \
-#                 --disable-lapack \
-#                 --disable-examples \
-#                 --disable-warnings \
-#                 --disable-maintainer-mode \
-#                 --disable-metaphysicl \
-#                 --with-methods="opt" \
-#                 --without-gdb-command \
-#                 --with-cxx-std-min=2014
-#     make 2>/dev/null -j${compile_cores} install
-# fi
+apt-get -y install m4 libnetcdf-dev libpnetcdf-dev 
+cd $SRC_DIR
+if build_exists "$SRC_DIR/libmesh/build"; then
+    echo "LIBMESH already built."
+else
+    git clone --shallow-submodules --recurse-submodules --single-branch -b "v1.8.0-rc2" --depth 1 "https://github.com/libMesh/libmesh"
+    mkdir build && cd build
+    ../libmesh/configure \
+                --prefix=$/usr/local/ CXX=mpicxx CC=mpicc FC=mpifort F77=mpif77 \
+                --enable-exodus \
+                --enable-mpi \
+                --enable-silent-rules \
+                --enable-unique-id \
+                --disable-eigen \
+                --disable-fortran \
+                --disable-lapack \
+                --disable-examples \
+                --disable-warnings \
+                --disable-maintainer-mode \
+                --disable-metaphysicl \
+                --with-methods="opt" \
+                --without-gdb-command \
+                --with-cxx-std-min=2014
+    make 2>/dev/null -j${compile_cores} install
+fi
 
 
 # Install OpenMC (C++ core)
@@ -261,12 +261,10 @@ else
     python -c "import openmc"
 fi
 
-# if [ "$BUILD_WHEELS" = true ]; then
-#     # Build and install OpenMC wheel
-#     cd $SRC_DIR/openmc
-#     python -m build --wheel --outdir "$WHEEL_DIR"
+if [ "$BUILD_WHEELS" = true ]; then
+    # Build and install OpenMC wheel
+    cd $SRC_DIR/openmc
+    python -m build --wheel --outdir "$WHEEL_DIR"
 
-#     ls "$WHEEL_DIR"
-# fi
-
-# #deactivate
+    ls "$WHEEL_DIR"
+fi
