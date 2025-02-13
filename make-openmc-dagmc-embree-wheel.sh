@@ -75,7 +75,7 @@ wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3-7.debi
 wget http://ftp.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3-7.dsc
 dpkg-source -x parmetis_4.0.3-7.dsc
 cd parmetis-4.0.3
-dpkg-buildpackage -rfakeroot -b
+dpkg-buildpackage -rfakeroot -b -d
 dpkg -i ../libparmetis4.0_4.0.3-7_amd64.deb
 dpkg -i ../libparmetis-dev_4.0.3-7_amd64.deb
 
