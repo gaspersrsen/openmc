@@ -434,7 +434,8 @@ class CoupledOperator(OpenMCOperator):
         bracket: array of 2 floats > 0, optional
             Lower and upper bounds for concentrations.
             Needs to be used in tandem with initial_value.
-        materials: materials in which nuclide concentrations are changed.
+        materials: NOT YET IMPLEMENTED
+            materials in which nuclide concentrations are changed.
             Defaults to all materials.
         initial_value: float > 0, optional
             Only used in first call, used for intermediate critical concentration message output.
@@ -505,6 +506,7 @@ class CoupledOperator(OpenMCOperator):
                 if M == 10:
                     i = 0
                     for tally_ in talliez.values():
+                        print(int(tally_))
                         if i == 2:
                             break
                         prev_res += [tally_.results - tally_.results]
@@ -527,11 +529,9 @@ class CoupledOperator(OpenMCOperator):
                 L_leak = leak                                               # Neutron leakage fraction
                 L_abs = curr_res[0][0][1][1]                                # Total neutron absorption
                 L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]  # Total flagged nuclide absorption
-                # Predict concentration change
-                #k = (P_fiss) / (L_abs + P_fiss*L_leak)
-                k = (P_fiss + P_nxn) / (L_abs + (P_fiss + P_nxn)*L_leak)
+                # Predict concentration change                
                 g0 = ((P_fiss/target + P_nxn)
-                        - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs #* np.exp(k-target)
+                        - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs
                 # Optimal following (Kalman filter for narrowing to a scalar value):
                 if M == 10:
                     x = 1
@@ -539,8 +539,9 @@ class CoupledOperator(OpenMCOperator):
                     p_n = 1e16
                     p_measure = 1e16
                 if (g0 >= 0.1 and g0 <= 2.5):
-                    # Estimate the accuracy of the measurement with a quadratic difference of k and target
+                    #Slowly relax uncertainty
                     p_measure = ((batches+10)/M)/np.sqrt(self.model.settings.particles)
+                    # Estimate the accuracy of the measurement with a quadratic difference of k and target
                     #(1 + self.model.settings.particles * (k-target)**2)**2 / np.sqrt(self.model.settings.particles)
                 else:
                     if g0 < 0.1: g0 = x*0.1
@@ -556,9 +557,9 @@ class CoupledOperator(OpenMCOperator):
                 f = x
                 g = f/f_prev
                 f_prev = f
-                print(g0,k,g,f)
 
                 if debug is True:
+                    k = (P_fiss + P_nxn) / (L_abs + (P_fiss + P_nxn)*L_leak)
                     print(f"Batch: {M}")
                     print(f"k_absorption:{k}")
                     print(f"Search algorithm internal tally:\n{curr_res}")
