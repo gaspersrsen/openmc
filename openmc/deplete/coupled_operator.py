@@ -507,11 +507,12 @@ class CoupledOperator(OpenMCOperator):
                     for tally_ in talliez.values():
                         if tally_.id in [8888,8889]:
                             prev_res += [tally_.results - tally_.results]
+                i=0
                 for tally_ in talliez.values():
                     if tally_.id in [8888,8889]:
                         curr_res += [tally_.results - prev_res[i]]
                         prev_res[i] = copy.copy(tally_.results)
-                
+                        i+=1
                 # Talliy results are added (summed) in each batch - measurement is the difference
                 glob_tall = copy.copy(openmc.lib.global_tallies())
                 leak = glob_tall[3][0]*M - prev_leak
