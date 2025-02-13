@@ -227,39 +227,39 @@ fi
 # fi
 
 
-# # Install OpenMC (C++ core)
-# cd $SRC_DIR
-# if build_exists "$SRC_DIR/openmc/build"; then
-#     echo "OpenMC already built."
-# else
-#     PINNED_COMMIT="de8132a5a431660f5ff515cc7894ea0f283d3bec"
-#     #git clone --recurse-submodules --single-branch --branch develop --depth 1 https://github.com/openmc-dev/openmc.git || echo "OpenMC already cloned."
-#     #git clone --recurse-submodules --single-branch --branch $openmc_branch --depth 1 $OPENMC_REPO || echo "OpenMC already cloned."
-#     cd openmc
-#     #git fetch --depth 1 origin $PINNED_COMMIT
-#     #git checkout $PINNED_COMMIT
-#     git submodule update --init --recursive
-#     cd ..
-#     mkdir -p build
-#     cd build
-#     cmake ../openmc \
-#         -DCMAKE_INSTALL_PREFIX=/usr/local/ \
-#         -DCMAKE_BUILD_TYPE=Release \
-#         -DOPENMC_USE_DAGMC=ON \
-#         -DDAGMC_ROOT=/usr/local/ \
-#         -DOPENMC_USE_MPI=ON \
-#         -DHDF5_PREFER_PARALLEL=ON \
-#         -DCPP20=ON \
-#         -DBUILD_TESTING=OFF \
-#         -DOPENMC_USE_LIBMESH=$build_libmesh \
-#         -DCMAKE_PREFIX_PATH=/usr/local \
-#         -DXTENSOR_USE_TBB=OFF \
-#         -DXTENSOR_USE_OPENMP=ON \
-#         -DXTENSOR_USE_XSIMD=OFF
-#     make 2>/dev/null -j${compile_cores} install
-#     cd ../openmc && pip install .[test,depletion-mpi]
-#     python -c "import openmc"
-# fi
+# Install OpenMC (C++ core)
+cd $SRC_DIR
+if build_exists "$SRC_DIR/openmc/build"; then
+    echo "OpenMC already built."
+else
+    PINNED_COMMIT="de8132a5a431660f5ff515cc7894ea0f283d3bec"
+    #git clone --recurse-submodules --single-branch --branch develop --depth 1 https://github.com/openmc-dev/openmc.git || echo "OpenMC already cloned."
+    #git clone --recurse-submodules --single-branch --branch $openmc_branch --depth 1 $OPENMC_REPO || echo "OpenMC already cloned."
+    cd openmc
+    #git fetch --depth 1 origin $PINNED_COMMIT
+    #git checkout $PINNED_COMMIT
+    git submodule update --init --recursive
+    cd ..
+    mkdir -p build
+    cd build
+    cmake ../openmc \
+        -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DOPENMC_USE_DAGMC=ON \
+        -DDAGMC_ROOT=/usr/local/ \
+        -DOPENMC_USE_MPI=ON \
+        -DHDF5_PREFER_PARALLEL=ON \
+        -DCPP20=ON \
+        -DBUILD_TESTING=OFF \
+        -DOPENMC_USE_LIBMESH=$build_libmesh \
+        -DCMAKE_PREFIX_PATH=/usr/local \
+        -DXTENSOR_USE_TBB=OFF \
+        -DXTENSOR_USE_OPENMP=ON \
+        -DXTENSOR_USE_XSIMD=OFF
+    make 2>/dev/null -j${compile_cores} install
+    cd ../openmc && pip install .[test,depletion-mpi]
+    python -c "import openmc"
+fi
 
 # if [ "$BUILD_WHEELS" = true ]; then
 #     # Build and install OpenMC wheel
