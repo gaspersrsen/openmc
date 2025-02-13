@@ -531,7 +531,7 @@ class CoupledOperator(OpenMCOperator):
                 #k = (P_fiss) / (L_abs + P_fiss*L_leak)
                 k = (P_fiss + P_nxn) / (L_abs + (P_fiss + P_nxn)*L_leak)
                 g0 = ((P_fiss/target + P_nxn)
-                        - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs * np.exp(k-target)
+                        - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs #* np.exp(k-target)
                 # Optimal following (Kalman filter for narrowing to a scalar value):
                 if M == 10:
                     x = 1
