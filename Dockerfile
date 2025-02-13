@@ -127,10 +127,10 @@ RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
     fi; \
     mkdir build && cd build ; \
     if [ ${build_libmesh} = "off" ]; then \
-    cmake ../openmc \
-        -DCMAKE_CXX_COMPILER=mpicxx \
-        -DOPENMC_USE_MPI=on \
-        -DHDF5_PREFER_PARALLEL=on ; \
+        cmake .. \
+            -DCMAKE_CXX_COMPILER=mpicxx \
+            -DOPENMC_USE_MPI=on \
+            -DHDF5_PREFER_PARALLEL=on ; \
     fi ; \
     # if [ ${build_libmesh} = "off" ]; then \
     #     cmake .. \
