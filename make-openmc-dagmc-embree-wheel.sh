@@ -38,27 +38,18 @@ if [ "$BUILD_WHEELS" = true ]; then
 fi
 
 # Install system dependencies
-apt-get install -y cmake \
-                        g++ \
+apt-get install -y g++ \
                         gfortran \
-                        git \
-                        hdf5-tools \
                         imagemagick \
                         libeigen3-dev \
                         libgles2-mesa-dev \
                         libglfw3 \
                         libglfw3-dev \
-                        libhdf5-mpich-dev \
-                        libhdf5-serial-dev \
-                        libmpich-dev \
                         libmetis-dev \
                         libnetcdf-dev \
                         libnetcdf-mpi-dev \
                         libopenblas-dev \
-                        libpng-dev \
                         libtbb-dev \
-                        mpich \
-                        wget \
                         doxygen \
                         debhelper-compat=13 \
                         mpi-default-bin \
