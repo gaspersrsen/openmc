@@ -127,19 +127,25 @@ RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
     fi; \
     mkdir build && cd build ; \
     if [ ${build_libmesh} = "off" ]; then \
-        cmake .. \
-            -DCMAKE_INSTALL_PREFIX=/usr/local/ \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DOPENMC_USE_DAGMC=ON \
-            -DOPENMC_USE_MPI=ON \
-            -DHDF5_PREFER_PARALLEL=ON \
-            -DCPP20=ON \
-            -DBUILD_TESTING=OFF \
-            -DCMAKE_PREFIX_PATH=/root/src/DAGMC/build \
-            -DXTENSOR_USE_TBB=OFF \
-            -DXTENSOR_USE_OPENMP=ON \
-            -DXTENSOR_USE_XSIMD=OFF; \
+    cmake ../openmc \
+        -DCMAKE_CXX_COMPILER=mpicxx \
+        -DOPENMC_USE_MPI=on \
+        -DHDF5_PREFER_PARALLEL=on ; \
     fi ; \
+    # if [ ${build_libmesh} = "off" ]; then \
+    #     cmake .. \
+    #         -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+    #         -DCMAKE_BUILD_TYPE=Release \
+    #         -DOPENMC_USE_DAGMC=ON \
+    #         -DOPENMC_USE_MPI=ON \
+    #         -DHDF5_PREFER_PARALLEL=ON \
+    #         -DCPP20=ON \
+    #         -DBUILD_TESTING=OFF \
+    #         -DCMAKE_PREFIX_PATH=/root/src/DAGMC/build \
+    #         -DXTENSOR_USE_TBB=OFF \
+    #         -DXTENSOR_USE_OPENMP=ON \
+    #         -DXTENSOR_USE_XSIMD=OFF; \
+    # fi ; \
     make 2>/dev/null -j${compile_cores} install \
     && cd .. && pip install .[test,depletion-mpi] \
     && python -c "import openmc"
