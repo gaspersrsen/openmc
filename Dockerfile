@@ -133,20 +133,20 @@ RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
     #         -DOPENMC_USE_MPI=on \
     #         -DHDF5_PREFER_PARALLEL=on ; \
     # fi ; \
-    if [ ${build_libmesh} = "off" ]; then \
-        cmake ../openmc \
-            -DCMAKE_INSTALL_PREFIX=/usr/local/ \
-            -DCMAKE_BUILD_TYPE=Release \
-            -DOPENMC_USE_DAGMC=ON \
-            -DOPENMC_USE_MPI=ON \
-            -DHDF5_PREFER_PARALLEL=ON \
-            -DCPP20=ON \
-            -DBUILD_TESTING=OFF \
-            -DCMAKE_PREFIX_PATH="/usr/local;$HOME/src/DAGMC" \
-            -DXTENSOR_USE_TBB=OFF \
-            -DXTENSOR_USE_OPENMP=ON \
-            -DXTENSOR_USE_XSIMD=OFF; \
-    fi ; \
+    # if [ ${build_libmesh} = "off" ]; then \
+    #     cmake ../openmc \
+    #         -DCMAKE_INSTALL_PREFIX=/usr/local/ \
+    #         -DCMAKE_BUILD_TYPE=Release \
+    #         -DOPENMC_USE_DAGMC=ON \
+    #         -DOPENMC_USE_MPI=ON \
+    #         -DHDF5_PREFER_PARALLEL=ON \
+    #         -DCPP20=ON \
+    #         -DBUILD_TESTING=OFF \
+    #         -DCMAKE_PREFIX_PATH="/usr/local;$HOME/src/DAGMC" \
+    #         -DXTENSOR_USE_TBB=OFF \
+    #         -DXTENSOR_USE_OPENMP=ON \
+    #         -DXTENSOR_USE_XSIMD=OFF; \
+    # fi ; \
     # make 2>/dev/null -j${compile_cores} install \
     # && cd ../openmc && pip install .[test,depletion-mpi] \
     # && python -c "import openmc"
