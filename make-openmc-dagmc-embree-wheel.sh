@@ -54,7 +54,7 @@ fi
 #                         debhelper-compat=13 \
 #                         libc6-dev \
 #                         apt-utils
-apt-get -y install libeigen3-dev libnetcdf-dev libtbb-dev libglfw3-dev libmetis-dev libparmetis-dev
+apt-get -y install libeigen3-dev libnetcdf-dev libtbb-dev libglfw3-dev libmetis-dev libscotchparmetis-dev
 
 
 # #apt-get update -y
