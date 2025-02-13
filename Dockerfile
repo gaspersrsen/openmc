@@ -125,9 +125,10 @@ RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
     if [ "$build_dagmc" = "on" ]; then \
         ./make-openmc-dagmc-embree-wheel.sh ; \
     fi; \
-    mkdir build && cd build ; \
+    cd .. \
+    && mkdir build && cd build ; \
     if [ ${build_libmesh} = "off" ]; then \
-        cmake .. \
+        cmake ../openmc \
             -DCMAKE_CXX_COMPILER=mpicxx \
             -DOPENMC_USE_MPI=on \
             -DHDF5_PREFER_PARALLEL=on ; \
@@ -147,7 +148,7 @@ RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
     #         -DXTENSOR_USE_XSIMD=OFF; \
     # fi ; \
     make 2>/dev/null -j${compile_cores} install \
-    && cd .. && pip install .[test,depletion-mpi] \
+    && cd ../openmc && pip install .[test,depletion-mpi] \
     && python -c "import openmc"
 
 # RUN cd ${HOME}/src/openmc \
