@@ -410,7 +410,7 @@ class CoupledOperator(OpenMCOperator):
         self.materials.export_to_xml(nuclides_to_ignore=self._decay_nucs)
     
     def search_crit_conc(self, vec, source_rate, iso=None, batches=None, bracket=None, 
-                         initial_value=None, target=1., debug=False):
+                         materials=None, initial_value=None, target=1., debug=False):
         """
         Runs a simulation where 'iso' nuclide values converge in such a way to obtain the desired k_eff.
         Operator.model materials are updated in the process
@@ -428,17 +428,22 @@ class CoupledOperator(OpenMCOperator):
         iso: array of str, required
             Nuclide name, ex. ["B10", "B11"]
         batches: int, optional
-            Number of inactive batches added to the begining of simulation where 'iso' concentration converges.
+            Number of inactive batches added to the begining of simulation where
+            'iso' concentration converges.
             Defaults to 50 extra inactive cycles.
         bracket: array of 2 floats > 0, optional
             Lower and upper bounds for concentrations.
             Needs to be used in tandem with initial_value.
+        materials: materials in which nuclide concentrations are changed.
+            Defaults to all materials.
         initial_value: float > 0, optional
             Only used in first call, used for intermediate critical concentration message output.
+            Defaults to 1.0.
         target: float, optional
             Target k_eff, defaults to 1.0
         debug: Bool, optional
-            Wether to print out batch number, tally results of each batch, k_eff and current concentration.
+            Wether to print out batch number, tally results of each batch,
+            batch k_absorption and current concentration.
             Defaults to False.
 
         Returns
@@ -467,12 +472,19 @@ class CoupledOperator(OpenMCOperator):
             return OperatorResult(ufloat(0.0, 0.0), rates)
 
         if not hasattr(self, 'initial_value'):
-            self.initial_value = initial_value
+            if initial_value is None:
+                self.initial_value = 1.0
+            else:           
+                self.initial_value = initial_value
             self.concs = [initial_value]
         initial_value = self.initial_value
         
         self._update_materials_and_nuclides(vec)
         self.model.materials.export_to_xml()
+        if materials is not None:
+            mat_ids=[]
+            for mat in materials:
+                mat_ids += [mat.id]
 
         f = 1
         g = 1
@@ -518,33 +530,33 @@ class CoupledOperator(OpenMCOperator):
                 # Predict concentration change
                 #k = (P_fiss) / (L_abs + P_fiss*L_leak)
                 k = (P_fiss + P_nxn) / (L_abs + (P_fiss + P_nxn)*L_leak)
-                g = ((P_fiss/target + P_nxn)
+                g0 = ((P_fiss/target + P_nxn)
                         - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs * np.exp(k-target)
-                print(g, k)
                 # Optimal following (Kalman filter for narrowing to a scalar value):
                 if M == 10:
                     x = 1
                     p = 1e16
                     p_n = 1e16
                     p_measure = 1e16
-                if (g >= 0.1 and g <= 2.5):
+                if (g0 >= 0.1 and g0 <= 2.5):
                     # Estimate the accuracy of the measurement with a quadratic difference of k and target
-                    p_measure = (1 + self.model.settings.particles * (k-target)**2)**2 / np.sqrt(self.model.settings.particles)
+                    p_measure = 1/np.sqrt(self.model.settings.particles)
+                    #(1 + self.model.settings.particles * (k-target)**2)**2 / np.sqrt(self.model.settings.particles)
                 else:
-                    if g < 0.1: g = x*0.1
-                    elif g > 2.5: g = x*2.5
+                    if g0 < 0.1: g0 = x*0.1
+                    elif g0 > 2.5: g0 = x*2.5
                     p_measure = 1e16
                 if p_n >= 1e16 and p_measure >= 1e16:
                     pass
                 else:
                     p_n = 1/(1/p + 1/p_measure)
-                z = f_prev * g
+                z = f_prev * g0
                 x = x + p_n/p_measure * (z - x)
                 p = p_n
                 f = x
                 g = f/f_prev
                 f_prev = f
-                print(g,f)
+                print(g0,k,g,f)
 
                 if debug is True:
                     print(f"Batch: {M}")
@@ -556,6 +568,9 @@ class CoupledOperator(OpenMCOperator):
 
                 # Update densities on C API side
                 for mat in openmc.lib.materials:
+                    if materials is not None:
+                        if int(mat) not in mat_ids:
+                            continue
                     nuclides=[]
                     densities=[]
                     all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
