@@ -52,7 +52,6 @@ apt-get install -y g++ \
                         libtbb-dev \
                         doxygen \
                         debhelper-compat=13 \
-                        mpi-default-bin \
                         libc6-dev \
                         apt-utils
 
