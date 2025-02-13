@@ -57,27 +57,27 @@ fi
 apt-get -y install libeigen3-dev libnetcdf-dev libtbb-dev libglfw3-dev
 
 
-#apt-get update -y
-# Install ParMETIS
-cd $SRC_DIR
+# #apt-get update -y
+# # Install ParMETIS
+# cd $SRC_DIR
 
-#wget http://ftp.debian.org/debian/pool/non-free/p/parmetis/libparmetis4.0_4.0.3-7+b2_amd64.deb
-#echo($ls)
-#apt install ./libparmetis4.0_4.0.3-7+b2_amd64.deb
-# wget http://ftp.debian.org/debian/pool/non-free/p/parmetis/libparmetis-dev_4.0.3-7+b2_amd64.deb
-# dpkg -i libparmetis-dev_4.0.3-7+b2_amd64.deb
-mkdir parmetis && cd parmetis
-wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3.orig.tar.gz
-#tar -xvzf parmetis_4.0.3.orig.tar.gz
-#cd parmetis-4.0.3/
-wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3-7.debian.tar.xz
-#tar -xvf parmetis_4.0.3-7.debian.tar.xz
-wget http://ftp.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3-7.dsc
-dpkg-source -x parmetis_4.0.3-7.dsc
-cd parmetis-4.0.3
-dpkg-buildpackage -rfakeroot -b -d
-dpkg -i ../libparmetis4.0_4.0.3-7_amd64.deb
-dpkg -i ../libparmetis-dev_4.0.3-7_amd64.deb
+# #wget http://ftp.debian.org/debian/pool/non-free/p/parmetis/libparmetis4.0_4.0.3-7+b2_amd64.deb
+# #echo($ls)
+# #apt install ./libparmetis4.0_4.0.3-7+b2_amd64.deb
+# # wget http://ftp.debian.org/debian/pool/non-free/p/parmetis/libparmetis-dev_4.0.3-7+b2_amd64.deb
+# # dpkg -i libparmetis-dev_4.0.3-7+b2_amd64.deb
+# mkdir parmetis && cd parmetis
+# wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3.orig.tar.gz
+# #tar -xvzf parmetis_4.0.3.orig.tar.gz
+# #cd parmetis-4.0.3/
+# wget http://deb.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3-7.debian.tar.xz
+# #tar -xvf parmetis_4.0.3-7.debian.tar.xz
+# wget http://ftp.debian.org/debian/pool/non-free/p/parmetis/parmetis_4.0.3-7.dsc
+# dpkg-source -x parmetis_4.0.3-7.dsc
+# cd parmetis-4.0.3
+# dpkg-buildpackage -rfakeroot -b
+# dpkg -i ../libparmetis4.0_4.0.3-7_amd64.deb
+# dpkg -i ../libparmetis-dev_4.0.3-7_amd64.deb
 
 # make config shared=1 -j"$(nproc)"
 # make install
