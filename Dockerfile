@@ -82,7 +82,7 @@ RUN export CC=mpicc CXX=mpicxx FC=mpif90 F90=mpif90 F77=mpif77 \
     && ./update_and_rebuild_libmesh.sh  || return \
     && ./update_and_rebuild_wasp.sh  || return \
     && cd ../test \
-    && make -j${compile_cores}
+    && make -j${compile_cores} \
     && ./run_tests -j${compile_cores}
 
 # clone and install openmc
