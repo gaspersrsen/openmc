@@ -538,14 +538,14 @@ class CoupledOperator(OpenMCOperator):
                     p = 1e16
                     p_n = 1e16
                     p_measure = 1e16
-                if (g0 >= 0.1 and g0 <= 2.5):
+                if (g0 >= 0.1 and g0 <= 10.0):
                     #Slowly relax uncertainty
                     p_measure = ((batches+10)/M)/np.sqrt(self.model.settings.particles)
                     # Estimate the accuracy of the measurement with a quadratic difference of k and target
                     #(1 + self.model.settings.particles * (k-target)**2)**2 / np.sqrt(self.model.settings.particles)
                 else:
-                    if g0 < 0.1: g0 = x*0.1
-                    elif g0 > 2.5: g0 = x*2.5
+                    if g0 <= 0.1: g0 = 0.1
+                    elif g0 >= 2.5: g0 = 2.5
                     p_measure = 1e16
                 if p_n >= 1e16 and p_measure >= 1e16:
                     pass
