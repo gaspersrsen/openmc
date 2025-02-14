@@ -859,7 +859,7 @@ class Integrator(ABC):
                 tallyTest2.nuclides = conc_args["iso"]
                 tallyTest2.scores = ["absorption"]
                 if "materials" in conc_args:
-                    tallyTest2.filters = [MaterialFilter(conc_args["materials"],id=8888)]
+                    tallyTest2.filters = [MaterialFilter(conc_args["materials"],filter_id=8888)]
                 self.operator.model.tallies += [tallyTest2]
                 self.operator.model.tallies.export_to_xml()
             n = self.operator.initial_condition()
