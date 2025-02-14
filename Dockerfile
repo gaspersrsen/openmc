@@ -70,7 +70,7 @@ ENV HOME=/root
 ARG CACHEBUST=1
 #RUN echo "$CACHEBUST"
 
-RUN cd $HOME/src
+RUN cd $HOME/src \
     && git clone https://github.com/neams-th-coe/cardinal.git \
     && cd cardinal \
     && ./scripts/get-dependencies.sh \
