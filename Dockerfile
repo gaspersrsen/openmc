@@ -40,7 +40,7 @@ RUN apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false upd
     apt-get install -y \
         python3-pip python-is-python3 wget git build-essential cmake \
         mpich libmpich-dev libhdf5-serial-dev libhdf5-mpich-dev \
-        libpng-dev python3-venv yaml pkg-config && \
+        libpng-dev python3-venv pkg-config && \
     apt-get autoremove
 
 # create virtual enviroment to avoid externally managed environment error
@@ -49,7 +49,7 @@ ENV PATH=/openmc_venv/bin:$PATH
 
 # Update system-provided pip
 RUN pip install --upgrade pip
-RUN pip install vtk
+RUN pip install vtk pyyaml
 
 # Clone and install NJOY2016
 RUN cd $HOME \
