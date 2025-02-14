@@ -842,9 +842,8 @@ class Integrator(ABC):
             output: bool = True,
             path: PathLike = 'depletion_results.h5'
         ):
-
-        with change_directory(self.operator.output_dir):
-            if conc_run:
+        #Add required tallies and parse some potentially problematic parameters
+        if conc_run:
                 if "batches" not in conc_args.keys():
                     conc_args["batches"] = 50
                 self.operator.model.settings.batches += conc_args["batches"]
@@ -862,6 +861,9 @@ class Integrator(ABC):
                     tallyTest2.filters = [MaterialFilter(conc_args["materials"],filter_id=8888)]
                 self.operator.model.tallies += [tallyTest2]
                 self.operator.model.tallies.export_to_xml()
+        
+        with change_directory(self.operator.output_dir):
+            
             n = self.operator.initial_condition()
             t, self._i_res = self._get_start_data()
 
