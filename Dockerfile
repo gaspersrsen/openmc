@@ -71,7 +71,7 @@ ARG CACHEBUST=1
 
 ARG MOOSE_JOBS=${compile_cores}
 ARG ENABLE_DAGMC=yes
-ARG NEKRS_HOME=$HOME/cardinal/install
+ARG NEKRS_HOME=$HOME/src/cardinal/install
 ARG NEKRS_OCCA_MODE_DEFAULT=CPU
 #RUN echo "$CACHEBUST"
 
