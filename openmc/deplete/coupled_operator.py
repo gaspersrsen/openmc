@@ -489,8 +489,6 @@ class CoupledOperator(OpenMCOperator):
             for mat in materials:
                 mat_ids += [mat.id]
 
-# tallies.export_to_xml()
-
         f = 1
         g = 1
         f_prev = 1

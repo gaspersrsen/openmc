@@ -21,7 +21,7 @@ from uncertainties import ufloat
 from openmc.checkvalue import check_type, check_greater_than, PathLike
 from openmc.mpi import comm
 from openmc.utility_funcs import change_directory
-from openmc import Material, Tally
+from openmc import Material, Tally, MaterialFilter
 from .stepresult import StepResult
 from .chain import Chain
 from .results import Results
@@ -859,7 +859,7 @@ class Integrator(ABC):
                 tallyTest2.nuclides = conc_args["iso"]
                 tallyTest2.scores = ["absorption"]
                 if "materials" in conc_args:
-                    tallyTest2.materials = conc_args["materials"]
+                    tallyTest2.filters = [MaterialFilter(conc_args["materials"])]
                 self.operator.model.tallies += [tallyTest2]
                 self.operator.model.tallies.export_to_xml()
             n = self.operator.initial_condition()
