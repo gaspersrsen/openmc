@@ -436,8 +436,7 @@ class CoupledOperator(OpenMCOperator):
             Lower and upper bounds for concentrations.
             Inteded to be used in tandem with initial_value.
             Otherwise just a multiple of initial concentration at step 0.
-        materials: NOT YET IMPLEMENTED
-            materials in which nuclide concentrations are changed.
+        materials: materials in which nuclide concentrations are changed.
             Defaults to all materials.
         initial_value: float > 0, optional
             Only used in first call, used for intermediate critical concentration message output.
@@ -529,6 +528,9 @@ class CoupledOperator(OpenMCOperator):
                     L_abs_nucs = np.sum(np.array(np.sum(curr_res[1], axis=0)).T, axis=1)[1]
                 else:
                     L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
+                if L_abs_nucs == 0:
+                    print(f"No nuclide absorption tallied, skipping step {M}")
+                    continue
                 # Predict concentration change                
                 g0 = ((P_fiss/target + P_nxn)
                         - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs
