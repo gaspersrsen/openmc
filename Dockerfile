@@ -71,7 +71,6 @@ ARG CACHEBUST=1
 
 ARG MOOSE_JOBS=${compile_cores}
 ARG ENABLE_DAGMC=yes
-ARG NEKRS_HOME=$HOME/src/cardinal/install
 ARG NEKRS_OCCA_MODE_DEFAULT=CPU
 #RUN echo "$CACHEBUST"
 
@@ -85,7 +84,7 @@ RUN mkdir -p $HOME/src \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
     && ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
-    && export NEKRS_HOME=$HOME/cardinal/install \
+    && export NEKRS_HOME=$HOME/src/cardinal/install \
     && make -j${compile_cores} \
 #clone and install MOOSE
 # RUN export CC=mpicc CXX=mpicxx FC=mpif90 F90=mpif90 F77=mpif77 \
