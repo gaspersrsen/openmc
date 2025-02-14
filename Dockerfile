@@ -73,7 +73,7 @@ ARG CACHEBUST=1
 RUN mkdir -p $HOME/src \
     && cd $HOME/src \
     && git clone https://github.com/neams-th-coe/cardinal.git \
-    && apt-get install flex
+    && apt-get install flex \
     && cd cardinal \
     && ./scripts/get-dependencies.sh \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
