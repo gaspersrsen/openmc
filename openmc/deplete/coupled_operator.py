@@ -550,6 +550,11 @@ class CoupledOperator(OpenMCOperator):
                 else:
                     p_n = 1/(1/p + 1/p_measure)
                 z = f_prev * g0
+                if bracket is not None:
+                    if z*initial_value > bracket[1]:
+                        z = bracket[1]/initial_value
+                    elif z*initial_value < bracket[0]:
+                        z = bracket[0]/initial_value
                 x = x + p_n/p_measure * (z - x)
                 p = p_n
                 f = x
