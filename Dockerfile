@@ -88,7 +88,7 @@ RUN mkdir -p $HOME \
     && export NEKRS_HOME=$HOME/cardinal/install
 
 RUN cd $HOME/cardinal \
-    && make
+    && make -j${compile_cores} MAKEFLAGS=-j${compile_cores}
 
 
 
