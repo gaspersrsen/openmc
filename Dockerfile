@@ -74,7 +74,7 @@ RUN mkdir -p $HOME/src \
     && cd $HOME/src \
     && git clone https://github.com/neams-th-coe/cardinal.git \
     && apt-get install -y \
-        flex \
+        flex bison \
     && cd cardinal \
     && ./scripts/get-dependencies.sh \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
