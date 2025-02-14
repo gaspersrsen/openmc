@@ -431,7 +431,8 @@ class CoupledOperator(OpenMCOperator):
             Number of inactive batches added to the begining of simulation where
             'iso' concentration converges.
             Defaults to 50 extra inactive cycles.
-        bracket: array of 2 floats > 0, optional
+        bracket: NOT YET IMPLEMENTED
+            array of 2 floats > 0, optional
             Lower and upper bounds for concentrations.
             Needs to be used in tandem with initial_value.
         materials: NOT YET IMPLEMENTED
