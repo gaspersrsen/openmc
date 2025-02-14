@@ -478,6 +478,17 @@ class CoupledOperator(OpenMCOperator):
             else:           
                 self.initial_value = initial_value
             self.concs = [initial_value]
+            tallyTest = openmc.Tally(tally_id=8888, name="search_crit_conc_tally_1")
+            tallyTest.scores = ["nu-fission", "absorption", "nu-scatter", "scatter"]
+            tallies += [tallyTest]
+            
+            tallyTest2 = openmc.Tally(tally_id=8889, name="search_crit_conc_tally_2")
+            tallyTest2.nuclides = ["B10","B11"]
+            tallyTest2.scores = ["absorption"]
+            if materials is not None:
+                tallyTest2.materials = materials
+            tallies += [tallyTest2]
+            
         initial_value = self.initial_value
         
         self._update_materials_and_nuclides(vec)
@@ -486,6 +497,8 @@ class CoupledOperator(OpenMCOperator):
             mat_ids=[]
             for mat in materials:
                 mat_ids += [mat.id]
+
+# tallies.export_to_xml()
 
         f = 1
         g = 1
@@ -522,6 +535,8 @@ class CoupledOperator(OpenMCOperator):
                 P_nxn = curr_res[0][0][2][1] - curr_res[0][0][3][1]         # Additional neutrons produced by (n,xn) reactions
                 L_leak = leak                                               # Neutron leakage fraction
                 L_abs = curr_res[0][0][1][1]                                # Total neutron absorption
+                print(curr_res[1][0])
+                exit()
                 L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]  # Total flagged nuclide absorption
                 # Predict concentration change                
                 g0 = ((P_fiss/target + P_nxn)
