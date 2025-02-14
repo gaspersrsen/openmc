@@ -49,7 +49,7 @@ ENV PATH=/openmc_venv/bin:$PATH
 
 # Update system-provided pip
 RUN pip install --upgrade pip
-RUN pip install vtk pyyaml
+RUN pip install vtk pyyaml jinja2 packaging
 
 # Clone and install NJOY2016
 RUN cd $HOME \
