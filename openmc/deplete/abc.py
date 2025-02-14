@@ -845,7 +845,7 @@ class Integrator(ABC):
 
         with change_directory(self.operator.output_dir):
             if conc_run:
-                if "batches" not in conc_args:
+                if "batches" not in conc_args.keys():
                     conc_args["batches"] = 50
                 self.operator.model.settings.batches += conc_args["batches"]
                 self.operator.model.settings.inactive += conc_args["batches"]
@@ -854,11 +854,11 @@ class Integrator(ABC):
                 self.operator.model.tallies += [tallyTest]
                 
                 tallyTest2 = Tally(tally_id=8889, name="search_crit_conc_tally_2")
-                if "iso" not in conc_args:
+                if "iso" not in conc_args.keys():
                     raise ValueError("'iso' argument in conc_args is empty")
                 tallyTest2.nuclides = conc_args["iso"]
                 tallyTest2.scores = ["absorption"]
-                if "materials" in conc_args:
+                if "materials" in conc_args.keys():
                     print("HI")
                     tallyTest2.filters = [MaterialFilter(conc_args["materials"],filter_id=8888)]
                 self.operator.model.tallies += [tallyTest2]
