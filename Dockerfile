@@ -72,11 +72,11 @@ ARG CACHEBUST=1
 ARG MOOSE_JOBS=${compile_cores}
 ENV ENABLE_DAGMC=yes
 ENV NEKRS_OCCA_MODE_DEFAULT=CPU
-ENV NEKRS_HOME=$HOME/src/cardinal/install
+ENV NEKRS_HOME=$HOME/cardinal/install
 #RUN echo "$CACHEBUST"
 
-RUN mkdir -p $HOME/src \
-    && cd $HOME/src \
+RUN mkdir -p $HOME \
+    && cd $HOME \
     && git clone https://github.com/neams-th-coe/cardinal.git \
     && apt-get install -y \
         flex bison \
@@ -85,9 +85,9 @@ RUN mkdir -p $HOME/src \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
     && ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
-    && export NEKRS_HOME=$HOME/src/cardinal/install
+    && export NEKRS_HOME=$HOME/cardinal/install
 
-RUN cd $HOME/src/cardinal \
+RUN cd $HOME/cardinal \
     && make
 
 
