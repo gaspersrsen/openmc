@@ -87,8 +87,8 @@ RUN mkdir -p $HOME \
     && ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
     && export NEKRS_HOME=$HOME/cardinal/install
 
-RUN cd $HOME/cardinal \
-    && make -j${compile_cores} MAKEFLAGS=-j${compile_cores}
+# RUN cd $HOME/cardinal \
+#     && make -j${compile_cores} MAKEFLAGS=-j${compile_cores}
 
 
 
