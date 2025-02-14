@@ -88,12 +88,12 @@ RUN mkdir -p $HOME \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
     && ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
-    && export NEKRS_HOME=$HOME/cardinal/install
+    && export NEKRS_HOME=$HOME/cardinal/install \
     && cd ./contrib/openmc \
     && git remote set-url origin $OPENMC_REPO
 
 RUN cd $HOME/cardinal \
-    && make -j${compile_cores} MAKEFLAGS=-j${compile_cores}
+    && make -j${compile_cores} MAKEFLAGS=-j${compile_cores} \
     && cd ./contrib/openmc \
     && pip install .[test,depletion-mpi] \
     && python -c "import openmc"
