@@ -434,7 +434,8 @@ class CoupledOperator(OpenMCOperator):
         bracket: NOT YET IMPLEMENTED
             array of 2 floats > 0, optional
             Lower and upper bounds for concentrations.
-            Needs to be used in tandem with initial_value.
+            Inteded to be used in tandem with initial_value.
+            Otherwise just a multiple of initial concentration at step 0.
         materials: NOT YET IMPLEMENTED
             materials in which nuclide concentrations are changed.
             Defaults to all materials.
@@ -479,18 +480,6 @@ class CoupledOperator(OpenMCOperator):
             else:           
                 self.initial_value = initial_value
             self.concs = [initial_value]
-            tallyTest = openmc.Tally(tally_id=8888, name="search_crit_conc_tally_1")
-            tallyTest.scores = ["nu-fission", "absorption", "nu-scatter", "scatter"]
-            self.model.tallies += [tallyTest]
-            
-            tallyTest2 = openmc.Tally(tally_id=8889, name="search_crit_conc_tally_2")
-            tallyTest2.nuclides = iso
-            tallyTest2.scores = ["absorption"]
-            if materials is not None:
-                tallyTest2.materials = materials
-            self.model.tallies += [tallyTest2]
-            self.model.tallies.export_to_xml()
-            
         initial_value = self.initial_value
         
         self._update_materials_and_nuclides(vec)

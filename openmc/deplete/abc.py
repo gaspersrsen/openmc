@@ -21,7 +21,7 @@ from uncertainties import ufloat
 from openmc.checkvalue import check_type, check_greater_than, PathLike
 from openmc.mpi import comm
 from openmc.utility_funcs import change_directory
-from openmc import Material
+from openmc import Material, Tally
 from .stepresult import StepResult
 from .chain import Chain
 from .results import Results
@@ -849,6 +849,19 @@ class Integrator(ABC):
                     conc_args["batches"] = 50
                 self.operator.model.settings.batches += conc_args["batches"]
                 self.operator.model.settings.inactive += conc_args["batches"]
+                tallyTest = Tally(tally_id=8888, name="search_crit_conc_tally_1")
+                tallyTest.scores = ["nu-fission", "absorption", "nu-scatter", "scatter"]
+                self.operator.model.tallies += [tallyTest]
+                
+                tallyTest2 = Tally(tally_id=8889, name="search_crit_conc_tally_2")
+                if "iso" not in conc_args:
+                    raise ValueError("'iso' argument in conc_args is empty")
+                tallyTest2.nuclides = conc_args["iso"]
+                tallyTest2.scores = ["absorption"]
+                if "materials" in conc_args:
+                    tallyTest2.materials = conc_args["materials"]
+                self.operator.model.tallies += [tallyTest2]
+                self.operator.model.tallies.export_to_xml()
             n = self.operator.initial_condition()
             t, self._i_res = self._get_start_data()
 
