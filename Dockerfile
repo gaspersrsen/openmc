@@ -70,20 +70,29 @@ ENV HOME=/root
 ARG CACHEBUST=1
 #RUN echo "$CACHEBUST"
 
-#clone and install MOOSE
-RUN export CC=mpicc CXX=mpicxx FC=mpif90 F90=mpif90 F77=mpif77 \
-    && mkdir -p ${HOME}/src && cd ${HOME}/src \
-    && git clone https://github.com/idaholab/moose.git \
-    && cd moose \
-    && git checkout master \
-    && cd ./scripts \
-    && export MOOSE_JOBS=6 METHODS=opt \
-    && ./update_and_rebuild_petsc.sh   || return \
-    && ./update_and_rebuild_libmesh.sh  || return \
-    && ./update_and_rebuild_wasp.sh  || return \
-    && cd ../test \
+RUN cd $HOME/src
+    && git clone https://github.com/neams-th-coe/cardinal.git \
+    && cd cardinal \
+    && ./scripts/get-dependencies.sh \
+    && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
+    && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
+    && ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
+    && export NEKRS_HOME=$HOME/cardinal/install \
     && make -j${compile_cores} \
-    && ./run_tests -j${compile_cores}
+#clone and install MOOSE
+# RUN export CC=mpicc CXX=mpicxx FC=mpif90 F90=mpif90 F77=mpif77 \
+#     && mkdir -p ${HOME}/src && cd ${HOME}/src \
+#     && git clone https://github.com/idaholab/moose.git \
+#     && cd moose \
+#     && git checkout master \
+#     && cd ./scripts \
+#     && export MOOSE_JOBS=6 METHODS=opt \
+#     && ./update_and_rebuild_petsc.sh   || return \
+#     && ./update_and_rebuild_libmesh.sh  || return \
+#     && ./update_and_rebuild_wasp.sh  || return \
+#     && cd ../test \
+#     && make -j${compile_cores} \
+#     && ./run_tests -j${compile_cores}
 
 # clone and install openmc
 # RUN mkdir -p ${HOME}/src && cd ${HOME}/src \
