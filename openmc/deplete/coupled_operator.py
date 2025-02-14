@@ -417,7 +417,7 @@ class CoupledOperator(OpenMCOperator):
         Optional initial value is the value given in your material building process, must be strictly bigger than 0.
         All 'iso' nuclides are multiplied by the same scaling factor.
         Higher (>10 000) particle numbers in 'openmc.settings' are recommended for more accurate simulation.
-        Atleast 30 batches are required for convergence, recommended >50.
+        Atleast 30 batches are required for adequate convergence, recommended >50.
 
         Parameters
         ----------
@@ -481,14 +481,15 @@ class CoupledOperator(OpenMCOperator):
             self.concs = [initial_value]
             tallyTest = openmc.Tally(tally_id=8888, name="search_crit_conc_tally_1")
             tallyTest.scores = ["nu-fission", "absorption", "nu-scatter", "scatter"]
-            tallies += [tallyTest]
+            self.model.tallies += [tallyTest]
             
             tallyTest2 = openmc.Tally(tally_id=8889, name="search_crit_conc_tally_2")
             tallyTest2.nuclides = iso
             tallyTest2.scores = ["absorption"]
             if materials is not None:
                 tallyTest2.materials = materials
-            tallies += [tallyTest2]
+            self.model.tallies += [tallyTest2]
+            self.model.tallies.export_to_xml()
             
         initial_value = self.initial_value
         
