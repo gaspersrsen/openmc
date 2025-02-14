@@ -40,7 +40,7 @@ RUN apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false upd
     apt-get install -y \
         python3-pip python-is-python3 wget git build-essential cmake \
         mpich libmpich-dev libhdf5-serial-dev libhdf5-mpich-dev \
-        libpng-dev python3-venv && \
+        libpng-dev python3-venv yaml && \
     apt-get autoremove
 
 # create virtual enviroment to avoid externally managed environment error
@@ -73,6 +73,9 @@ ARG MOOSE_JOBS=${compile_cores}
 ENV ENABLE_DAGMC=yes
 ENV NEKRS_OCCA_MODE_DEFAULT=CPU
 ENV NEKRS_HOME=$HOME/cardinal/install
+ENV CC=mpicc
+ENV CXX=mpicxx
+ENV FC=mpif90
 #RUN echo "$CACHEBUST"
 
 RUN mkdir -p $HOME \
