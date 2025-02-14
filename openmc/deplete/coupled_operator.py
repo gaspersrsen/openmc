@@ -483,7 +483,7 @@ class CoupledOperator(OpenMCOperator):
             tallies += [tallyTest]
             
             tallyTest2 = openmc.Tally(tally_id=8889, name="search_crit_conc_tally_2")
-            tallyTest2.nuclides = ["B10","B11"]
+            tallyTest2.nuclides = nuclides
             tallyTest2.scores = ["absorption"]
             if materials is not None:
                 tallyTest2.materials = materials
