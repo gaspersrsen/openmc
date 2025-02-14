@@ -524,6 +524,7 @@ class CoupledOperator(OpenMCOperator):
                 P_nxn = curr_res[0][0][2][1] - curr_res[0][0][3][1]         # Additional neutrons produced by (n,xn) reactions
                 L_leak = leak                                               # Neutron leakage fraction
                 L_abs = curr_res[0][0][1][1]                                # Total neutron absorption
+                print(curr_res[1])
                 L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]  # Total flagged nuclide absorption
                 # Predict concentration change                
                 g0 = ((P_fiss/target + P_nxn)
