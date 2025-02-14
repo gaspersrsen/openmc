@@ -524,10 +524,11 @@ class CoupledOperator(OpenMCOperator):
                 P_nxn = curr_res[0][0][2][1] - curr_res[0][0][3][1]         # Additional neutrons produced by (n,xn) reactions
                 L_leak = leak                                               # Neutron leakage fraction
                 L_abs = curr_res[0][0][1][1]                                # Total neutron absorption
+                # Total flagged nuclide absorption
                 if materials is not None:
                     L_abs_nucs = np.sum(np.array(np.sum(curr_res[1], axis=0)).T, axis=1)[1]
                 else:
-                    L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]  # Total flagged nuclide absorption
+                    L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
                 # Predict concentration change                
                 g0 = ((P_fiss/target + P_nxn)
                         - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs
