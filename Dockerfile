@@ -83,14 +83,14 @@ ENV FC=mpif90
 
 RUN mkdir -p $HOME \
     && cd $HOME \
-    && git clone https://github.com/neams-th-coe/cardinal.git \
+    && git clone -b master https://github.com/neams-th-coe/cardinal.git \
     && apt-get install -y \
         flex bison \
     && cd ./cardinal \
     && git submodule foreach git pull \
     && ./scripts/get-dependencies.sh \
     && cd ./contrib/moose/ \
-    && git clean -xfd \
+    && git checkout 2024-11-11-release
     && cd $HOME/cardinal \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
