@@ -90,7 +90,7 @@ RUN mkdir -p $HOME \
     && git submodule foreach git pull \
     && ./scripts/get-dependencies.sh \
     && cd ./contrib/moose/ \
-    && git checkout 2024-11-11-release
+    && git checkout 2024-11-11-release \
     && cd $HOME/cardinal \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
