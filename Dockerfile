@@ -95,9 +95,7 @@ RUN mkdir -p $HOME \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
     && ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
-    && export NEKRS_HOME=$HOME/cardinal/install \
-
-    #MUST COMPILE OPEN MC HERE
+    #&& export NEKRS_HOME=$HOME/cardinal/install
 
 RUN cd $HOME/cardinal \
     && make -j${compile_cores} MAKEFLAGS=-j${compile_cores}
