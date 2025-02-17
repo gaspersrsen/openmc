@@ -87,6 +87,7 @@ RUN mkdir -p $HOME \
     && apt-get install -y \
         flex bison \
     && cd ./cardinal \
+    && git submodule foreach git pull \
     && ./scripts/get-dependencies.sh \
     && cd ./contrib/moose/ \
     && git clean -xfd \
