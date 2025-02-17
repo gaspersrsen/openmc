@@ -111,7 +111,7 @@ RUN  cd $HOME/cardinal/contrib/openmc \
             -DHDF5_PREFER_PARALLEL=on \
             -DOPENMC_USE_DAGMC=on \
             -DOPENMC_USE_LIBMESH=on \
-            -DCMAKE_PREFIX_PATH="/root/cardinal/install/lib/cmake/dagmc;$root/cardinal/contrib/moose/libmesh" ; \
+            -DCMAKE_PREFIX_PATH="/root/cardinal/install/lib/cmake/dagmc;$root/cardinal/contrib/moose/libmesh/build" ; \
     fi ; \
     make 2>/dev/null -j${compile_cores} install \
     && cd ../openmc && pip install .[test,depletion-mpi] \
