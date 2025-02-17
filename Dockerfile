@@ -92,13 +92,13 @@ RUN mkdir -p $HOME \
     && cd ./contrib/openmc \
     && git remote set-url origin $OPENMC_REPO \
     if [ ${build_dagmc} = "on" ] && [ ${build_libmesh} = "on" ]; then \
-    cmake ../openmc \
-        -DCMAKE_CXX_COMPILER=mpicxx \
-        -DOPENMC_USE_MPI=on \
-        -DHDF5_PREFER_PARALLEL=on \
-        -DOPENMC_USE_DAGMC=on \
-        -DOPENMC_USE_LIBMESH=on \
-        -DCMAKE_PREFIX_PATH="/root/cardinal/contrib/DAGMC;$root/cardinal/contrib/moose/libmesh" ; \
+        cmake ../openmc \
+            -DCMAKE_CXX_COMPILER=mpicxx \
+            -DOPENMC_USE_MPI=on \
+            -DHDF5_PREFER_PARALLEL=on \
+            -DOPENMC_USE_DAGMC=on \
+            -DOPENMC_USE_LIBMESH=on \
+            -DCMAKE_PREFIX_PATH="/root/cardinal/contrib/DAGMC;$root/cardinal/contrib/moose/libmesh" ; \
     make 2>/dev/null -j${compile_cores} install \
     && cd ../openmc && pip install .[test,depletion-mpi] \
     && python -c "import openmc"
