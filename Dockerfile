@@ -105,7 +105,7 @@ RUN mkdir -p $HOME \
     #MUST COMPILE OPEN MC HERE
 
 RUN cd $HOME/cardinal \
-    && make -j${compile_cores} MAKEFLAGS=-j${compile_cores} \
+    && make -j${compile_cores} MAKEFLAGS=-j${compile_cores}
 
 
 
