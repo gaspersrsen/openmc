@@ -69,7 +69,10 @@ ENV OPENMC_REPO='https://github.com/gaspersrsen/openmc.git'
 ENV HOME=/root
 ARG CACHEBUST=1
 
-ARG MOOSE_JOBS=${compile_cores}
+ENV JOBS=${compile_cores}
+ENV MOOSE_JOBS=${compile_cores}
+ENV LIBMESH_JOBS=${compile_cores}
+ENV METHODS=opt
 ENV ENABLE_DAGMC=yes
 ENV NEKRS_OCCA_MODE_DEFAULT=CPU
 ENV NEKRS_HOME=$HOME/cardinal/install
@@ -100,7 +103,7 @@ RUN mkdir -p $HOME \
             -DHDF5_PREFER_PARALLEL=on \
             -DOPENMC_USE_DAGMC=on \
             -DOPENMC_USE_LIBMESH=on \
-            -DCMAKE_PREFIX_PATH="/root/cardinal/contrib/DAGMC;$root/cardinal/contrib/moose/libmesh" ; \
+            -DCMAKE_PREFIX_PATH="/root/cardinal/build/DAGMC;$root/cardinal/contrib/moose/libmesh" ; \
     fi ; \
     make 2>/dev/null -j${compile_cores} install \
     && cd ../openmc && pip install .[test,depletion-mpi] \
