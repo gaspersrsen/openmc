@@ -86,8 +86,11 @@ RUN mkdir -p $HOME \
     && git clone https://github.com/neams-th-coe/cardinal.git \
     && apt-get install -y \
         flex bison \
-    && cd cardinal \
+    && cd ./cardinal \
     && ./scripts/get-dependencies.sh \
+    && cd ./contrib/moose/ \
+    && git clean -xfd
+    && cd $HOME/cardinal
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
     && ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
