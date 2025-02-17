@@ -99,6 +99,7 @@ RUN mkdir -p $HOME \
             -DOPENMC_USE_DAGMC=on \
             -DOPENMC_USE_LIBMESH=on \
             -DCMAKE_PREFIX_PATH="/root/cardinal/contrib/DAGMC;$root/cardinal/contrib/moose/libmesh" ; \
+    fi ; \
     make 2>/dev/null -j${compile_cores} install \
     && cd ../openmc && pip install .[test,depletion-mpi] \
     && python -c "import openmc"
