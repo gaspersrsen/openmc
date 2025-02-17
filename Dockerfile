@@ -89,13 +89,15 @@ RUN mkdir -p $HOME \
     && cd ./cardinal \
     && git submodule foreach git pull \
     && ./scripts/get-dependencies.sh \
+    && cd $HOME/cardinal/contrib/openmc \
+    && git remote set-url origin $OPENMC_REPO \
+    && git pull origin develop
     && cd ./contrib/moose/ \
     && git checkout master \
     && cd $HOME/cardinal \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
     && ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
-    #&& export NEKRS_HOME=$HOME/cardinal/install
 
 RUN cd $HOME/cardinal \
     && make -j${compile_cores} MAKEFLAGS=-j${compile_cores}
@@ -114,9 +116,12 @@ RUN cd $HOME/cardinal \
 #             -DCMAKE_PREFIX_PATH="/root/cardinal/install/lib/cmake/dagmc;$root/cardinal/contrib/moose/libmesh/build" ; \
 #     fi ; \
 #     make 2>/dev/null -j${compile_cores} install \
-#     && cd ../openmc && pip install .[test,depletion-mpi] \
-#     && python -c "import openmc"
+    # && cd ../openmc && pip install .[test,depletion-mpi] \
+    # && python -c "import openmc"
 
+RUN cd $HOME/cardinal/contrib/openmc \
+    && pip install .[test,depletion-mpi] \
+    && python -c "import openmc"
 
 
 #clone and install MOOSE
