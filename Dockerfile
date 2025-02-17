@@ -90,7 +90,7 @@ RUN mkdir -p $HOME \
     && git submodule foreach git pull \
     && ./scripts/get-dependencies.sh \
     && cd $HOME/cardinal/contrib/openmc \
-    && git remote set-url origin $OPENMC_REPO \
+    && git remote set-url origin $OPENMC_REPO --rebase\
     && git pull origin develop \
     && cd ./contrib/moose/ \
     && git checkout master \
