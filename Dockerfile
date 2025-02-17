@@ -91,7 +91,7 @@ RUN mkdir -p $HOME \
     && ./scripts/get-dependencies.sh \
     && cd $HOME/cardinal/contrib/openmc \
     && git remote set-url origin $OPENMC_REPO \
-    && git pull origin develop
+    && git pull origin develop \
     && cd ./contrib/moose/ \
     && git checkout master \
     && cd $HOME/cardinal \
