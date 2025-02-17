@@ -91,7 +91,7 @@ RUN mkdir -p $HOME \
     && export NEKRS_HOME=$HOME/cardinal/install \
     && cd ./contrib/openmc \
     && git remote set-url origin $OPENMC_REPO \
-    && git pull origin \
+    && git pull origin develop \
     && mkdir build && cd build ; \
     if [ ${build_dagmc} = "on" ] && [ ${build_libmesh} = "on" ]; then \
         cmake ../openmc \
