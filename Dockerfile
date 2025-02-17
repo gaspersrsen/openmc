@@ -91,7 +91,7 @@ RUN mkdir -p $HOME \
     && export NEKRS_HOME=$HOME/cardinal/install \
     && cd ./contrib/openmc \
     && git remote set-url origin $OPENMC_REPO \
-    if [ ${build_dagmc} = "on" ] && [ ${build_libmesh} = "on" ]; then \
+    if [ ${build_dagmc} = "off" ] && [ ${build_libmesh} = "off" ]; then \
         cmake ../openmc \
             -DCMAKE_CXX_COMPILER=mpicxx \
             -DOPENMC_USE_MPI=on \
