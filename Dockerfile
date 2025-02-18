@@ -1,28 +1,9 @@
-# To build with OpenMC and by default this Dockerfile builds the master branch of OpenMC.
-# docker build -t openmc .
-
-# To build with OpenMC develop branch
-# docker build -t openmc_develop --build-arg openmc_branch=develop .
-
-# To build with OpenMC and DAGMC enabled
-# docker build -t openmc_dagmc --build-arg build_dagmc=on --build-arg compile_cores=4 .
-
-# To build with OpenMC and Libmesh enabled
-# docker build -t openmc_libmesh --build-arg build_libmesh=on --build-arg compile_cores=4 .
-
-# To build with both DAGMC and Libmesh enabled
-# docker build -t openmc_dagmc_libmesh --build-arg build_dagmc=on --build-arg build_libmesh=on --build-arg compile_cores=4 .
-
-# sudo docker run image_name:tag_name or ID with no tag sudo docker run ID number
-
+# THIS DOCKER-FILE CREATES DOCKER CONTAINER FOR MULTIPHYISCS SIMULATIONS
+# USING CARDINAL AND MOOSE SOFTWARES
 
 # global ARG as these ARGS are used in multiple stages
 # By default one core is used to compile
 ARG compile_cores=1
-
-# By default this Dockerfile builds OpenMC without DAGMC and LIBMESH support
-ARG build_dagmc=on
-ARG build_libmesh=on
 
 FROM debian:bookworm-slim AS dependencies
 
@@ -103,31 +84,27 @@ RUN mkdir -p $HOME \
     && cd $HOME/cardinal \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
-    && ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
+    && ./contrib/moose/scripts/update_and_rebuild_wasp.sh
 
 RUN cd $HOME/cardinal \
     && make -j${compile_cores} MAKEFLAGS=-j${compile_cores}
 
-# RUN  cd $HOME/cardinal/contrib/openmc \
-#     && git remote set-url origin $OPENMC_REPO \
-#     && git pull origin develop \
-#     && mkdir build && cd build ; \
-#     if [ ${build_dagmc} = "on" ] && [ ${build_libmesh} = "on" ]; then \
-#         cmake ../openmc \
-#             -DCMAKE_CXX_COMPILER=mpicxx \
-#             -DOPENMC_USE_MPI=on \
-#             -DHDF5_PREFER_PARALLEL=on \
-#             -DOPENMC_USE_DAGMC=on \
-#             -DOPENMC_USE_LIBMESH=on \
-#             -DCMAKE_PREFIX_PATH="/root/cardinal/install/lib/cmake/dagmc;$root/cardinal/contrib/moose/libmesh/build" ; \
-#     fi ; \
-#     make 2>/dev/null -j${compile_cores} install \
-    # && cd ../openmc && pip install .[test,depletion-mpi] \
-    # && python -c "import openmc"
-
-RUN cd $HOME/cardinal/contrib/openmc \
-    && pip install .[test,depletion-mpi] \
+RUN  cd $HOME/cardinal/contrib/openmc \
+    && mkdir build && cd build \
+    && cmake ../openmc \
+        -DCMAKE_CXX_COMPILER=mpicxx \
+        -DOPENMC_USE_MPI=on \
+        -DHDF5_PREFER_PARALLEL=on \
+        -DOPENMC_USE_DAGMC=on \
+        -DOPENMC_USE_LIBMESH=on \
+        -DCMAKE_PREFIX_PATH="/root/cardinal/install/lib/cmake/dagmc;$root/cardinal/contrib/moose/libmesh/build" \
+    && make 2>/dev/null -j${compile_cores} install \
+    && cd ../openmc && pip install .[test,depletion-mpi] \
     && python -c "import openmc"
+
+# RUN cd $HOME/cardinal/contrib/openmc \
+#     && pip install .[test,depletion-mpi] \
+#     && python -c "import openmc"
 
 
 #clone and install MOOSE
