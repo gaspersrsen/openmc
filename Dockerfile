@@ -98,8 +98,6 @@ RUN mkdir -p $HOME \
     && cd ./cardinal \
     && git submodule foreach git pull \
     && ./scripts/get-dependencies.sh \
-    && cd $HOME/cardinal/contrib/openmc \
-    && git pull $OPENMC_REPO develop --ff-only\
     && cd ./contrib/moose/ \
     && git checkout master \
     && cd $HOME/cardinal \
