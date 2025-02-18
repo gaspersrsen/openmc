@@ -30,7 +30,7 @@ ENV PATH=/openmc_venv/bin:$PATH
 
 # Update system-provided pip
 RUN pip install --upgrade pip
-RUN pip install vtk pyyaml jinja2 packaging
+RUN pip install pyyaml jinja2 packaging
 
 # Clone and install NJOY2016
 RUN cd $HOME \
@@ -84,14 +84,18 @@ RUN mkdir -p $HOME \
     && cd $HOME/cardinal \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
-    && ./contrib/moose/scripts/update_and_rebuild_wasp.sh
+    && ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
+    #&& export HDF5_ROOT = $HOME/cardinal/contrib/moose/petsc/arch-moose/externalpackages/hdf5-1.14.3-p1 \
+    && export HDF5_ROOT = $HOME/cardinal/contrib/moose/petsc/arch-moose/lib/
 
+#ENV HDF5_ROOT = $HOME/cardinal/contrib/moose/petsc/arch-moose/externalpackages/hdf5-1.14.3-p1
+ENV HDF5_ROOT = $HOME/cardinal/contrib/moose/petsc/arch-moose/lib/
 RUN cd $HOME/cardinal \
     && make -j${compile_cores} MAKEFLAGS=-j${compile_cores}
 
-RUN  cd $HOME/cardinal/contrib/openmc \
+RUN cd $HOME/cardinal/contrib/openmc \
     && mkdir build && cd build \
-    && cmake ../openmc \
+    && cmake .. \
         -DCMAKE_CXX_COMPILER=mpicxx \
         -DOPENMC_USE_MPI=on \
         -DHDF5_PREFER_PARALLEL=on \
@@ -99,7 +103,10 @@ RUN  cd $HOME/cardinal/contrib/openmc \
         -DOPENMC_USE_LIBMESH=on \
         -DCMAKE_PREFIX_PATH="/root/cardinal/install/lib/cmake/dagmc;$root/cardinal/contrib/moose/libmesh/build" \
     && make 2>/dev/null -j${compile_cores} install \
-    && cd ../openmc && pip install .[test,depletion-mpi] \
+    && cd ..
+    && MPICC=/usr/bin/mpicc python -m pip install mpi4py
+    && CC=/usr/bin/mpicc HDF5_MPI=ON HDF5_DIR=$HDF5_ROOT python -m pip install --no-binary=h5py h5py
+    && pip install .[test,depletion-mpi] \
     && python -c "import openmc"
 
 # RUN cd $HOME/cardinal/contrib/openmc \
