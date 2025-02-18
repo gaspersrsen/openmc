@@ -83,6 +83,14 @@ ENV FC=mpif90
 
 RUN mkdir -p $HOME \
     && cd $HOME \
+    && export CC=mpicc CXX=mpicxx FC=mpif90 F90=mpif90 F77=mpif77 \
+        NEKRS_HOME=$HOME/cardinal/install \
+        NEKRS_OCCA_MODE_DEFAULT=CPU \
+        JOBS=${compile_cores} \
+        MOOSE_JOBS=${compile_cores} \
+        LIBMESH_JOBS=${compile_cores} \
+        METHODS=opt \
+        ENABLE_DAGMC=yes \
     && git clone -b master https://github.com/neams-th-coe/cardinal.git \
     && apt-get install -y \
         flex bison \
