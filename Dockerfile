@@ -101,7 +101,7 @@ RUN cd $HOME/cardinal/contrib/openmc \
         -DHDF5_PREFER_PARALLEL=on \
         -DOPENMC_USE_DAGMC=on \
         -DOPENMC_USE_LIBMESH=on \
-        -DCMAKE_PREFIX_PATH="/root/cardinal/install/lib/cmake/dagmc;$root/cardinal/contrib/moose/libmesh/build" \
+        -DCMAKE_PREFIX_PATH="$HOME/cardinal/install/lib/cmake/dagmc;$HOME/cardinal/contrib/moose/libmesh/build" \
     && make 2>/dev/null -j${compile_cores} install \
     && cd ..
     && MPICC=/usr/bin/mpicc python -m pip install mpi4py
