@@ -85,14 +85,14 @@ RUN mkdir -p $HOME \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
     && ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
+    
+RUN cd $HOME/cardinal \
+    && make -j${compile_cores} MAKEFLAGS=-j${compile_cores}
     && export HDF5_ROOT = $HOME/cardinal/contrib/moose/petsc/arch-moose/externalpackages/hdf5-1.14.3-p1
     #&& export HDF5_ROOT = $HOME/cardinal/contrib/moose/petsc/arch-moose/lib/
 
-ENV HDF5_ROOT = $HOME/cardinal/contrib/moose/petsc/arch-moose/externalpackages/hdf5-1.14.3-p1
-#ENV HDF5_ROOT = $HOME/cardinal/contrib/moose/petsc/arch-moose/lib/
-
-RUN cd $HOME/cardinal \
-    && make -j${compile_cores} MAKEFLAGS=-j${compile_cores}
+    ENV HDF5_ROOT = $HOME/cardinal/contrib/moose/petsc/arch-moose/externalpackages/hdf5-1.14.3-p1
+    #ENV HDF5_ROOT = $HOME/cardinal/contrib/moose/petsc/arch-moose/lib/
 
 RUN cd $HOME/cardinal/contrib/openmc \
     && mkdir build && cd build \
