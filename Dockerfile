@@ -65,6 +65,7 @@ RUN cd $HOME \
 
 ARG openmc_branch=th
 ENV OPENMC_REPO='https://github.com/gaspersrsen/openmc.git'
+ENV CARDINAL_REPO='https://github.com/gaspersrsen/cardinal/tree/master'
 
 ENV HOME=/root
 ARG CACHEBUST=1
@@ -91,15 +92,14 @@ RUN mkdir -p $HOME \
         LIBMESH_JOBS=${compile_cores} \
         METHODS=opt \
         ENABLE_DAGMC=yes \
-    && git clone -b master https://github.com/neams-th-coe/cardinal.git \
+    && git clone -b master $CARDINAL_REPO \
     && apt-get install -y \
         flex bison \
     && cd ./cardinal \
     && git submodule foreach git pull \
     && ./scripts/get-dependencies.sh \
-    && cd $HOME/cardinal/contrib \
-    && rm -rf openmc \
-    && git pull $OPENMC_REPO develop \
+    && cd $HOME/cardinal/contrib/openmc \
+    && git pull $OPENMC_REPO develop --ff-only\
     && cd ./contrib/moose/ \
     && git checkout master \
     && cd $HOME/cardinal \
