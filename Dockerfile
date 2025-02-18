@@ -65,7 +65,7 @@ RUN cd $HOME \
 
 ARG openmc_branch=th
 ENV OPENMC_REPO='https://github.com/gaspersrsen/openmc.git'
-ENV CARDINAL_REPO='https://github.com/gaspersrsen/cardinal/tree/master'
+ENV CARDINAL_REPO='https://github.com/gaspersrsen/cardinal.git'
 
 ENV HOME=/root
 ARG CACHEBUST=1
