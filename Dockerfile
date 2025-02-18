@@ -98,7 +98,7 @@ RUN mkdir -p $HOME \
     && git submodule foreach git pull \
     && ./scripts/get-dependencies.sh \
     && cd $HOME/cardinal/contrib/openmc \
-    && git pull OPENMC_REPO develop \
+    && git pull $OPENMC_REPO develop \
     && cd ./contrib/moose/ \
     && git checkout master \
     && cd $HOME/cardinal \
