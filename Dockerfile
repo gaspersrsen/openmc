@@ -90,6 +90,7 @@ RUN mkdir -p $HOME \
 
 #ENV HDF5_ROOT = $HOME/cardinal/contrib/moose/petsc/arch-moose/externalpackages/hdf5-1.14.3-p1
 ENV HDF5_ROOT = $HOME/cardinal/contrib/moose/petsc/arch-moose/lib/
+
 RUN cd $HOME/cardinal \
     && make -j${compile_cores} MAKEFLAGS=-j${compile_cores}
 
@@ -103,9 +104,9 @@ RUN cd $HOME/cardinal/contrib/openmc \
         -DOPENMC_USE_LIBMESH=on \
         -DCMAKE_PREFIX_PATH="$HOME/cardinal/install/lib/cmake/dagmc;$HOME/cardinal/contrib/moose/libmesh/build" \
     && make 2>/dev/null -j${compile_cores} install \
-    && cd ..
-    && MPICC=/usr/bin/mpicc python -m pip install mpi4py
-    && CC=/usr/bin/mpicc HDF5_MPI=ON HDF5_DIR=$HDF5_ROOT python -m pip install --no-binary=h5py h5py
+    && cd .. \
+    && MPICC=/usr/bin/mpicc python -m pip install mpi4py \
+    && CC=/usr/bin/mpicc HDF5_MPI=ON HDF5_DIR=$HDF5_ROOT python -m pip install --no-binary=h5py h5py \
     && pip install .[test,depletion-mpi] \
     && python -c "import openmc"
 
