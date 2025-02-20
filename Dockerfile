@@ -89,16 +89,16 @@ RUN cd $HOME/cardinal \
     && make -j${compile_cores} MAKEFLAGS=-j${compile_cores} \
 
 RUN cd $HOME/cardinal/contrib/openmc \
-    && mkdir build && cd build \
-    && cmake .. \
-        -DCMAKE_CXX_COMPILER=mpicxx \
-        -DOPENMC_USE_MPI=on \
-        -DHDF5_PREFER_PARALLEL=on \
-        -DOPENMC_USE_DAGMC=on \
-        -DOPENMC_USE_LIBMESH=on \
-        -DCMAKE_PREFIX_PATH="$HOME/cardinal/install/lib/cmake/dagmc;$HOME/cardinal/contrib/moose/libmesh/installed" \
-    && make 2>/dev/null -j${compile_cores} install \
-    && cd .. \
+    # && mkdir build && cd build \
+    # && cmake .. \
+    #     -DCMAKE_CXX_COMPILER=mpicxx \
+    #     -DOPENMC_USE_MPI=on \
+    #     -DHDF5_PREFER_PARALLEL=on \
+    #     -DOPENMC_USE_DAGMC=on \
+    #     -DOPENMC_USE_LIBMESH=on \
+    #     -DCMAKE_PREFIX_PATH="$HOME/cardinal/install/lib/cmake/dagmc;$HOME/cardinal/contrib/moose/libmesh/installed" \
+    # && make 2>/dev/null -j${compile_cores} install \
+    # && cd .. \
     && MPICC=/usr/bin/mpicc python -m pip install mpi4py \
     && CC=/usr/bin/mpicc HDF5_MPI=ON HDF5_DIR=$HDF5_ROOT python -m pip install --no-binary=h5py h5py \
     && pip install .[test,depletion-mpi] \
