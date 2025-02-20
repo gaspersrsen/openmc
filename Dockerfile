@@ -88,9 +88,8 @@ RUN mkdir -p $HOME \
     
 RUN cd $HOME/cardinal \
     #&& ./configure
-    && make -j${compile_cores} \
-    && make install
-    #MAKEFLAGS=-j${compile_cores}\
+    && make -j${compile_cores} MAKEFLAGS=-j${compile_cores}\
+    && make install -j${compile_cores}
 
 RUN cd $HOME/cardinal/contrib/openmc \
     # && mkdir build && cd build \
