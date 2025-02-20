@@ -77,7 +77,8 @@ RUN mkdir -p $HOME \
     && cd ./cardinal \
     #&& git submodule foreach git pull \
     && ./scripts/get-dependencies.sh \
-    # && cd ./contrib/moose/ \
+    && cd ./contrib/moose/ \
+    && git clean -xfd \
     # && git checkout master \
     # && git pull origin master \
     && cd $HOME/cardinal \
@@ -86,7 +87,8 @@ RUN mkdir -p $HOME \
     && ./contrib/moose/scripts/update_and_rebuild_wasp.sh
     
 RUN cd $HOME/cardinal \
-    && make -j${compile_cores} \
+    && ./configure
+    && make -j${compile_cores} MAKEFLAGS=-j${compile_cores}\
 
 RUN cd $HOME/cardinal/contrib/openmc \
     # && mkdir build && cd build \
