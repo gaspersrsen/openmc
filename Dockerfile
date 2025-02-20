@@ -102,8 +102,8 @@ RUN cd $HOME/cardinal/contrib/openmc \
     #     -DCMAKE_PREFIX_PATH="$HOME/cardinal/install/lib/cmake/dagmc;$HOME/cardinal/contrib/moose/libmesh/installed" \
     # && make 2>/dev/null -j${compile_cores} install \
     # && cd .. \
-    && MPICC=/usr/bin/mpicc python -m pip install mpi4py \
-    && CC=/usr/bin/mpicc HDF5_MPI=ON HDF5_DIR=$HDF5_ROOT python -m pip install --no-binary=h5py h5py \
+    #&& MPICC=/usr/bin/mpicc python -m pip install mpi4py \
+    #&& CC=/usr/bin/mpicc HDF5_MPI=ON HDF5_DIR=$HDF5_ROOT python -m pip install --no-binary=h5py h5py \
     && pip install .[test,depletion-mpi] \
     && python -c "import openmc"
 
