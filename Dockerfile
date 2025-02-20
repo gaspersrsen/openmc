@@ -21,7 +21,7 @@ RUN apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false upd
     apt-get install -y \
         python3-pip python-is-python3 wget git build-essential cmake \
         mpich libmpich-dev libhdf5-serial-dev libhdf5-mpich-dev \
-        libpng-dev python3-venv pkg-config && \
+        libpng-dev python3-venv pkg-config flex bison&& \
     apt-get autoremove
 
 # create virtual enviroment to avoid externally managed environment error
@@ -74,10 +74,8 @@ RUN mkdir -p $HOME \
         ENABLE_DAGMC=yes \
     #&& git clone -b master $CARDINAL_REPO \
     && git clone $CARDINAL_REPO \
-    && apt-get install -y \
-        flex bison \
-    && cd ./cardinal \
-    && git submodule foreach git pull \
+    #&& cd ./cardinal \
+    #&& git submodule foreach git pull \
     && ./scripts/get-dependencies.sh \
     # && cd ./contrib/moose/ \
     # && git checkout master \
