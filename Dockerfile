@@ -72,8 +72,8 @@ RUN mkdir -p $HOME \
         LIBMESH_JOBS=${compile_cores} \
         METHODS=opt \
         ENABLE_DAGMC=ON \
-    #&& git clone -b master $CARDINAL_REPO \
-    && git clone $CARDINAL_REPO \
+    && git clone -b master $CARDINAL_REPO \
+    #&& git clone $CARDINAL_REPO \
     && cd ./cardinal \
     #&& git submodule foreach git pull \
     && ./scripts/get-dependencies.sh \
