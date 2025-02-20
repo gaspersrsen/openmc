@@ -57,7 +57,7 @@ ENV JOBS=${compile_cores}
 ENV MOOSE_JOBS=${compile_cores}
 ENV LIBMESH_JOBS=${compile_cores}
 ENV METHODS=opt
-ENV ENABLE_DAGMC=yes
+ENV ENABLE_DAGMC=ON
 ENV NEKRS_OCCA_MODE_DEFAULT=CPU
 ENV NEKRS_HOME=$HOME/cardinal/install
 ENV CC=mpicc CXX=mpicxx FC=mpif90 F90=mpif90 F77=mpif77
@@ -71,7 +71,7 @@ RUN mkdir -p $HOME \
         MOOSE_JOBS=${compile_cores} \
         LIBMESH_JOBS=${compile_cores} \
         METHODS=opt \
-        ENABLE_DAGMC=yes \
+        ENABLE_DAGMC=ON \
     #&& git clone -b master $CARDINAL_REPO \
     && git clone $CARDINAL_REPO \
     && cd ./cardinal \
