@@ -77,9 +77,9 @@ RUN mkdir -p $HOME \
     && cd ./cardinal \
     && git submodule foreach git pull \
     && ./scripts/get-dependencies.sh \
-    && cd ./contrib/moose/ \
-    && git checkout master \
-    && git pull origin master \
+    # && cd ./contrib/moose/ \
+    # && git checkout master \
+    # && git pull origin master \
     && cd $HOME/cardinal \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
