@@ -89,11 +89,6 @@ RUN mkdir -p $HOME \
     
 RUN cd $HOME/cardinal \
     && make -j${compile_cores} MAKEFLAGS=-j${compile_cores} \
-    && export HDF5_ROOT=$HOME/cardinal/contrib/moose/petsc/arch-moose/externalpackages/hdf5-1.14.3-p1
-    #&& export HDF5_ROOT=$HOME/cardinal/contrib/moose/petsc/arch-moose/lib/
-
-ENV HDF5_ROOT=$HOME/cardinal/contrib/moose/petsc/arch-moose/externalpackages/hdf5-1.14.3-p1
-#ENV HDF5_ROOT=$HOME/cardinal/contrib/moose/petsc/arch-moose/lib/
 
 RUN cd $HOME/cardinal/contrib/openmc \
     && mkdir build && cd build \
@@ -103,7 +98,7 @@ RUN cd $HOME/cardinal/contrib/openmc \
         -DHDF5_PREFER_PARALLEL=on \
         -DOPENMC_USE_DAGMC=on \
         -DOPENMC_USE_LIBMESH=on \
-        -DCMAKE_PREFIX_PATH="$HOME/cardinal/install/lib/cmake/dagmc;$HOME/cardinal/contrib/moose/libmesh/build" \
+        -DCMAKE_PREFIX_PATH="$HOME/cardinal/install/lib/cmake/dagmc;$HOME/cardinal/contrib/moose/libmesh/installed" \
     && make 2>/dev/null -j${compile_cores} install \
     && cd .. \
     && MPICC=/usr/bin/mpicc python -m pip install mpi4py \
