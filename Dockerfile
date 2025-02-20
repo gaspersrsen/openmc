@@ -74,7 +74,7 @@ RUN mkdir -p $HOME \
         ENABLE_DAGMC=yes \
     #&& git clone -b master $CARDINAL_REPO \
     && git clone $CARDINAL_REPO \
-    #&& cd ./cardinal \
+    && cd ./cardinal \
     #&& git submodule foreach git pull \
     && ./scripts/get-dependencies.sh \
     # && cd ./contrib/moose/ \
