@@ -61,7 +61,6 @@ ENV NEKRS_OCCA_MODE_DEFAULT=CPU
 ENV NEKRS_HOME=$HOME/cardinal/install
 ENV CC=mpicc CXX=mpicxx FC=mpif90 F90=mpif90 F77=mpif77
 
-
 RUN mkdir -p $HOME \
     && cd $HOME \
     && export CC=mpicc CXX=mpicxx FC=mpif90 F90=mpif90 F77=mpif77 \
@@ -80,7 +79,7 @@ RUN mkdir -p $HOME \
     && ./scripts/get-dependencies.sh \
     && cd ./contrib/moose/ \
     && git checkout master \
-    && git pull origin \
+    && git pull origin master \
     && cd $HOME/cardinal \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
