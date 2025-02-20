@@ -86,7 +86,7 @@ RUN mkdir -p $HOME \
     && ./contrib/moose/scripts/update_and_rebuild_wasp.sh
     
 RUN cd $HOME/cardinal \
-    && make -j${compile_cores} MAKEFLAGS=-j${compile_cores} \
+    && make -j${compile_cores} \
 
 RUN cd $HOME/cardinal/contrib/openmc \
     # && mkdir build && cd build \
