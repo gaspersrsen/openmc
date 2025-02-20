@@ -81,6 +81,7 @@ RUN mkdir -p $HOME \
     && ./scripts/get-dependencies.sh \
     && cd ./contrib/moose/ \
     && git checkout master \
+    && git pull origin \
     && cd $HOME/cardinal \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
