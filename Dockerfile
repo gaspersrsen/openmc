@@ -83,7 +83,7 @@ RUN mkdir -p $HOME \
     && cd $HOME/cardinal \
     && ./contrib/moose/scripts/update_and_rebuild_petsc.sh \
     && ./contrib/moose/scripts/update_and_rebuild_libmesh.sh \
-    && ./contrib/moose/scripts/update_and_rebuild_wasp.sh \
+    && ./contrib/moose/scripts/update_and_rebuild_wasp.sh
     
 RUN cd $HOME/cardinal \
     && make -j${compile_cores} MAKEFLAGS=-j${compile_cores} \
