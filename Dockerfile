@@ -72,7 +72,8 @@ RUN mkdir -p $HOME \
         LIBMESH_JOBS=${compile_cores} \
         METHODS=opt \
         ENABLE_DAGMC=yes \
-    && git clone -b master $CARDINAL_REPO \
+    #&& git clone -b master $CARDINAL_REPO \
+    && git clone $CARDINAL_REPO \
     && apt-get install -y \
         flex bison \
     && cd ./cardinal \
