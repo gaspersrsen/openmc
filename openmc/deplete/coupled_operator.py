@@ -493,6 +493,7 @@ class CoupledOperator(OpenMCOperator):
         f_prev = 1
         prev_res = []
         prev_leak = 0
+        skip_steps = False
         openmc.lib.reset()
         openmc.lib.simulation_init()
         # Run simulation
@@ -500,7 +501,7 @@ class CoupledOperator(OpenMCOperator):
             M = openmc.lib.current_batch()
             if M < 10: continue
             # Only change concentrations during the additional batches
-            if M < batches+10:
+            if M < batches+10 and not skip_steps:
                 #k = openmc.lib.keff()[0]
                 talliez = copy.copy(openmc.lib.tallies)
                 curr_res = []
@@ -529,7 +530,8 @@ class CoupledOperator(OpenMCOperator):
                 else:
                     L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
                 if L_abs_nucs == 0:
-                    print(f"No nuclide absorption tallied, skipping step {M}")
+                    print(f"No nuclide absorption tallied, skipping at step {M}")
+                    skip_steps = True
                     continue
                 # Predict concentration change                
                 g0 = ((P_fiss/target + P_nxn)
