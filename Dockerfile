@@ -30,7 +30,7 @@ ENV PATH=/openmc_venv/bin:$PATH
 
 # Update system-provided pip
 RUN pip install --upgrade pip
-RUN pip install pyyaml jinja2 packaging patchelf
+RUN pip install pyyaml jinja2 packaging patchelf mooseutils livereload
 
 # Clone and install NJOY2016
 RUN cd $HOME \
