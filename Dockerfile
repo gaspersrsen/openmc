@@ -50,6 +50,7 @@ ENV CARDINAL_REPO='https://github.com/gaspersrsen/cardinal.git'
 
 ENV HOME=/root
 ARG CACHEBUST=1
+#RUN echo "$CACHEBUST"
 
 ENV JOBS=${compile_cores}
 ENV MOOSE_JOBS=${compile_cores}
@@ -58,10 +59,8 @@ ENV METHODS=opt
 ENV ENABLE_DAGMC=yes
 ENV NEKRS_OCCA_MODE_DEFAULT=CPU
 ENV NEKRS_HOME=$HOME/cardinal/install
-ENV CC=mpicc
-ENV CXX=mpicxx
-ENV FC=mpif90
-#RUN echo "$CACHEBUST"
+ENV CC=mpicc CXX=mpicxx FC=mpif90 F90=mpif90 F77=mpif77
+
 
 RUN mkdir -p $HOME \
     && cd $HOME \
