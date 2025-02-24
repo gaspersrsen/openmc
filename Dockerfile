@@ -21,6 +21,7 @@ RUN apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false upd
     apt-get install -y \
         python3-pip python-is-python3 wget git build-essential cmake \
         mpich libmpich-dev libhdf5-serial-dev libhdf5-mpich-dev \
+        libgsl0-dev libpython-dev python-numpy \
         libpng-dev python3-venv pkg-config flex bison && \
     apt-get autoremove
 
@@ -30,7 +31,9 @@ ENV PATH=/openmc_venv/bin:$PATH
 
 # Update system-provided pip
 RUN pip install --upgrade pip
-RUN pip install pyyaml jinja2 packaging patchelf livereload pybtex bs4 pylatexenc
+RUN pip install \
+        pyyaml jinja2 packaging patchelf livereload pybtex bs4 pylatexenc \
+        matplotlib networkx
 
 # Clone and install NJOY2016
 RUN cd $HOME \
@@ -89,7 +92,7 @@ RUN mkdir -p $HOME \
 RUN cd $HOME/cardinal \
     #&& ./configure
     && make -j${compile_cores}\
-    && make install -j${compile_cores}
+    && make -j${compile_cores} install 
 
 RUN cd $HOME/cardinal/contrib/openmc \
     # && mkdir build && cd build \
