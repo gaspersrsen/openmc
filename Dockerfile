@@ -90,9 +90,8 @@ RUN mkdir -p $HOME \
     && ./contrib/moose/scripts/update_and_rebuild_wasp.sh
     
 RUN cd $HOME/cardinal \
-    #&& ./configure
     && make -j${compile_cores}\
-    && make -j${compile_cores} install 
+    #&& make -j${compile_cores} install 
 
 RUN cd $HOME/cardinal/contrib/openmc \
     # && mkdir build && cd build \
@@ -109,6 +108,8 @@ RUN cd $HOME/cardinal/contrib/openmc \
     #&& CC=/usr/bin/mpicc HDF5_MPI=ON HDF5_DIR=$HDF5_ROOT python -m pip install --no-binary=h5py h5py \
     && pip install .[test,depletion-mpi] \
     && python -c "import openmc"
+
+RUN export PATH=/root/cardinal:/root/cardinal/build/openmc/bin/:$PATH
 
 # RUN cd $HOME/cardinal/contrib/openmc \
 #     && pip install .[test,depletion-mpi] \
