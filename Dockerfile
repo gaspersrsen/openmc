@@ -30,7 +30,7 @@ ENV PATH=/openmc_venv/bin:$PATH
 
 # Update system-provided pip
 RUN pip install --upgrade pip
-RUN pip install pyyaml jinja2 packaging patchelf livereload pybtex
+RUN pip install pyyaml jinja2 packaging patchelf livereload pybtex bs4 pylatexenc
 
 # Clone and install NJOY2016
 RUN cd $HOME \
