@@ -108,7 +108,8 @@ RUN cd $HOME/cardinal/contrib/openmc \
     && pip install .[test,depletion-mpi] \
     && python -c "import openmc"
 
-RUN export PATH=/root/cardinal:/root/cardinal/build/openmc/bin/:$PATH
+#RUN export PATH=/root/cardinal:/root/cardinal/build/openmc/bin/:$PATH
+RUN echo "export PATH=/root/cardinal:/root/cardinal/build/openmc/bin:$PATH" >> ~/.bashrc \
 
 # RUN cd $HOME/cardinal/contrib/openmc \
 #     && pip install .[test,depletion-mpi] \
