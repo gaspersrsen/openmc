@@ -21,10 +21,9 @@ RUN apt-get -o Acquire::Check-Valid-Until=false -o Acquire::Check-Date=false upd
     apt-get install -y \
         python3-pip python-is-python3 wget git build-essential cmake \
         mpich libmpich-dev libhdf5-serial-dev libhdf5-mpich-dev \
-        libgsl0-dev libpython-dev \
         libpng-dev python3-venv pkg-config flex bison && \
     apt-get autoremove
-
+#libgsl0-dev #libpython-dev \
 # create virtual enviroment to avoid externally managed environment error
 RUN python3 -m venv openmc_venv
 ENV PATH=/openmc_venv/bin:$PATH
