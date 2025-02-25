@@ -1,4 +1,4 @@
-Bootstrap: docker
+Bootstrap: docker-archive
 From: openmc_srsen_15_1_dev_thermohydraulics.tar
 
 %environment
