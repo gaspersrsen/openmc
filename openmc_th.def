@@ -1,0 +1,8 @@
+Bootstrap: docker
+From: docker-daemon://openmc_srsen_15_1_dev_thermohydraulics
+
+%environment
+    export PATH=$PATH:/root/cardinal:/root/cardinal/build/openmc/bin
+
+%runscript
+    exec "$@"
