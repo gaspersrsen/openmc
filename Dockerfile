@@ -110,6 +110,7 @@ RUN cd $HOME/cardinal/contrib/openmc \
 
 #RUN export PATH=/root/cardinal:/root/cardinal/build/openmc/bin/:$PATH
 ENV PATH="/root/cardinal:/root/cardinal/build/openmc/bin:$PATH"
+RUN chmod -R 777 $HOME/cardinal
 
 # RUN cd $HOME/cardinal/contrib/openmc \
 #     && pip install .[test,depletion-mpi] \
