@@ -79,7 +79,7 @@ RUN python3 -m venv openmc_venv
 ENV PATH=/openmc_venv/bin:$PATH
 
 # Update system-provided pip
-RUN pip install --upgrade pip
+RUN pip install --upgrade pip openmc_plasma_source
 #RUN pip install vtk
 
 # Clone and install NJOY2016
