@@ -183,8 +183,8 @@ FROM dependencies AS build
 
 ENV HOME=/root
 
-ARG openmc_branch=develop
-ENV OPENMC_REPO='https://github.com/gaspersrsen/openmc.git'
+ARG openmc_branch=v0.15.2
+ENV OPENMC_REPO='https://github.com/openmc-dev/openmc.git'
 
 ARG compile_cores
 ARG build_dagmc
