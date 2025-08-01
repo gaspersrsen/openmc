@@ -22,10 +22,11 @@ from ._xml import get_text
 
 _FILTER_TYPES = (
     'universe', 'material', 'cell', 'cellborn', 'surface', 'mesh', 'energy',
-    'energyout', 'mu', 'polar', 'azimuthal', 'distribcell', 'delayedgroup',
+    'energyout', 'mu', 'musurface', 'polar', 'azimuthal', 'distribcell', 'delayedgroup',
     'energyfunction', 'cellfrom', 'materialfrom', 'legendre', 'spatiallegendre',
     'sphericalharmonics', 'zernike', 'zernikeradial', 'particle', 'cellinstance',
-    'collision', 'time'
+    'collision', 'time', 'parentnuclide', 'weight', 'meshborn', 'meshsurface',
+    'meshmaterial',
 )
 
 _CURRENT_NAMES = (
@@ -732,7 +733,7 @@ class SurfaceFilter(WithIDFilter):
 
 
 class ParticleFilter(Filter):
-    """Bins tally events based on the Particle type.
+    """Bins tally events based on the particle type.
 
     Parameters
     ----------
@@ -765,7 +766,7 @@ class ParticleFilter(Filter):
     @Filter.bins.setter
     def bins(self, bins):
         cv.check_type('bins', bins, Sequence, str)
-        bins = np.atleast_1d(bins)    
+        bins = np.atleast_1d(bins)
         for edge in bins:
             cv.check_value('filter bin', edge, _PARTICLES)
         self._bins = bins
@@ -786,6 +787,33 @@ class ParticleFilter(Filter):
         filter_id = int(elem.get('id'))
         bins = get_text(elem, 'bins').split()
         return cls(bins, filter_id=filter_id)
+
+
+class ParentNuclideFilter(ParticleFilter):
+    """Bins tally events based on the parent nuclide
+
+    Parameters
+    ----------
+    bins : str, or iterable of str
+        Names of nuclides (e.g., 'Ni65')
+    filter_id : int
+        Unique identifier for the filter
+
+    Attributes
+    ----------
+    bins : iterable of str
+        Names of nuclides
+    id : int
+        Unique identifier for the filter
+    num_bins : Integral
+        The number of filter bins
+
+    """
+    @Filter.bins.setter
+    def bins(self, bins):
+        bins = np.atleast_1d(bins)
+        cv.check_iterable_type('filter bins', bins, str)
+        self._bins = bins
 
 
 class MeshFilter(Filter):
@@ -873,8 +901,6 @@ class MeshFilter(Filter):
 
     @property
     def shape(self):
-        if isinstance(self, MeshSurfaceFilter):
-            return (self.num_bins,)
         return self.mesh.dimension
 
     @property
@@ -965,8 +991,11 @@ class MeshFilter(Filter):
             XML element containing filter data
 
         """
-        element = super().to_xml_element()
-        element[0].text = str(self.mesh.id)
+        element = ET.Element('filter')
+        element.set('id', str(self.id))
+        element.set('type', self.short_name.lower())
+        subelement = ET.SubElement(element, 'bins')
+        subelement.text = str(self.mesh.id)
         if self.translation is not None:
             element.set('translation', ' '.join(map(str, self.translation)))
         return element
@@ -1012,6 +1041,181 @@ class MeshBornFilter(MeshFilter):
     """
 
 
+class MeshMaterialFilter(MeshFilter):
+    """Filter events by combinations of mesh elements and materials.
+
+    .. versionadded:: 0.15.3
+
+    Parameters
+    ----------
+    mesh : openmc.MeshBase
+        The mesh object that events will be tallied onto
+    bins : iterable of 2-tuples or numpy.ndarray
+        Combinations of (mesh element, material) to tally, given as 2-tuples.
+        The first value in the tuple represents the index of the mesh element,
+        and the second value indicates the material (either a
+        :class:`openmc.Material` instance of the ID).
+    filter_id : int
+        Unique identifier for the filter
+
+    """
+    def __init__(self, mesh: openmc.MeshBase, bins, filter_id=None):
+        self.mesh = mesh
+        self.bins = bins
+        self.id = filter_id
+        self._translation = None
+
+    @classmethod
+    def from_volumes(cls, mesh: openmc.MeshBase, volumes: openmc.MeshMaterialVolumes):
+        """Construct a MeshMaterialFilter from a MeshMaterialVolumes object.
+
+        Parameters
+        ----------
+        mesh : openmc.MeshBase
+            The mesh object that events will be tallied onto
+        volumes : openmc.MeshMaterialVolumes
+            The mesh material volumes to use for the filter
+
+        Returns
+        -------
+        MeshMaterialFilter
+            A new MeshMaterialFilter instance
+
+        """
+        bins = list(zip(*np.where(volumes._materials > -1)))
+        return cls(mesh, bins)
+
+    def __hash__(self):
+        data = (type(self).__name__, self.mesh.id, tuple(self.bins.ravel()))
+        return hash(data)
+
+    def __repr__(self):
+        string = type(self).__name__ + '\n'
+        string += '{: <16}=\t{}\n'.format('\tID', self.id)
+        string += '{: <16}=\t{}\n'.format('\tMesh ID', self.mesh.id)
+        string += '{: <16}=\n{}\n'.format('\tBins', self.bins)
+        string += '{: <16}=\t{}\n'.format('\tTranslation', self.translation)
+        return string
+
+    @property
+    def shape(self):
+        return (self.num_bins,)
+
+    @property
+    def mesh(self):
+        return self._mesh
+
+    @mesh.setter
+    def mesh(self, mesh):
+        cv.check_type('filter mesh', mesh, openmc.MeshBase)
+        self._mesh = mesh
+
+    @Filter.bins.setter
+    def bins(self, bins):
+        pairs = np.empty((len(bins), 2), dtype=int)
+        for i, (elem, mat) in enumerate(bins):
+            cv.check_type('element', elem, Integral)
+            cv.check_type('material', mat, (Integral, openmc.Material))
+            pairs[i, 0] = elem
+            pairs[i, 1] = mat if isinstance(mat, Integral) else mat.id
+        self._bins = pairs
+
+    def to_xml_element(self):
+        """Return XML element representing the filter.
+
+        Returns
+        -------
+        element : lxml.etree._Element
+            XML element containing filter data
+
+        """
+        element = ET.Element('filter')
+        element.set('id', str(self.id))
+        element.set('type', self.short_name.lower())
+        element.set('mesh', str(self.mesh.id))
+
+        if self.translation is not None:
+            element.set('translation', ' '.join(map(str, self.translation)))
+
+        subelement = ET.SubElement(element, 'bins')
+        subelement.text = ' '.join(str(i) for i in self.bins.ravel())
+
+        return element
+
+    @classmethod
+    def from_xml_element(cls, elem: ET.Element, **kwargs) -> MeshMaterialFilter:
+        filter_id = int(elem.get('id'))
+        mesh_id = int(elem.get('mesh'))
+        mesh_obj = kwargs['meshes'][mesh_id]
+        bins = [int(x) for x in get_text(elem, 'bins').split()]
+        bins = list(zip(bins[::2], bins[1::2]))
+        out = cls(mesh_obj, bins, filter_id=filter_id)
+
+        translation = elem.get('translation')
+        if translation:
+            out.translation = [float(x) for x in translation.split()]
+        return out
+
+    @classmethod
+    def from_hdf5(cls, group, **kwargs):
+        if group['type'][()].decode() != cls.short_name.lower():
+            raise ValueError("Expected HDF5 data for filter type '"
+                             + cls.short_name.lower() + "' but got '"
+                             + group['type'][()].decode() + " instead")
+
+        if 'meshes' not in kwargs:
+            raise ValueError(cls.__name__ + " requires a 'meshes' keyword "
+                             "argument.")
+
+        mesh_id = group['mesh'][()]
+        mesh_obj = kwargs['meshes'][mesh_id]
+        bins = group['bins'][()]
+        filter_id = int(group.name.split('/')[-1].lstrip('filter '))
+        out = cls(mesh_obj, bins, filter_id=filter_id)
+
+        translation = group.get('translation')
+        if translation:
+            out.translation = translation[()]
+
+        return out
+
+    def get_pandas_dataframe(self, data_size, stride, **kwargs):
+        """Builds a Pandas DataFrame for the Filter's bins.
+
+        This method constructs a Pandas DataFrame object for the filter with
+        columns annotated by filter bin information. This is a helper method for
+        :meth:`Tally.get_pandas_dataframe`.
+
+        Parameters
+        ----------
+        data_size : int
+            The total number of bins in the tally corresponding to this filter
+        stride : int
+            Stride in memory for the filter
+
+        Returns
+        -------
+        pandas.DataFrame
+            A Pandas DataFrame with a multi-index column for the cell instance.
+            The number of rows in the DataFrame is the same as the total number
+            of bins in the corresponding tally, with the filter bin appropriately
+            tiled to map to the corresponding tally bins.
+
+        See also
+        --------
+        Tally.get_pandas_dataframe(), CrossFilter.get_pandas_dataframe()
+
+        """
+        # Repeat and tile bins as necessary to account for other filters.
+        bins = np.repeat(self.bins, stride, axis=0)
+        tile_factor = data_size // len(bins)
+        bins = np.tile(bins, (tile_factor, 1))
+
+        columns = pd.MultiIndex.from_product([[self.short_name.lower()],
+                                              ['element', 'material']])
+        return pd.DataFrame(bins, columns=columns)
+
+
 class MeshSurfaceFilter(MeshFilter):
     """Filter events by surface crossings on a mesh.
 
@@ -1038,6 +1242,9 @@ class MeshSurfaceFilter(MeshFilter):
         The number of filter bins
 
     """
+    @property
+    def shape(self):
+        return (self.num_bins,)
 
     @MeshFilter.mesh.setter
     def mesh(self, mesh):
@@ -1211,7 +1418,7 @@ class RealFilter(Filter):
             cv.check_type('filter value', v1, Real)
 
             # Make sure that each tuple has values that are increasing
-            if v1 < v0:
+            if v1 <= v0:
                 raise ValueError(f'Values {v0} and {v1} appear to be out of '
                                  'order')
 
@@ -1357,7 +1564,7 @@ class EnergyFilter(RealFilter):
     ----------
     values : Iterable of Real
         A list of values for which each successive pair constitutes a range of
-        energies in [eV] for a single bin
+        energies in [eV] for a single bin. Entries must be positive and ascending.
     filter_id : int
         Unique identifier for the filter
 
@@ -1850,6 +2057,44 @@ class MuFilter(RealFilter):
                 cv.check_less_than('filter value', x, 1., equality=True)
 
 
+class MuSurfaceFilter(MuFilter):
+    """Bins tally events based on the angle of surface crossing.
+
+    This filter bins events based on the cosine of the angle between the
+    direction of the particle and the normal to the surface at the point it
+    crosses. Only used in conjunction with a SurfaceFilter and current score.
+
+    .. versionadded:: 0.15.1
+
+    Parameters
+    ----------
+    values : int or Iterable of Real
+        A grid of surface crossing angles which the events will be divided into.
+        Values represent the cosine of the angle between the direction of the
+        particle and the normal to the surface at the point it crosses. If an
+        iterable is given, the values will be used explicitly as grid points. If
+        a single int is given, the range [-1, 1] will be divided equally into
+        that number of bins.
+    filter_id : int
+        Unique identifier for the filter
+
+    Attributes
+    ----------
+    values : numpy.ndarray
+        An array of values for which each successive pair constitutes a range of
+        surface crossing angle cosines for a single bin.
+    id : int
+        Unique identifier for the filter
+    bins : numpy.ndarray
+        An array of shape (N, 2) where each row is a pair of cosines of surface
+        crossing angle for a single filter
+    num_bins : Integral
+        The number of filter bins
+
+    """
+    # Note: inherits implementation from MuFilter
+
+
 class PolarFilter(RealFilter):
     """Bins tally events based on the incident particle's direction.
 
@@ -2263,3 +2508,26 @@ class EnergyFunctionFilter(Filter):
             {self.short_name.lower(): filter_bins})])
 
         return df
+
+
+class WeightFilter(RealFilter):
+    """Bins tally events based on the incoming particle weight.
+
+    Parameters
+    ----------
+    Values : Iterable of float
+        A list or iterable of the weight boundaries, as float values.
+    filter_id : int
+        Unique identifier for the filter
+
+    Attributes
+    ----------
+    id : int
+        Unique identifier for the filter
+    bins : numpy.ndarray
+        An array of integer values representing the weights by which to filter
+    num_bins : int
+        The number of filter bins
+    values : numpy.ndarray
+        Array of weight boundaries
+    """
