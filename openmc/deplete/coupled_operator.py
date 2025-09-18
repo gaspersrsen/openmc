@@ -533,9 +533,10 @@ class CoupledOperator(OpenMCOperator):
                     print(f"No nuclide absorption tallied, skipping at step {M}")
                     skip_steps = True
                     continue
-                # Predict concentration change                
-                g0 = ((P_fiss/target + P_nxn)
-                        - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak) / L_abs_nucs
+                # Predict concentration change
+                top = (P_fiss + P_nxn)/target - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)/target*L_leak
+                bot = L_abs_nucs
+                g0 = top / bot
                 # Optimal following (Kalman filter for narrowing to a scalar value):
                 if M == 10:
                     x = 1
@@ -543,10 +544,30 @@ class CoupledOperator(OpenMCOperator):
                     p_n = 1e16
                     p_measure = 1e16
                 if (g0 >= 0.1 and g0 <= 10.0):
-                    #Slowly relax uncertainty
-                    p_measure = ((batches+10)/M)/np.sqrt(self.model.settings.particles)
+                    
+                    rel_err_MC = 1/np.sqrt(self.model.settings.particles)
+                    prod = P_fiss + P_nxn
+                    loss = L_abs + prod * (1-L_leak)
+                    # Sig = part_tally * rel_err
+                    # rel_err = sqrt(1/N_part_tally) = 1/sqrt(N_tot) * sqrt(N_tot/N_part_tally) = rel_err_MC * sqrt(N_tot/N_part_tally) = rel_err_MC * sqrt(tot_tally/part_tally)
+                    # Sig = part_tally * rel_err_MC * sqrt(tot/part_tally) = rel_err_MC * sqrt(tot*part_tally)
+                    sig1 = rel_err_MC*(np.sqrt(prod/P_fiss) + np.sqrt(prod/P_nxn))/target #sig for (P_fiss + P_nxn)/target
+                    sig2 = rel_err_MC*(np.sqrt(loss/L_abs) + np.sqrt(loss/L_abs_nucs) ) #sig for (L_abs - L_abs_nucs)
+                    #logic: prod/target = loss = abs + leak; leak = prod/target - abs
+                    sig_leak = sig1 + rel_err_MC*np.sqrt(loss/L_abs) #sig for L_leak
+                    sig3 = (sig1*target/prod + sig_leak/loss) / target * prod * L_leak  #sig for (P_fiss + P_nxn)/target * L_leak; Sig = L_leak * prod * (rel_err(prod) + rel_err(L_leak)) / target
+                    #Division by target must not influence relative errors
+                    rel_err_top = (sig1 + sig2 + sig3) / top
+                    rel_err_bot = rel_err_MC*np.sqrt(loss/L_abs_nucs) / bot
+                    rel_err_g0 = rel_err_top + rel_err_bot
+                    sig_g0 = g0 * rel_err_g0
+                    p_measure = sig_g0**2
+                    
+                    
+                    # p_measure = ((batches+10)/M)/np.sqrt(self.model.settings.particles) #Slowly relax uncertainty; OLD version
+                    
                     # Estimate the accuracy of the measurement with a quadratic difference of k and target
-                    #(1 + self.model.settings.particles * (k-target)**2)**2 / np.sqrt(self.model.settings.particles)
+                    # p_measure = (1 + self.model.settings.particles * (k-target)**2)**2 / np.sqrt(self.model.settings.particles) #OLD version
                 else:
                     if g0 <= 0.1: g0 = 0.1
                     elif g0 >= 2.5: g0 = 2.5
