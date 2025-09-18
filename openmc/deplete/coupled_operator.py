@@ -515,7 +515,7 @@ class CoupledOperator(OpenMCOperator):
                         curr_res += [tally_.results - prev_res[i]]
                         prev_res[i] = copy.copy(tally_.results)
                         i+=1
-                # Talliy results are added (summed) in each batch - measurement is the difference
+                # Tally results are added (summed) in each batch - measurement is the difference
                 glob_tall = copy.copy(openmc.lib.global_tallies())
                 leak = glob_tall[3][0]*M - prev_leak
                 prev_leak = glob_tall[3][0]*M
@@ -530,7 +530,7 @@ class CoupledOperator(OpenMCOperator):
                 else:
                     L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
                 if L_abs_nucs == 0:
-                    print(f"No nuclide absorption tallied, skipping at step {M}")
+                    if not skip_steps: print(f"No nuclide absorption tallied, skipping at step {M}")
                     skip_steps = True
                     continue
                 # Predict concentration change
