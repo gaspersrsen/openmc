@@ -66,8 +66,8 @@ ENV LD_LIBRARY_PATH=${DAGMC_INSTALL_DIR}/lib:$LD_LIBRARY_PATH \
     DEBIAN_FRONTEND=noninteractive
 
 # Install and update dependencies from Debian package manager
-RUN apt-get update -y && \
-    apt-get upgrade -y && \
+RUN apt-get update -y || usleep && \
+    apt-get upgrade -y || usleep && \
     apt-get install -y \
         python3-pip python-is-python3 wget git build-essential cmake \
         mpich libmpich-dev libhdf5-serial-dev libhdf5-mpich-dev \
