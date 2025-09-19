@@ -534,28 +534,27 @@ class CoupledOperator(OpenMCOperator):
                     skip_steps = True
                     continue
                 # Predict concentration change
-                top = (P_fiss + P_nxn)/target - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)/target*L_leak
+                top = (P_fiss/target + P_nxn) - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak
                 bot = L_abs_nucs
                 g0 = top / bot
                 # Optimal following (Kalman filter for narrowing to a scalar value):
-                if M == 10:
+                if M == 10: #Start the iteration at step 10, handled before, this is only K.f initialization
                     x = 1
                     p = 1e16
                     p_n = 1e16
                     p_measure = 1e16
                 if (g0 >= 0.1 and g0 <= 10.0):
-                    
                     rel_err_MC = 1/np.sqrt(self.model.settings.particles)
                     prod = P_fiss + P_nxn
-                    loss = L_abs + prod * (1-L_leak)
+                    loss = L_abs + prod * L_leak
                     # Sig = part_tally * rel_err
                     # rel_err = sqrt(1/N_part_tally) = 1/sqrt(N_tot) * sqrt(N_tot/N_part_tally) = rel_err_MC * sqrt(N_tot/N_part_tally) = rel_err_MC * sqrt(tot_tally/part_tally)
                     # Sig = part_tally * rel_err_MC * sqrt(tot/part_tally) = rel_err_MC * sqrt(tot*part_tally)
-                    sig1 = rel_err_MC*(np.sqrt(prod/P_fiss) + np.sqrt(prod/P_nxn))/target #sig for (P_fiss + P_nxn)/target
+                    sig1 = rel_err_MC*(np.sqrt(prod/P_fiss)/target + np.sqrt(prod/P_nxn)) #sig for (P_fiss + P_nxn)/target
                     sig2 = rel_err_MC*(np.sqrt(loss/L_abs) + np.sqrt(loss/L_abs_nucs) ) #sig for (L_abs - L_abs_nucs)
-                    #logic: prod/target = loss = abs + leak; leak = prod/target - abs
-                    sig_leak = sig1 + rel_err_MC*np.sqrt(loss/L_abs) #sig for L_leak
-                    sig3 = (sig1*target/prod + sig_leak/loss) / target * prod * L_leak  #sig for (P_fiss + P_nxn)/target * L_leak; Sig = L_leak * prod * (rel_err(prod) + rel_err(L_leak)) / target
+                    #logic: prod = loss = abs + leak; leak = prod - abs
+                    sig_leak = rel_err_MC*(np.sqrt(prod/P_fiss) + np.sqrt(prod/P_nxn)) + rel_err_MC*np.sqrt(loss/L_abs) #sig for L_leak
+                    sig3 = (sig1/prod + sig_leak/loss) * prod * L_leak  #sig for (P_fiss + P_nxn)/target * L_leak; Sig = L_leak * prod * (rel_err(prod) + rel_err(L_leak)) / target
                     #Division by target must not influence relative errors
                     rel_err_top = (sig1 + sig2 + sig3) / top
                     rel_err_bot = rel_err_MC*np.sqrt(loss/L_abs_nucs) / bot
