@@ -547,9 +547,8 @@ class CoupledOperator(OpenMCOperator):
                     rel_err_MC = 1/np.sqrt(self.model.settings.particles)
                     prod = P_fiss + P_nxn
                     loss = L_abs + prod * L_leak
-                    # Sig = part_tally * rel_err
                     # rel_err = sqrt(1/N_part_tally) = 1/sqrt(N_tot) * sqrt(N_tot/N_part_tally) = rel_err_MC * sqrt(N_tot/N_part_tally) = rel_err_MC * sqrt(tot_tally/part_tally)
-                    # Sig = part_tally * rel_err_MC * sqrt(tot/part_tally) = rel_err_MC * sqrt(tot*part_tally)
+                    # Sig = part_tally * rel_err = part_tally * rel_err_MC * sqrt(tot/part_tally) = rel_err_MC * sqrt(tot*part_tally)
                     sig1 = rel_err_MC * (np.sqrt(prod * P_fiss)/target + np.sqrt(prod * P_nxn)) #sig for (P_fiss + P_nxn)/target
                     sig2 = rel_err_MC * (np.sqrt(loss * L_abs) + np.sqrt(loss * L_abs_nucs) ) #sig for (L_abs - L_abs_nucs)
                     #logic: prod = loss = abs + leak; leak = prod - abs
@@ -559,7 +558,7 @@ class CoupledOperator(OpenMCOperator):
                     #Division by target must not influence relative errors
                     rel_err_top = (sig1 + sig2 + sig3) / top
                     rel_err_bot = rel_err_MC * np.sqrt(loss * L_abs_nucs) / bot
-                    rel_err_g_est = (rel_err_top + rel_err_bot)  * (1+100*np.exp(-(M-10)**2/(batches/6))) #Slowly relax uncertainty, as first guesses are inaccurate, about 2/3 of batches get very little extra uncertainty, this improves convergence when initial guess is bad, but increases final uncertainty
+                    rel_err_g_est = (rel_err_top + rel_err_bot)  * (1+100*np.exp(-(M - 10)**2 / (batches / 6))) #Slowly relax uncertainty, as first guesses are inaccurate, about 2/3 of batches get very little extra uncertainty, this improves convergence when initial guess is bad, but increases final uncertainty
                     sig_g_est = f_prev * g_est * rel_err_g_est
                     p_measure = sig_g_est**2
                     
