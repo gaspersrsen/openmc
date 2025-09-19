@@ -558,7 +558,7 @@ class CoupledOperator(OpenMCOperator):
                     #Division by target must not influence relative errors
                     rel_err_top = (sig1 + sig2 + sig3) / top
                     rel_err_bot = rel_err_MC * np.sqrt(loss * L_abs_nucs) / bot
-                    rel_err_g_est = (rel_err_top + rel_err_bot)  * (1+100*np.exp(-(M - 10)**2 / (batches / 6))) #Slowly relax uncertainty, as first guesses are inaccurate, about 2/3 of batches get very little extra uncertainty, this improves convergence when initial guess is bad, but increases final uncertainty
+                    rel_err_g_est = (rel_err_top + rel_err_bot)  * (1+100*np.exp(-(M - 10)**2 / (batches / 6)) if (M - 10) < batches / 3 else 1) #Slowly relax uncertainty, as first guesses are inaccurate, 2/3 of batches do not extra uncertainty, this improves convergence when initial guess is bad, but increases final uncertainty
                     sig_g_est = f_prev * g_est * rel_err_g_est
                     p_measure = sig_g_est**2
                     
@@ -591,8 +591,8 @@ class CoupledOperator(OpenMCOperator):
                     k = (P_fiss + P_nxn) / (L_abs + (P_fiss + P_nxn)*L_leak)
                     print(f"Batch: {M}")
                     print(f"k_absorption:{k}")
-                    print(f"Batch estimated correction:{g_est}")
-                    print(f"Batch filtered correction:{f_prev/f}")
+                    print(f"Batch estimated correction: {g_est}")
+                    print(f"Batch filtered correction: {f_prev/f}")
                     print(f"Search algorithm internal tally:\n{curr_res}")
                     print(f"Correction coefficients [P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs]: {P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs}")
                     print(f"Sigmas: [sig1, sig2, sig3]: {sig1, sig2, sig3}")
