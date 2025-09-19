@@ -534,33 +534,34 @@ class CoupledOperator(OpenMCOperator):
                     skip_steps = True
                     continue
                 # Predict concentration change
-                top = (P_fiss/target + P_nxn) - (L_abs - L_abs_nucs) - (P_fiss + P_nxn)*L_leak
+                top = (P_fiss/target + P_nxn) - (L_abs - L_abs_nucs) - (P_fiss + P_nxn) * L_leak
                 bot = L_abs_nucs
-                g0 = top / bot
+                g_est = top / bot
                 # Optimal following (Kalman filter for narrowing to a scalar value):
                 if M == 10: #Start the iteration at step 10, handled before, this is only K.f initialization
                     x = 1
                     p = 1e16
                     p_n = 1e16
                     p_measure = 1e16
-                if (g0 >= 0.1 and g0 <= 10.0):
+                if (g_est >= 0.1 and g_est <= 10.0):
                     rel_err_MC = 1/np.sqrt(self.model.settings.particles)
                     prod = P_fiss + P_nxn
                     loss = L_abs + prod * L_leak
                     # Sig = part_tally * rel_err
                     # rel_err = sqrt(1/N_part_tally) = 1/sqrt(N_tot) * sqrt(N_tot/N_part_tally) = rel_err_MC * sqrt(N_tot/N_part_tally) = rel_err_MC * sqrt(tot_tally/part_tally)
                     # Sig = part_tally * rel_err_MC * sqrt(tot/part_tally) = rel_err_MC * sqrt(tot*part_tally)
-                    sig1 = rel_err_MC*(np.sqrt(prod/P_fiss)/target + np.sqrt(prod/P_nxn)) #sig for (P_fiss + P_nxn)/target
-                    sig2 = rel_err_MC*(np.sqrt(loss/L_abs) + np.sqrt(loss/L_abs_nucs) ) #sig for (L_abs - L_abs_nucs)
+                    sig1 = rel_err_MC * (np.sqrt(prod / P_fiss)/target + np.sqrt(prod / P_nxn)) #sig for (P_fiss + P_nxn)/target
+                    sig2 = rel_err_MC * (np.sqrt(loss / L_abs) + np.sqrt(loss / L_abs_nucs) ) #sig for (L_abs - L_abs_nucs)
                     #logic: prod = loss = abs + leak; leak = prod - abs
-                    sig_leak = rel_err_MC*(np.sqrt(prod/P_fiss) + np.sqrt(prod/P_nxn)) + rel_err_MC*np.sqrt(loss/L_abs) #sig for L_leak
-                    sig3 = (sig1/prod + sig_leak/loss) * prod * L_leak  #sig for (P_fiss + P_nxn)/target * L_leak; Sig = L_leak * prod * (rel_err(prod) + rel_err(L_leak)) / target
+                    #sig_leak = rel_err_MC*(np.sqrt(prod/P_fiss) + np.sqrt(prod/P_nxn)) + rel_err_MC*np.sqrt(loss/L_abs) #sig for L_leak
+                    #sig3 = (sig1/prod + sig_leak/loss) * prod * L_leak  #sig for (P_fiss + P_nxn)/target * L_leak; Sig = L_leak * prod * (rel_err(prod) + rel_err(L_leak)) / target
+                    sig3 = rel_err_MC * (np.sqrt(prod / P_fiss) + np.sqrt(prod / P_nxn)) * L_leak
                     #Division by target must not influence relative errors
                     rel_err_top = (sig1 + sig2 + sig3) / top
-                    rel_err_bot = rel_err_MC*np.sqrt(loss/L_abs_nucs) / bot
-                    rel_err_g0 = rel_err_top + rel_err_bot
-                    sig_g0 = g0 * rel_err_g0
-                    p_measure = sig_g0**2
+                    rel_err_bot = rel_err_MC * np.sqrt(loss / L_abs_nucs) / bot
+                    rel_err_g_est = rel_err_top + rel_err_bot
+                    sig_g_est = f_prev * g_est * rel_err_g_est
+                    p_measure = sig_g_est**2
                     
                     
                     # p_measure = ((batches+10)/M)/np.sqrt(self.model.settings.particles) #Slowly relax uncertainty; OLD version
@@ -568,14 +569,14 @@ class CoupledOperator(OpenMCOperator):
                     # Estimate the accuracy of the measurement with a quadratic difference of k and target
                     # p_measure = (1 + self.model.settings.particles * (k-target)**2)**2 / np.sqrt(self.model.settings.particles) #OLD version
                 else:
-                    if g0 <= 0.1: g0 = 0.1
-                    elif g0 >= 2.5: g0 = 2.5
+                    if g_est <= 0.1: g_est = 0.1
+                    elif g_est >= 2.5: g_est = 2.5
                     p_measure = 1e16
                 if p_n >= 1e16 and p_measure >= 1e16:
                     pass
                 else:
                     p_n = 1/(1/p + 1/p_measure)
-                z = f_prev * g0
+                z = f_prev * g_est
                 if bracket is not None:
                     if z*initial_value > bracket[1]:
                         z = bracket[1]/initial_value
