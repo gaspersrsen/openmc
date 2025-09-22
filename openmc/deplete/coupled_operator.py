@@ -562,7 +562,7 @@ class CoupledOperator(OpenMCOperator):
                     rel_err_bot = rel_err_MC * np.sqrt(loss * L_abs_nucs) / bot
                     rel_err_g_est = (rel_err_top + rel_err_bot)  * (100*np.exp(-(M - 10)**2 / (batches / 6)) if (M - 10) < batches / 3 else 1) #Slowly relax uncertainty, as first guesses are inaccurate, 2/3 of batches do not extra uncertainty, this improves convergence when initial guess is bad, but increases final uncertainty
                     sig_g_est = g_est * rel_err_g_est
-                    p_measure = np.pow(sig_g_est,2)
+                    p_measure = sig_g_est**2
                     
                     
                     # p_measure = ((batches+10)/M)/np.sqrt(self.model.settings.particles) #Slowly relax uncertainty; OLD version
