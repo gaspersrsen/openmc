@@ -594,11 +594,12 @@ class CoupledOperator(OpenMCOperator):
                 f_prev = f
 
                 if debug is True:
-                    k = (P_fiss + P_nxn) / (L_abs + (P_fiss + P_nxn)*L_leak)
+                    k = (P_fiss - P_nxn) / (L_abs + (P_fiss + P_nxn)*L_leak - P_nxn)
                     print(f"Batch: {M}")
                     print(f"k_absorption:{k}")
-                    print(f"Batch estimated correction: {g_est}")
-                    print(f"Batch filtered correction: {g}")
+                    print(f"Batch uncertainty: p: {p_measure}, sig_g: {sig_g_est}")
+                    print(f"Batch estimated correction - 1: {g_est-1}")
+                    print(f"Batch filtered correction: {g-1}")
                     # print(f"Search algorithm internal tally:\n{curr_res}")
                     print(f"Correction coefficients [P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs]: {P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs}")
                     print(f"Sigmas: [sig1, sig2, sig3]: {sig1, sig2, sig3}")
