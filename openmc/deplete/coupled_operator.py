@@ -598,6 +598,7 @@ class CoupledOperator(OpenMCOperator):
                     print(f"Batch: {M}")
                     print(f"k_absorption:{k}")
                     print(f"Batch uncertainty: p: {p_measure}, sig_g: {sig_g_est}")
+                    print(f"top: {top}, bot: {bot}")
                     print(f"Batch estimated correction - 1: {g_est-1}")
                     print(f"Batch filtered correction: {g-1}")
                     # print(f"Search algorithm internal tally:\n{curr_res}")
