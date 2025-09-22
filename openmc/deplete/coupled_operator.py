@@ -588,10 +588,10 @@ class CoupledOperator(OpenMCOperator):
                         z = bracket[0]/initial_value
                 print(f"Changing concentration mult from {x} to {x + p_n/p_measure * (z - x)}, by {p_n/p_measure * (z - x)}, innovation factor: {p_n/p_measure}")
                 x = x + p_n/p_measure * (z - x)
-                p = p_n
+                p = copy.copy(p_n)
                 f = copy.copy(x)
                 g = f/f_prev
-                f_prev = f
+                f_prev = copy.copy(f)
 
                 if debug is True:
                     k = (P_fiss) / (L_abs + (P_fiss + P_nxn)*L_leak - P_nxn)
