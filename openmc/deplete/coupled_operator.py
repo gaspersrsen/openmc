@@ -515,6 +515,7 @@ class CoupledOperator(OpenMCOperator):
                         curr_res += [tally_.results - prev_res[i]]
                         prev_res[i] = copy.copy(tally_.results)
                         i+=1
+                        
                 # Tally results are added (summed) in each batch - measurement is the difference
                 glob_tall = copy.copy(openmc.lib.global_tallies())
                 leak = glob_tall[3][0]*M - prev_leak
@@ -530,9 +531,10 @@ class CoupledOperator(OpenMCOperator):
                 else:
                     L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
                 if L_abs_nucs == 0:
-                    if not skip_steps: print(f"No nuclide absorption tallied, skipping at step {M}")
+                    if not skip_steps: print(f"No nuclide absorption tallied, skipping from step {M} onwards")
                     skip_steps = True
                     continue
+                
                 # Predict concentration change
                 top = (P_fiss/target + P_nxn) - (L_abs - L_abs_nucs) - (P_fiss + P_nxn) * L_leak
                 bot = L_abs_nucs
@@ -571,16 +573,20 @@ class CoupledOperator(OpenMCOperator):
                     if g_est <= 0.1: g_est = 0.1
                     elif g_est >= 2.5: g_est = 2.5
                     p_measure = 1e16
+                
                 if p_n >= 1e16 and p_measure >= 1e16:
                     pass
                 else:
+                    print(f"Propagating uncertainty: p_prev {p}, p_measure {p_measure}, p_next {p_n}")
                     p_n = 1/(1/p + 1/p_measure)
                 z = f_prev * g_est
+                
                 if bracket is not None:
                     if z*initial_value > bracket[1]:
                         z = bracket[1]/initial_value
                     elif z*initial_value < bracket[0]:
                         z = bracket[0]/initial_value
+                print(f"Changing concentration mult from {x} to {x + p_n/p_measure * (z - x)}, by {p_n/p_measure * (z - x)}, innovation factor: {p_n/p_measure}")
                 x = x + p_n/p_measure * (z - x)
                 p = p_n
                 f = x
@@ -592,11 +598,10 @@ class CoupledOperator(OpenMCOperator):
                     print(f"Batch: {M}")
                     print(f"k_absorption:{k}")
                     print(f"Batch estimated correction: {g_est}")
-                    print(f"Batch filtered correction: {f_prev/f}")
-                    print(f"Search algorithm internal tally:\n{curr_res}")
+                    print(f"Batch filtered correction: {g}")
+                    # print(f"Search algorithm internal tally:\n{curr_res}")
                     print(f"Correction coefficients [P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs]: {P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs}")
                     print(f"Sigmas: [sig1, sig2, sig3]: {sig1, sig2, sig3}")
-                    print(f"Batch concentration correction:{g}")
                     print(f"Batch estimated concentration:{f*initial_value} +/- {f*initial_value*(p**(1/2))}")
 
                 # Update densities on C API side
