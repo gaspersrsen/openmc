@@ -560,8 +560,8 @@ class CoupledOperator(OpenMCOperator):
                     #Division by target must not influence relative errors
                     rel_err_top = (np.abs(sig1) + np.abs(sig2) + np.abs(sig3)) / top
                     rel_err_bot = rel_err_MC * np.sqrt(loss * L_abs_nucs) / bot
-                    rel_err_g_est = (rel_err_top + rel_err_bot)  * (100*np.exp(-(M - 10)**2 / (batches / 6)) if (M - 10) < batches / 3 else 1) #Slowly relax uncertainty, as first guesses are inaccurate, 2/3 of batches do not extra uncertainty, this improves convergence when initial guess is bad, but increases final uncertainty
-                    sig_g_est = g_est * rel_err_g_est
+                    rel_err_g_est = (rel_err_top + rel_err_bot)  * (1 + 100*np.exp(-(M - 10)**2 / (batches / 6)) if (M - 10) < (batches / 3) else 0) #Slowly relax uncertainty, as first guesses are inaccurate, 2/3 of batches do not extra uncertainty, this improves convergence when initial guess is bad, but increases final uncertainty
+                    sig_g_est = f_prev * g_est * rel_err_g_est
                     p_measure = sig_g_est**2
                     
                     
@@ -596,15 +596,15 @@ class CoupledOperator(OpenMCOperator):
                 if debug is True:
                     k = (P_fiss) / (L_abs + (P_fiss + P_nxn)*L_leak - P_nxn)
                     print(f"Batch: {M}")
-                    print(f"k_absorption:{k}")
+                    print(f"k_absorption: {k}")
                     print(f"Batch uncertainty: p: {p_measure}, sig_g: {sig_g_est}")
                     print(f"top: {top}, bot: {bot}")
                     print(f"Batch estimated correction - 1: {g_est-1}")
-                    print(f"Batch filtered correction: {g-1}")
+                    print(f"Batch filtered correction - 1: {g-1}")
                     # print(f"Search algorithm internal tally:\n{curr_res}")
                     print(f"Correction coefficients [P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs]: {P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs}")
                     print(f"Sigmas: [sig1, sig2, sig3]: {sig1, sig2, sig3}")
-                    print(f"Batch estimated concentration:{f*initial_value} +/- {f*initial_value*(p**(1/2))}")
+                    print(f"Batch estimated concentration: {f*initial_value} +/- {f*initial_value*(p**(1/2))}")
 
                 # Update densities on C API side
                 for mat in openmc.lib.materials:
