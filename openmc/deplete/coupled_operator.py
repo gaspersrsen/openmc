@@ -561,8 +561,8 @@ class CoupledOperator(OpenMCOperator):
                     rel_err_top = (np.abs(sig1) + np.abs(sig2) + np.abs(sig3)) / top
                     rel_err_bot = rel_err_MC * np.sqrt(loss * L_abs_nucs) / bot
                     rel_err_g_est = (rel_err_top + rel_err_bot)  * (100*np.exp(-(M - 10)**2 / (batches / 6)) if (M - 10) < batches / 3 else 1) #Slowly relax uncertainty, as first guesses are inaccurate, 2/3 of batches do not extra uncertainty, this improves convergence when initial guess is bad, but increases final uncertainty
-                    sig_g_est = f_prev * g_est * rel_err_g_est
-                    p_measure = sig_g_est**2
+                    sig_g_est = g_est * rel_err_g_est
+                    p_measure = np.pow(sig_g_est,2)
                     
                     
                     # p_measure = ((batches+10)/M)/np.sqrt(self.model.settings.particles) #Slowly relax uncertainty; OLD version
@@ -577,8 +577,8 @@ class CoupledOperator(OpenMCOperator):
                 if p_n >= 1e16 and p_measure >= 1e16:
                     pass
                 else:
-                    print(f"Propagating uncertainty: p_prev {p}, p_measure {p_measure}, p_next {p_n}")
                     p_n = 1/(1/p + 1/p_measure)
+                    print(f"Propagating uncertainty: p_prev {p}, p_measure {p_measure}, p_next {p_n}")
                 z = f_prev * g_est
                 
                 if bracket is not None:
@@ -589,12 +589,12 @@ class CoupledOperator(OpenMCOperator):
                 print(f"Changing concentration mult from {x} to {x + p_n/p_measure * (z - x)}, by {p_n/p_measure * (z - x)}, innovation factor: {p_n/p_measure}")
                 x = x + p_n/p_measure * (z - x)
                 p = p_n
-                f = x
+                f = copy.copy(x)
                 g = f/f_prev
                 f_prev = f
 
                 if debug is True:
-                    k = (P_fiss - P_nxn) / (L_abs + (P_fiss + P_nxn)*L_leak - P_nxn)
+                    k = (P_fiss) / (L_abs + (P_fiss + P_nxn)*L_leak - P_nxn)
                     print(f"Batch: {M}")
                     print(f"k_absorption:{k}")
                     print(f"Batch uncertainty: p: {p_measure}, sig_g: {sig_g_est}")
