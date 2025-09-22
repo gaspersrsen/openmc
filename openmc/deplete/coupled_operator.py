@@ -560,7 +560,7 @@ class CoupledOperator(OpenMCOperator):
                     #Division by target must not influence relative errors
                     rel_err_top = (np.abs(sig1) + np.abs(sig2) + np.abs(sig3)) / top
                     rel_err_bot = rel_err_MC * np.sqrt(loss * L_abs_nucs) / bot
-                    rel_err_g_est = (rel_err_top + rel_err_bot)  * (1 + 100*np.exp(-(M - 10)**2 / (batches / 6)) if (M - 10) < (batches / 3) else 0) #Slowly relax uncertainty, as first guesses are inaccurate, 2/3 of batches do not extra uncertainty, this improves convergence when initial guess is bad, but increases final uncertainty
+                    rel_err_g_est = (rel_err_top + rel_err_bot)  * (1 + (100*np.exp(-(M - 10)**2 / (batches / 6)) if (M - 10) < (batches / 3) else 0)) #Slowly relax uncertainty, as first guesses are inaccurate, 2/3 of batches do not extra uncertainty, this improves convergence when initial guess is bad, but increases final uncertainty
                     sig_g_est = f_prev * g_est * rel_err_g_est
                     p_measure = sig_g_est**2
                     
