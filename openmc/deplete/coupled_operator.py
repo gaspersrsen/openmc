@@ -523,7 +523,7 @@ class CoupledOperator(OpenMCOperator):
                 
                 P_fiss = curr_res[0][0][0][1]                               # Neutrons produced by fission (prompt and delayed)
                 P_nxn = curr_res[0][0][2][1] - curr_res[0][0][3][1]         # Additional neutrons produced by (n,xn) reactions
-                L_leak = np.abs(leak)                                       # Neutron leakage fraction
+                L_leak = (leak if leak > 0 else 0)                          # Neutron leakage fraction
                 L_abs = curr_res[0][0][1][1]                                # Total neutron absorption
                 # Total flagged nuclide absorption
                 if materials is not None:
