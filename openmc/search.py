@@ -322,7 +322,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
         M = openmc.lib.current_batch()
         if M < starting_batch: continue
         # Only change concentrations during the additional batches
-        if M < batches+10 and not skip_steps:
+        if M < starting_batch + batches and not skip_steps:
             #k = openmc.lib.keff()[0]
             talliez = copy.copy(openmc.lib.tallies)
             curr_res = []
