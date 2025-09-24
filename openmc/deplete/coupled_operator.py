@@ -631,7 +631,7 @@ class CoupledOperator(OpenMCOperator):
                     # Update densities on C API side
                     mat_internal = openmc.lib.materials[int(mat)]
                     mat_internal.set_densities(nuclides, densities)
-            if M == batches:
+            if M == self.model.settings.inactive:
                 openmc.lib.reset()
         openmc.lib.simulation_finalize()
 

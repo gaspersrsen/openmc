@@ -326,7 +326,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             #k = openmc.lib.keff()[0]
             talliez = copy.copy(openmc.lib.tallies)
             curr_res = []
-            if M == 10:
+            if M == starting_batch:
                 for tally_ in talliez.values():
                     if tally_.id in [8888,8889]:
                         prev_res += [tally_.results - tally_.results]
@@ -361,7 +361,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             bot = L_abs_nucs
             g_est = top / bot
             # Optimal following (Kalman filter for narrowing to a scalar value):
-            if M == 10: #Start the iteration at step 10, handled before, this is only K.f initialization
+            if M == starting_batch: #Start the iteration at step 10, handled before, this is only K.f initialization
                 x = 1
                 p = 1e16
                 p_n = 1e16
@@ -381,7 +381,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 #Division by target must not influence relative errors
                 rel_err_top = (np.abs(sig1) + np.abs(sig2) + np.abs(sig3)) / top
                 rel_err_bot = rel_err_MC * np.sqrt(loss * L_abs_nucs) / bot
-                rel_err_g_est = (rel_err_top + rel_err_bot)  * (1 + (100*np.exp(-(M - 10)**2 / (batches / 6)) if (M - 10) < (batches / 3) else 0)) #Slowly relax uncertainty, as first are inaccurate, 2/3 of batches do not extra uncertainty, this improves convergence when initial guess is bad, but increases final uncertainty
+                rel_err_g_est = (rel_err_top + rel_err_bot)  * (1 + (100*np.exp(-(M - starting_batch)**2 / (batches / 6)) if (M - starting_batch) < (batches / 3) else 0)) #Slowly relax uncertainty, as first are inaccurate, 2/3 of batches do not extra uncertainty, this improves convergence when initial guess is bad, but increases final uncertainty
                 sig_g_est = f_prev * g_est * rel_err_g_est
                 p_measure = sig_g_est**2
                 
