@@ -249,10 +249,6 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     openmc.model.model, with updated critical density concentrations of flagged nuclides in flagged materials
 
     """
-    # Initialize OpenMC library
-    comm.barrier()
-    if not openmc.lib.is_initialized:
-        openmc.lib.init(intracomm=comm)
     if iso is None:
         raise ValueError("'iso' argument is empty")
     if initial_value is not None:
@@ -314,6 +310,10 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     prev_res = []
     prev_leak = 0
     skip_steps = False
+    # Initialize OpenMC library
+    comm.barrier()
+    if not openmc.lib.is_initialized:
+        openmc.lib.init(intracomm=comm)
     openmc.lib.reset()
     openmc.lib.simulation_init()
     # Run simulation
