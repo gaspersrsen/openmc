@@ -265,7 +265,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
         cv.check_less_than('bracket values', bracket[0], bracket[1])
         
     #Create tallies if not already created
-    if model.settings.inactive < batches:
+    if model.settings.inactive < batches + 10:
         model.settings.inactive += batches
         model.settings.batches += batches
     tally_ids = [tally.id for tally in model.tallies]
@@ -310,6 +310,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     prev_res = []
     prev_leak = 0
     skip_steps = False
+    starting_batch = model.settings.inactive - batches - 1 #Otherwise Obi-Wan error
     # Initialize OpenMC library
     comm.barrier()
     if not openmc.lib.is_initialized:
@@ -319,7 +320,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     # Run simulation
     for _ in openmc.lib.iter_batches():
         M = openmc.lib.current_batch()
-        if M < 10: continue
+        if M < starting_batch: continue
         # Only change concentrations during the additional batches
         if M < batches+10 and not skip_steps:
             #k = openmc.lib.keff()[0]
