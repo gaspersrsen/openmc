@@ -380,6 +380,9 @@ void initialize_batch()
     simulation::time_inactive.stop();
     simulation::time_active.start();
     for (auto& t : model::tallies) {
+      t->reset();
+    }
+    for (auto& t : model::tallies) {
       t->active_ = true;
     }
   }

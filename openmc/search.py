@@ -313,8 +313,8 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     starting_batch = model.settings.inactive - batches - 1 #Otherwise Obi-Wan error
     # Initialize OpenMC library
     comm.barrier()
-    if not openmc.lib.is_initialized:
-        openmc.lib.init(intracomm=comm)
+    # if not openmc.lib.is_initialized:
+    openmc.lib.init(intracomm=comm)
     openmc.lib.reset()
     openmc.lib.simulation_init()
     # Run simulation
@@ -452,8 +452,8 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 # Update densities on C API side
                 mat_internal = openmc.lib.materials[int(mat)]
                 mat_internal.set_densities(nuclides, densities)
-        if M == model.settings.inactive:
-            openmc.lib.reset()
+        # if M == model.settings.inactive:
+        #     openmc.lib.reset()
     openmc.lib.simulation_finalize()
         
     # Finaly update densities on Python API side
