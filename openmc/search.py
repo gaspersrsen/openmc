@@ -557,16 +557,35 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
                 element_nucs = target
             target_nucs[mat] = element_nucs
         
+        def _average_molar_mass(mat,nucs):
+            # Using the sum of specified atomic or weight amounts as a basis, sum
+            # the mass and moles of the material
+            mass = 0.
+            moles = 0.
+            for nuc in mat.nuclides:
+                if nuc in nucs:
+                    if nuc.percent_type == 'ao':
+                        mass += nuc.percent * openmc.data.atomic_mass(nuc.name)
+                        moles += nuc.percent
+                    else:
+                        moles += nuc.percent / openmc.data.atomic_mass(nuc.name)
+                        mass += nuc.percent
+
+            # Compute and return the molar mass
+            return mass / moles
+        
         wgts = []
         def process_new_frac_target(mat, p_t, frac):
             print(mat)
             if frac is None: return None
             if p_t == 'ao':
-                norm_mat = ((1 / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])) if target_nucs[mat] != [] else 1)
+                #norm_mat = ((1 / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])) if target_nucs[mat] != [] else 1)
+                norm_mat = ((mat.average_molar_mass / _average_molar_mass(mat,target_nucs[mat]))  if target_nucs[mat] != [] else 1)
                 print(norm_mat)
                 return frac * mat.average_molar_mass / mat.get_mass_density() * norm_mat
             elif p_t == 'wo':
-                norm_mat = ((np.sum(list(mat.get_nuclide_atom_densities())) / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])) if target_nucs[mat] != [] else 1)
+                #norm_mat = ((np.sum(list(mat.get_nuclide_atom_densities())) / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])) if target_nucs[mat] != [] else 1)
+                norm_mat = ((mat.average_molar_mass / _average_molar_mass(mat,target_nucs[mat]))  if target_nucs[mat] != [] else 1)
                 print(norm_mat)
                 return frac / mat.get_mass_density() * norm_mat
             elif p_t == 'vo':
