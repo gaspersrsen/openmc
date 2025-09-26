@@ -1,4 +1,5 @@
-from collections.abc import Callable
+from collections import defaultdict, namedtuple, Counter
+from collections.abc import Callable, Iterable
 from numbers import Real, Integral
 
 import scipy.optimize as sopt
@@ -11,6 +12,8 @@ from openmc import Material, Tally, MaterialFilter
 import openmc.checkvalue as cv
 import openmc.lib
 from openmc.mpi import comm
+
+import warnings
 
 
 _SCALAR_BRACKETED_METHODS = {'brentq', 'brenth', 'ridder', 'bisect'}
@@ -210,7 +213,7 @@ def search_for_keff(model_builder, initial_guess=None, target=1.0,
 
 
 def critical_density_iteration(model, iso=None, batches=None, bracket=None, 
-                        materials=None, initial_value=None, target=1., perfer_all_xml=False, debug=False): # TODO allow for change in number of neutrons and then return settings to previous values
+                        materials=None, initial_value=None, target=1., perfer_all_xml=True, debug=False): # TODO allow for change in number of neutrons and then return settings to previous values
     """
     Runs a simulation where 'iso' nuclide values converge in such a way to obtain the desired k_eff.
     Operator.model materials are updated in the process
@@ -310,7 +313,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     prev_res = []
     prev_leak = 0
     skip_steps = False
-    starting_batch = model.settings.inactive - batches - 1 #Otherwise Obi-Wan error
+    starting_batch = model.settings.inactive - batches
     # Initialize OpenMC library
     comm.barrier()
     # if not openmc.lib.is_initialized:
@@ -322,7 +325,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
         M = openmc.lib.current_batch()
         if M < starting_batch: continue
         # Only change concentrations during the additional batches
-        if M < starting_batch + batches and not skip_steps:
+        if M <= starting_batch + batches and not skip_steps:
             #k = openmc.lib.keff()[0]
             talliez = copy.copy(openmc.lib.tallies)
             curr_res = []
@@ -480,3 +483,136 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             model.tallies.export_to_xml()
     
     return model
+
+
+def get_ao_mix_materials(cls, materials, fracs: Iterable[float], fracs_target: Iterable[str] | None = None,
+                      percent_type: Iterable[str] | str = 'ao'):#TODO also handle chemical equations, ex. CO2
+        """Mix materials together based on atom, weight, or volume fractions
+
+        .. versionadded:: 0.12
+
+        Parameters
+        ----------
+        materials : Iterable of openmc.Material
+            Materials to combine
+        fracs : Iterable of float
+            Fractions of each material to be combined
+        fracs_target : Iterable of str, optional
+            Fraction target of each material to be combined, can be nuclide (ex. "B10")
+            or element (ex. "B")
+        percent_type : {'ao', 'wo', 'vo'}
+            Type of percentage, must be one of 'ao', 'wo', or 'vo', to signify atom
+            percent (molar percent), weight percent, or volume percent,
+            optional. Defaults to 'ao'
+
+        Returns
+        -------
+
+        """
+
+        cv.check_type('materials', materials, Iterable, Material)
+        cv.check_type('fracs', fracs, Iterable, Real)
+        cv.check_type('fracs', fracs_target, Iterable, str)
+        cv.check_value('percent type', percent_type, {'ao', 'wo', 'vo'})
+
+        fracs = np.asarray(fracs)
+        
+        if len(materials) != len(fracs):
+            raise ValueError(f"Number of provided materials: {len(materials)}; does not match the number of provided material fractions: {len(fracs)}")
+        
+        if type(percent_type) == str:
+            percent_type = [percent_type] * len(fracs)
+        if fracs_target is None:
+            fracs_target = [None] * len(fracs)
+
+        # Calculate appropriate weights which are how many cc's of each
+        # material are found in 1cc of the composite material
+        # avg_mol_mass = np.asarray([mat.average_molar_mass for mat in materials])
+        # mass_dens = np.asarray([mat.get_mass_density() for mat in materials])
+        ao_mats = {}
+        ao_fr_mats = {}
+        wo_fr_mats = {}
+        for mat in materials:
+            ao_mats[mat] = mat.get_mass_density()
+            ao_fr_mats[mat] = get_ao_fraction(mat)
+            wo_fr_mats[mat] = get_wo_fraction(mat)
+        target_nucs = {}
+        for (mat, target) in zip(materials, fracs_target):
+            if target is None:
+                target_nucs[mat] = []
+                continue
+            elif type(target) == str:
+                if str.isalpha():
+                    element = openmc.Element(target)
+                    element_nucs = []
+                    for nuc in element.expand(1, "ao"):
+                        element_nucs += nuc[0]
+                else:
+                    element_nucs = [target]
+            else:
+                element_nucs = target
+            target_nucs[mat] = element_nucs
+        
+        wgts = []
+        def process_new_frac_target(mat, p_t, frac):
+            if frac is None: return None
+            if p_t == 'ao':
+                norm_mat = (1 / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]]) if target_nucs[mat] != [] else 1)
+                return frac * mat.average_molar_mass / mat.get_mass_density() * norm_mat
+            elif p_t == 'wo':
+                norm_mat = (np.sum(list(mat.get_nuclide_atom_densities())) / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]]) if target_nucs[mat] != [] else 1)
+                return frac / mat.get_mass_density() * norm_mat
+            elif p_t == 'vo':
+                norm_mat = (1 / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]]) if target_nucs[mat] != [] else 1)
+                return frac * norm_mat
+                
+        for (mat, p_t, frac) in zip(materials, percent_type, fracs):
+            wgts += [process_new_frac_target(mat, p_t, frac)]
+        
+        # if None not in wgts and (np.abs(np.sum(wgts) - 1) < 1e-6): #TODO make the proper checks
+        #     warnings.warn(f"Resulting weights do not sum to one: {np.sum(wgts)}.\n Please set set one of 'fracs' to None for automatic correction")
+            
+        for (mat, p_t, wgt, index) in zip(materials, percent_type, wgts, range(len(wgts))):
+            if wgt is None:
+                wgts[index] = 1 - np.sum(wgts)
+            
+
+        # Add nuclide densities weighted by appropriate fractions
+        nuclides_per_cc = defaultdict(float)
+        mass_per_cc = defaultdict(float)
+        
+        for (mat, wgt) in zip(materials, wgts):
+            for nuc, atoms_per_bcm in mat.get_nuclide_atom_densities().items():
+                nuc_per_cc = wgt * 1.e24 * atoms_per_bcm
+                nuclides_per_cc[nuc] += nuc_per_cc
+                mass_per_cc[nuc] += nuc_per_cc*openmc.data.atomic_mass(nuc) / \
+                                    openmc.data.AVOGADRO
+        nuclide_ao_fr_per_submat = defaultdict(float)
+        for nuc, _ in nuclides_per_cc.items():
+            nuclide_ao_fr_per_submat[nuc] = [0] * len(wgts)
+        for (mat, wgt, index) in zip(materials, wgts, range(len(wgts))):
+            for nuc, atoms_per_bcm in mat.get_nuclide_atom_densities().items():
+                nuc_per_cc = wgt * 1.e24 * atoms_per_bcm
+                nuclide_ao_fr_per_submat[nuc][index] = nuc_per_cc / nuclides_per_cc[nuc]
+        return nuclides_per_cc, mass_per_cc, nuclide_ao_fr_per_submat
+
+
+def get_ao_fraction(material):
+    nuc_dict = material.get_nuclide_atom_densities()
+    mat_ao = np.sum(list(nuc_dict.values()))
+    new_dict2 = {}
+    for key, value in nuc_dict.items():
+        # print(type(value))
+        # print(key, value)
+        new_dict2[key] = value/mat_ao
+    return new_dict2
+
+def get_wo_fraction(material):
+    nuc_dict = material.get_nuclide_atom_densities()
+    mat_dens = np.sum(list(nuc_dict.values()))
+    new_dict2 = {}
+    for key, value in nuc_dict.items():
+        # print(type(value))
+        # print(key, value)
+        new_dict2[key] = value/mat_dens
+    return new_dict2
