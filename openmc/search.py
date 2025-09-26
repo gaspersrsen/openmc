@@ -582,23 +582,20 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
             
 
         # Add nuclide densities weighted by appropriate fractions
-        nuclides_per_cc = defaultdict(float)
-        mass_per_cc = defaultdict(float)
+        nuclides_per_bmc = defaultdict(float)
         
         for (mat, wgt) in zip(materials, wgts):
             for nuc, atoms_per_bcm in mat.get_nuclide_atom_densities().items():
-                nuc_per_cc = wgt * 1.e24 * atoms_per_bcm
-                nuclides_per_cc[nuc] += nuc_per_cc
-                mass_per_cc[nuc] += nuc_per_cc*openmc.data.atomic_mass(nuc) / \
-                                    openmc.data.AVOGADRO
+                nuc_per_bmc = wgt * atoms_per_bcm
+                nuclides_per_bmc[nuc] += nuc_per_bmc
         nuclide_ao_fr_per_submat = defaultdict(float)
-        for nuc, _ in nuclides_per_cc.items():
+        for nuc, _ in nuclides_per_bmc.items():
             nuclide_ao_fr_per_submat[nuc] = [0] * len(wgts)
         for (mat, wgt, index) in zip(materials, wgts, range(len(wgts))):
             for nuc, atoms_per_bcm in mat.get_nuclide_atom_densities().items():
-                nuc_per_cc = wgt * 1.e24 * atoms_per_bcm
-                nuclide_ao_fr_per_submat[nuc][index] = nuc_per_cc / nuclides_per_cc[nuc]
-        return nuclides_per_cc, mass_per_cc, nuclide_ao_fr_per_submat
+                nuc_per_bmc = wgt * atoms_per_bcm
+                nuclide_ao_fr_per_submat[nuc][index] = nuc_per_bmc / nuclides_per_bmc[nuc]
+        return nuclides_per_bmc, nuclide_ao_fr_per_submat
 
 
 def get_ao_fraction(material):
