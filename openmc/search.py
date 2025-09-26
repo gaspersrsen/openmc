@@ -559,6 +559,7 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
         
         wgts = []
         def process_new_frac_target(mat, p_t, frac):
+            print(mat)
             if frac is None: return None
             if p_t == 'ao':
                 norm_mat = ((1 / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])) if target_nucs[mat] != [] else 1)
