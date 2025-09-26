@@ -575,7 +575,9 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
                 return frac * norm_mat
                 
         for (mat, p_t, frac) in zip(materials, percent_type, fracs):
-            wgts += [process_new_frac_target(mat, p_t, frac)]
+            res=process_new_frac_target(mat, p_t, frac)
+            print(res)
+            wgts += [res]
         
         # if None not in wgts and (np.abs(np.sum(wgts) - 1) < 1e-6): #TODO make the proper checks
         #     warnings.warn(f"Resulting weights do not sum to one: {np.sum(wgts)}.\n Please set set one of 'fracs' to None for automatic correction")
