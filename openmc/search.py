@@ -485,7 +485,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     return model
 
 
-def get_ao_mix_materials(cls, materials, fracs: Iterable[float], fracs_target: Iterable[str] | None = None,
+def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterable[str] | None = None,
                       percent_type: Iterable[str] | str = 'ao'):#TODO also handle chemical equations, ex. CO2
         """Mix materials together based on atom, weight, or volume fractions
 
