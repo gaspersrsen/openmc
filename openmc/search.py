@@ -602,14 +602,14 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
         #     warnings.warn(f"Resulting weights do not sum to one: {np.sum(wgts)}.\n Please set set one of 'fracs' to None for automatic correction")
         AVOGADRO = openmc.data.AVOGADRO
         BARN = 1e-24
-        sum_wo = 0
-        sum_ao = 0
+        sum_wo = 0.0
+        sum_ao = 0.0
         for (p_t, frac) in zip(percent_type, fracs):
             if p_t == 'ao': sum_ao += frac
             if p_t == 'wo': sum_wo += frac
             
-        N_mix_top = 0
-        N_mix_bot = 1
+        N_mix_top = 0.0
+        N_mix_bot = 1.0
         for (mat, p_t, frac) in zip(materials, percent_type, fracs):
             if p_t == 'ao':
                 N_mix_bot -= frac
@@ -625,8 +625,8 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
         N_mix = N_mix_top / N_mix_bot
         print( N_mix, N_mix_top, N_mix_bot)
         
-        m_mix_top = 0
-        m_mix_bot = 1 - sum_wo
+        m_mix_top = 0.0
+        m_mix_bot = 1.0 - sum_wo
         for (mat, p_t, frac) in zip(materials, percent_type, fracs):
             if p_t == 'ao':
                 m_mix_top += frac * N_mix * mat.average_molar_mass * AVOGADRO * BARN
