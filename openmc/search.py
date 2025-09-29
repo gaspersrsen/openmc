@@ -655,7 +655,7 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
                     if p_t == 'ao':
                         M_avg += frac * mat.average_molar_mass
                     elif p_t == 'wo':
-                        inv_M_avg_rest += frac / mat.average_molar_mass
+                        inv_M_avg_wo += frac / mat.average_molar_mass
                 inv_M_avg_wo /= sum_wo
                 M_avg_ao /= (sum_ao if sum_ao != 0 else 1)
                 M_avg = sum_ao * M_avg_ao + (1 - sum_ao) / inv_M_avg_wo
@@ -667,7 +667,7 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
             print("fracs", fracs, np.sum(fracs))
             wgts = []
             for (mat, frac) in zip(materials, fracs): # ao to vo conversion
-                    wgts += [frac * mat.average_molar_mass / mat.get_mass_density()]
+                wgts += [frac * mat.average_molar_mass / mat.get_mass_density()]
             wgts /= np.sum(wgts)
             print("weights", wgts, np.sum(wgts))
                         
