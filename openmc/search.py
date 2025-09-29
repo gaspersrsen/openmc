@@ -511,7 +511,7 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
         """
 
         cv.check_type('materials', materials, Iterable, Material)
-        cv.check_type('fracs', fracs, Iterable, Real)
+        # cv.check_type('fracs', fracs, Iterable, Real)
         # cv.check_type('fracs', fracs_target, Iterable, str)
         # if type(fracs_target) ==  str:
         #     cv.check_value('percent type', percent_type, {'ao', 'wo', 'vo'})
