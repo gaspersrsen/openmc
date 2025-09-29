@@ -598,43 +598,104 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
         fracs *= norm_wgt
         print("norm_wgts",norm_wgt)
         
-        # if None not in wgts and (np.abs(np.sum(wgts) - 1) < 1e-6): #TODO make the proper checks
-        #     warnings.warn(f"Resulting weights do not sum to one: {np.sum(wgts)}.\n Please set set one of 'fracs' to None for automatic correction")
-        AVOGADRO = openmc.data.AVOGADRO
-        BARN = 1e-24
-        sum_wo = 0.0
-        sum_ao = 0.0
-        sum_vo = 0.0
-        for (p_t, frac) in zip(percent_type, fracs):
-            if p_t == 'ao': sum_ao += frac
-            if p_t == 'wo': sum_wo += frac
-            if p_t == 'vo': sum_vo += frac
+        # # if None not in wgts and (np.abs(np.sum(wgts) - 1) < 1e-6): #TODO make the proper checks
+        # #     warnings.warn(f"Resulting weights do not sum to one: {np.sum(wgts)}.\n Please set set one of 'fracs' to None for automatic correction")
+        # AVOGADRO = openmc.data.AVOGADRO
+        # BARN = 1e-24
+        # sum_wo = 0.0
+        # sum_ao = 0.0
+        # sum_vo = 0.0
+        # for (p_t, frac) in zip(percent_type, fracs):
+        #     if p_t == 'ao': sum_ao += frac
+        #     if p_t == 'wo': sum_wo += frac
+        #     if p_t == 'vo': sum_vo += frac
             
-        # First mix to get only 1 or 0 of each ao, wo, vo
-        # def mix_all_ao(materials, fracs, fracs_target, percent_type):
-        wgts_A = [] #All wo
-        wgts_B = [] #All ao
-        wgts_C = [] #All vo + None
-        for (mat, p_t, frac) in zip(materials, percent_type, fracs):#TODO handle frac=None
-                if p_t == 'ao':
-                    wgts_B += [frac * mat.average_molar_mass / mat.get_mass_density()]
-                if p_t == 'wo':
-                    wgts_B += [frac / mat.get_mass_density()]
-                if p_t == 'vo':
-                    wgts_C += [frac]
-        wgts_A /= np.sum(wgts_A)
-        wgts_B /= np.sum(wgts_B)
-        wgts_C /= np.sum(wgts_C)
-        # Calculate the missing fracton
-        index_None = np.argwhere(np.array(fracs) == None)
-        a = 1 - sum_ao
-        b = sum_ao
+        # # First mix to get only 1 or 0 of each ao, wo, vo
+        # # def mix_all_ao(materials, fracs, fracs_target, percent_type):
+        # wgts_A = [] #All wo
+        # wgts_B = [] #All ao
+        # wgts_C = [] #All vo + None
+        # for (mat, p_t, frac) in zip(materials, percent_type, fracs):#TODO handle frac=None
+        #         if p_t == 'ao':
+        #             wgts_B += [frac * mat.average_molar_mass / mat.get_mass_density()]
+        #         if p_t == 'wo':
+        #             wgts_B += [frac / mat.get_mass_density()]
+        #         if p_t == 'vo':
+        #             wgts_C += [frac]
+        # wgts_A /= np.sum(wgts_A)
+        # wgts_B /= np.sum(wgts_B)
+        # wgts_C /= np.sum(wgts_C)
+        # # Calculate the missing fracton
+        # index_None = np.argwhere(np.array(fracs) == None)
+        # a = 1 - sum_ao
+        # b = sum_ao
         
             
-        # elif sum_wo == 0:
-        #     fracs[index_None] = 1 - sum_ao
-        # else: # wo to ao conversion
-        #     if "wo" in percent_type:  #TODO handle frac=None
+        # # elif sum_wo == 0:
+        # #     fracs[index_None] = 1 - sum_ao
+        # # else: # wo to ao conversion
+        # #     if "wo" in percent_type:  #TODO handle frac=None
+        # #         M_avg_ao = 0
+        # #         inv_M_avg_wo = 0
+        # #         for (mat, p_t, frac) in zip(materials, percent_type, fracs):
+        # #             if p_t == 'ao':
+        # #                 M_avg += frac * mat.average_molar_mass
+        # #             elif p_t == 'wo':
+        # #                 inv_M_avg_wo += frac / mat.average_molar_mass
+        # #         inv_M_avg_wo /= sum_wo
+        # #         M_avg_ao /= (sum_ao if sum_ao != 0 else 1)
+        # #         M_avg = sum_ao * M_avg_ao + (1 - sum_ao) / inv_M_avg_wo
+                
+        # #         for (mat, p_t, frac, index) in zip(materials, percent_type, fracs, range(len(fracs))): # wo to ao conversion
+        # #             if p_t == 'wo':
+        # #                 fracs[index] = (frac / mat.average_molar_mass * M_avg if frac is not None else None)
+        # #                 percent_type[index] = "ao"
+            
+        
+        # if "vo" in percent_type: # Mixing ao, wo, vo
+        #     N_mix_top = 0.0
+        #     N_mix_bot = 1.0
+        #     for (mat, p_t, frac) in zip(materials, percent_type, fracs):#TODO handle frac=None
+        #         if p_t == 'ao':
+        #             N_mix_bot -= frac
+        #         elif p_t == 'wo':
+        #             for (mat2, p_t2, frac2) in zip(materials, percent_type, fracs):
+        #                 if p_t2 == 'ao':
+        #                     N_mix_bot -= frac * mat2.average_molar_mass / mat.average_molar_mass * frac2
+        #                 elif p_t2 == 'vo':
+        #                     N_mix_top +=  frac / (1 - sum_wo) * AVOGADRO * BARN / mat.average_molar_mass * frac2 * np.sum(list(mat2.get_mass_density().values()))
+        #         elif p_t == 'vo':
+        #             N_mix_top += frac * np.sum(list(mat.get_nuclide_atom_densities().values()))
+        #         print( mat, N_mix_top, N_mix_bot)
+        #     if N_mix_bot == 0:
+        #         raise ValueError("Unable to calculate fractions: Internal: N_mix_bot = 0)")
+        #     N_mix = N_mix_top / N_mix_bot
+        #     print( N_mix, N_mix_top, N_mix_bot)
+            
+        #     m_mix_top = 0.0
+        #     m_mix_bot = 1.0 - sum_wo
+        #     for (mat, p_t, frac) in zip(materials, percent_type, fracs):
+        #         if p_t == 'ao':
+        #             m_mix_top += frac * N_mix * mat.average_molar_mass * AVOGADRO * BARN
+        #         if p_t == 'vo':
+        #             m_mix_top += mat.get_mass_density()
+
+        #     m_mix = m_mix_top / m_mix_bot
+        #     print(m_mix, m_mix_top, m_mix_bot)
+            
+        #     wgts = []
+        #     for (mat, p_t, frac) in zip(materials, percent_type, fracs):
+        #         if p_t == 'ao':
+        #             wgts += [frac * np.sum(list(mat.get_nuclide_atom_densities().values())) / N_mix]
+        #         if p_t == 'wo':
+        #             wgts += [frac * mat.get_mass_density() / m_mix]
+        #         if p_t == 'vo':
+        #             wgts += [frac]#TODO
+        # else:
+
+            
+                    
+        #     if "wo" in percent_type: # wo to ao conversion #TODO handle frac=None
         #         M_avg_ao = 0
         #         inv_M_avg_wo = 0
         #         for (mat, p_t, frac) in zip(materials, percent_type, fracs):
@@ -650,82 +711,22 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
         #             if p_t == 'wo':
         #                 fracs[index] = (frac / mat.average_molar_mass * M_avg if frac is not None else None)
         #                 percent_type[index] = "ao"
-            
-        
-        if "vo" in percent_type: # Mixing ao, wo, vo
-            N_mix_top = 0.0
-            N_mix_bot = 1.0
-            for (mat, p_t, frac) in zip(materials, percent_type, fracs):#TODO handle frac=None
-                if p_t == 'ao':
-                    N_mix_bot -= frac
-                elif p_t == 'wo':
-                    for (mat2, p_t2, frac2) in zip(materials, percent_type, fracs):
-                        if p_t2 == 'ao':
-                            N_mix_bot -= frac * mat2.average_molar_mass / mat.average_molar_mass * frac2
-                        elif p_t2 == 'vo':
-                            N_mix_top +=  frac / (1 - sum_wo) * AVOGADRO * BARN / mat.average_molar_mass * frac2 * np.sum(list(mat2.get_mass_density().values()))
-                elif p_t == 'vo':
-                    N_mix_top += frac * np.sum(list(mat.get_nuclide_atom_densities().values()))
-                print( mat, N_mix_top, N_mix_bot)
-            if N_mix_bot == 0:
-                raise ValueError("Unable to calculate fractions: Internal: N_mix_bot = 0)")
-            N_mix = N_mix_top / N_mix_bot
-            print( N_mix, N_mix_top, N_mix_bot)
-            
-            m_mix_top = 0.0
-            m_mix_bot = 1.0 - sum_wo
-            for (mat, p_t, frac) in zip(materials, percent_type, fracs):
-                if p_t == 'ao':
-                    m_mix_top += frac * N_mix * mat.average_molar_mass * AVOGADRO * BARN
-                if p_t == 'vo':
-                    m_mix_top += mat.get_mass_density()
-
-            m_mix = m_mix_top / m_mix_bot
-            print(m_mix, m_mix_top, m_mix_bot)
-            
-            wgts = []
-            for (mat, p_t, frac) in zip(materials, percent_type, fracs):
-                if p_t == 'ao':
-                    wgts += [frac * np.sum(list(mat.get_nuclide_atom_densities().values())) / N_mix]
-                if p_t == 'wo':
-                    wgts += [frac * mat.get_mass_density() / m_mix]
-                if p_t == 'vo':
-                    wgts += [frac]#TODO
-        else:
-
-            
-                    
-            if "wo" in percent_type: # wo to ao conversion #TODO handle frac=None
-                M_avg_ao = 0
-                inv_M_avg_wo = 0
-                for (mat, p_t, frac) in zip(materials, percent_type, fracs):
-                    if p_t == 'ao':
-                        M_avg += frac * mat.average_molar_mass
-                    elif p_t == 'wo':
-                        inv_M_avg_wo += frac / mat.average_molar_mass
-                inv_M_avg_wo /= sum_wo
-                M_avg_ao /= (sum_ao if sum_ao != 0 else 1)
-                M_avg = sum_ao * M_avg_ao + (1 - sum_ao) / inv_M_avg_wo
-                
-                for (mat, p_t, frac, index) in zip(materials, percent_type, fracs, range(len(fracs))): # wo to ao conversion
-                    if p_t == 'wo':
-                        fracs[index] = (frac / mat.average_molar_mass * M_avg if frac is not None else None)
-                        percent_type[index] = "ao"
-            print("fracs", fracs, np.sum(fracs))
-            wgts = []
-            for (mat, frac) in zip(materials, fracs): # ao to vo conversion
-                wgts += [frac * mat.average_molar_mass / mat.get_mass_density()]
-            wgts /= np.sum(wgts)
-            print("weights", wgts, np.sum(wgts))
+        #     print("fracs", fracs, np.sum(fracs))
+        #     wgts = []
+        #     for (mat, frac) in zip(materials, fracs): # ao to vo conversion
+        #         wgts += [frac * mat.average_molar_mass / mat.get_mass_density()]
+        #     wgts /= np.sum(wgts)
+        #     print("weights", wgts, np.sum(wgts))
                         
             
-        # for (mat, p_t, wgt, index) in zip(materials, percent_type, wgts, range(len(wgts))):
-        #     if wgt is None:
-        #         wgts[index] = 1 - np.sum(wgts)
+        # # for (mat, p_t, wgt, index) in zip(materials, percent_type, wgts, range(len(wgts))):
+        # #     if wgt is None:
+        # #         wgts[index] = 1 - np.sum(wgts)
 
                 
             
-        print(wgts)
+        # print(wgts)
+        wgts = mix_ao_wo_vo(materials,percent_type,fracs)
         # Add nuclide densities weighted by appropriate fractions
         nuclides_per_bmc = defaultdict(float)
         
