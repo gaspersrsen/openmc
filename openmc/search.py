@@ -595,7 +595,7 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
         for (mat, p_t) in zip(materials, percent_type):
             norm_wgt += [process_new_frac_target(mat, p_t) if p_t is not None else 1]
             
-        fracs *= norm_wgt
+        fracs = [frac * norm_wgt if frac is not None else None for frac in fracs]
         print("norm_wgts",norm_wgt)
         
         # # if None not in wgts and (np.abs(np.sum(wgts) - 1) < 1e-6): #TODO make the proper checks
