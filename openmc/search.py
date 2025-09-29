@@ -726,6 +726,7 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
                 
             
         # print(wgts)
+        print(materials,percent_type,fracs)
         wgts = mix_ao_wo_vo(materials,percent_type,fracs)
         # Add nuclide densities weighted by appropriate fractions
         nuclides_per_bmc = defaultdict(float)
