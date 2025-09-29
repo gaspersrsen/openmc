@@ -596,7 +596,7 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
             norm_wgt += [process_new_frac_target(mat, p_t)]
             
         fracs *= norm_wgt
-        print(norm_wgt)
+        print("norm_wgts",norm_wgt)
         
         
         
@@ -612,25 +612,25 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
             
 
         # Calculate the missing fracton
-        index_None = np.argwhere(np.array(fracs) == None)
-        rho_mix = 0
-        n_moles_mix = 0
-        for (mat, p_t, frac, index) in zip(materials, percent_type, fracs, range(len(fracs))): # wo to ao conversion
-            if frac is None: continue
-            if p_t == "wo":
-                rho_mix = mat.get_mass_density() * frac
-            if p_t == "ao":
-                n_moles_mix = mat.get_mass_density() / mat.average_molar_mass / frac
-        if rho_mix == 0 and n_moles_mix == 0: # Only vo
-            fracs[index_None] = 1 - np.sum(fracs)
-        elif rho_mix != 0: 
-            fracs[index_None] =  materials[index_None].get_mass_density() / rho_mix
-            percent_type[index_None] = "wo"
-        elif n_moles_mix != 0: 
-            fracs[index_None] =  materials[index_None].get_mass_density() / materials[index_None].average_molar_mass / n_moles_mix
-            percent_type[index_None] = "ao"
-        else:
-            raise ValueError("Could not calculate missing fraction")
+        # index_None = np.argwhere(np.array(fracs) == None)
+        # rho_mix = 0
+        # n_moles_mix = 0
+        # for (mat, p_t, frac, index) in zip(materials, percent_type, fracs, range(len(fracs))): # wo to ao conversion
+        #     if frac is None: continue
+        #     if p_t == "wo":
+        #         rho_mix = mat.get_mass_density() * frac
+        #     if p_t == "ao":
+        #         n_moles_mix = mat.get_mass_density() / mat.average_molar_mass / frac
+        # if rho_mix == 0 and n_moles_mix == 0: # Only vo
+        #     fracs[index_None] = 1 - np.sum(fracs)
+        # elif rho_mix != 0: 
+        #     fracs[index_None] =  materials[index_None].get_mass_density() / rho_mix
+        #     percent_type[index_None] = "wo"
+        # elif n_moles_mix != 0: 
+        #     fracs[index_None] =  materials[index_None].get_mass_density() / materials[index_None].average_molar_mass / n_moles_mix
+        #     percent_type[index_None] = "ao"
+        # else:
+        #     raise ValueError("Could not calculate missing fraction")
             
         # elif sum_wo == 0:
         #     fracs[index_None] = 1 - sum_ao
