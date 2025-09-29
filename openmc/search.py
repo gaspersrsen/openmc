@@ -599,7 +599,7 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao')
         
         if None in fracs:
             index_none = np.argwhere(fracs == None)
-            print(index_none)
+            print(index_none, fracs)
             print(fracs[index_none])
             fracs[index_none] = 0
             fracs[index_none] = 1 - np.sum(fracs)
