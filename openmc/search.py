@@ -593,7 +593,7 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
                 # return frac * norm_mat
                 
         for (mat, p_t) in zip(materials, percent_type):
-            norm_wgt += [process_new_frac_target(mat, p_t)]
+            norm_wgt += [process_new_frac_target(mat, p_t) if p_t is not None else 1]
             
         fracs *= norm_wgt
         print("norm_wgts",norm_wgt)
