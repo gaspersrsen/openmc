@@ -675,8 +675,10 @@ def get_ao_fraction(material):
     return new_dict2
 
 def get_wo_fraction(material):
-    nuc_dict = material.get_nuclide_atom_densities()
-    mat_dens = np.sum(list(nuc_dict.values()))
+    nuc_dict= {}
+    for nuc in material.nuclides:
+        nuc_dict[nuc] = material.get_mass_density(nuc)
+    mat_dens = material.get_mass_density()
     new_dict2 = {}
     for key, value in nuc_dict.items():
         # print(type(value))
