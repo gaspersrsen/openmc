@@ -516,7 +516,7 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao')
         #     cv.check_value('percent type', percent_type, {'ao', 'wo', 'vo'})
         # else:
         #     for f_t in fracs_target:
-        #         cv.check_value('percent type', f_t, {'ao', 'wo', 'vo'})
+        cv.check_value('percent type', percent_type, {'ao', 'wo', 'vo'})
 
         fracs = np.array(fracs)
         
