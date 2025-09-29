@@ -596,6 +596,7 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
             norm_wgt += [process_new_frac_target(mat, p_t)]
             
         fracs *= norm_wgt
+        print(norm_wgt)
         
         # if None not in wgts and (np.abs(np.sum(wgts) - 1) < 1e-6): #TODO make the proper checks
         #     warnings.warn(f"Resulting weights do not sum to one: {np.sum(wgts)}.\n Please set set one of 'fracs' to None for automatic correction")
@@ -622,6 +623,7 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
                 N_mix_top += frac * np.sum(list(mat.get_nuclide_atom_densities().values()))
                 
         N_mix = N_mix_top / N_mix_bot
+        print( N_mix, N_mix_top, N_mix_bot)
         
         m_mix_top = 0
         m_mix_bot = 1 - sum_wo
@@ -632,6 +634,7 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
                 m_mix_top += np.sum(list(mat2.get_mass_density().values()))
 
         m_mix = m_mix_top / m_mix_bot
+        print(m_mix, m_mix_top, m_mix_bot)
             
         # for (mat, p_t, wgt, index) in zip(materials, percent_type, wgts, range(len(wgts))):
         #     if wgt is None:
