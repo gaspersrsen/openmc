@@ -551,7 +551,7 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
                     print(element)
                     element_nucs = []
                     for nuc in element.expand(1, "ao"):
-                        element_nucs += nuc[0]
+                        element_nucs += [nuc[0]]
                 else:
                     element_nucs = [target]
             else:
