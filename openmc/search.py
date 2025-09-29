@@ -613,14 +613,15 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
         for (mat, p_t, frac) in zip(materials, percent_type, fracs):
             if p_t == 'ao':
                 N_mix_bot -= frac
-            if p_t == 'wo':
+            elif p_t == 'wo':
                 for (mat2, p_t2, frac2) in zip(materials, percent_type, fracs):
                     if p_t2 == 'ao':
                         N_mix_bot -= frac * mat2.average_molar_mass / mat.average_molar_mass * frac2
-                    if p_t2 == 'vo':
+                    elif p_t2 == 'vo':
                         N_mix_top +=  frac / (1 - sum_wo) * AVOGADRO * BARN / mat.average_molar_mass * frac2 * np.sum(list(mat2.get_mass_density().values()))
-            if p_t == 'vo':
+            elif p_t == 'vo':
                 N_mix_top += frac * np.sum(list(mat.get_nuclide_atom_densities().values()))
+            print( N_mix, N_mix_top, N_mix_bot)
                 
         N_mix = N_mix_top / N_mix_bot
         print( N_mix, N_mix_top, N_mix_bot)
