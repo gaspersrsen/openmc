@@ -575,11 +575,11 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao')
         
         norm_wgt = []
         def process_new_frac_target(mat, p_t):
-            if target_nucs[mat] != []:
+            if not target_nucs[mat]:
                 return 1
             print((mat.name,(mat.get_mass_density(), np.sum(mat.get_mass_density([nuc for nuc in target_nucs[mat]]))), target_nucs[mat]))
             if p_t == 'ao':
-                return ((1 / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])) if target_nucs[mat] != [] else 1)
+                return 1 / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
                 #norm_mat = ((mat.average_molar_mass / _average_molar_mass(mat,target_nucs[mat]))  if target_nucs[mat] != [] else 1)
                 #print(norm_mat)
                 #return frac * mat.average_molar_mass / mat.get_mass_density() * norm_mat
