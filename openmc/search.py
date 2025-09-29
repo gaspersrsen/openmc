@@ -807,12 +807,12 @@ def mix_ao_wo_vo(materials, fraction_types, fraction_values, V_tot=1.0):
     mass_frac_constraints = []
 
     for i, (ftype, fval) in enumerate(zip(fraction_types, fraction_values)):
-        if ftype == "v":
+        if ftype == "vo":
             volumes[i] = fval * V_tot
             masses[i] = rho[i] * volumes[i]
-        elif ftype in ("w", "x"):
+        elif ftype in ("wo", "ao"):
             unknown_idx.append(i)
-            if ftype == "w":
+            if ftype == "wo":
                 mass_frac_constraints.append((i, fval))
         elif ftype is None:
             # filler material
