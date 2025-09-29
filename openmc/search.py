@@ -612,7 +612,7 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
             
 
         # Calculate the missing fracton
-        index_None = np.argwhere(fracs = None)
+        index_None = np.argwhere(np.array(fracs) == None)
         rho_mix = 0
         n_moles_mix = 0
         for (mat, p_t, frac, index) in zip(materials, percent_type, fracs, range(len(fracs))): # wo to ao conversion
