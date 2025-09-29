@@ -556,43 +556,16 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao')
                 element_nucs = target
             target_nucs[mat] = element_nucs
         
-        # def _average_molar_mass(mat,nucs):
-        #     # Using the sum of specified atomic or weight amounts as a basis, sum
-        #     # the mass and moles of the material
-        #     mass = 0.
-        #     moles = 0.
-        #     for nuc in mat.nuclides:
-        #         if nuc in nucs:
-        #             if nuc.percent_type == 'ao':
-        #                 mass += nuc.percent * openmc.data.atomic_mass(nuc.name)
-        #                 moles += nuc.percent
-        #             else:
-        #                 moles += nuc.percent / openmc.data.atomic_mass(nuc.name)
-        #                 mass += nuc.percent
-
-        #     # Compute and return the molar mass
-        #     return mass / moles
-        
         norm_wgt = []
         def process_new_frac_target(mat, p_t):
             if not target_nucs[mat]:
                 return 1
-            print((mat.name,(mat.get_mass_density(), np.sum([mat.get_mass_density(nuc) for nuc in target_nucs[mat]])), target_nucs[mat]))
             if p_t == 'ao':
                 return 1 / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
-                #norm_mat = ((mat.average_molar_mass / _average_molar_mass(mat,target_nucs[mat]))  if target_nucs[mat] != [] else 1)
-                #print(norm_mat)
-                #return frac * mat.average_molar_mass / mat.get_mass_density() * norm_mat
             elif p_t == 'wo':
-                #norm_mat = ((np.sum(list(mat.get_nuclide_atom_densities())) / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])) if target_nucs[mat] != [] else 1)
-                #return ((mat.average_molar_mass / _average_molar_mass(mat,target_nucs[mat]))  if target_nucs[mat] != [] else 1)
                 return mat.get_mass_density() / np.sum([mat.get_mass_density(nuc) for nuc in target_nucs[mat]])
-                # print(norm_mat)
-                # return frac / mat.get_mass_density() * norm_mat
             elif p_t == 'vo':
                 return 1 / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
-                # print(norm_mat)
-                # return frac * norm_mat
                 
         for mat in materials:
             norm_wgt += [process_new_frac_target(mat, percent_type)]
@@ -601,9 +574,7 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao')
         print("norm_wgts",norm_wgt)
         
         if None in fracs:
-            index_none = np.argwhere(fracs == None)#[0]
-            print(index_none, fracs)
-            print(fracs[index_none])
+            index_none = np.argwhere(fracs == None)
             fracs[index_none] = 0
             fracs[index_none] = 1 - np.sum(fracs)
         else:
@@ -620,193 +591,7 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao')
             wgts /= np.sum(wgts)
         elif percent_type == 'vo':
             wgts = fracs
-
-        # # if None not in wgts and (np.abs(np.sum(wgts) - 1) < 1e-6): #TODO make the proper checks
-        # #     warnings.warn(f"Resulting weights do not sum to one: {np.sum(wgts)}.\n Please set set one of 'fracs' to None for automatic correction")
-        # AVOGADRO = openmc.data.AVOGADRO
-        # BARN = 1e-24
-        # sum_wo = 0.0
-        # sum_ao = 0.0
-        # sum_vo = 0.0
-        # for (p_t, frac) in zip(percent_type, fracs):
-        #     if p_t == 'ao': sum_ao += frac
-        #     elif p_t == 'wo': sum_wo += frac
-        #     elif p_t == 'vo': sum_vo += frac
             
-        # # First mix to get only 1 or 0 of each ao, wo, vo
-        # # def mix_all_ao(materials, fracs, fracs_target, percent_type):
-        # # Calculate the missing fracton in vo
-        # wgts_A = [] #All wo
-        # wgts_B = [] #All ao
-        # wgts_C = [] #All vo + None
-        # for (mat, p_t, frac) in zip(materials, percent_type, fracs):#TODO handle frac=None
-        #     if p_t == 'ao':
-        #         wgts_B += [frac * mat.average_molar_mass / mat.get_mass_density()]
-        #     elif p_t == 'wo':
-        #         wgts_B += [frac / mat.get_mass_density()]
-        #     elif p_t == 'vo':
-        #         wgts_C += [frac]
-        # wgts_A /= np.sum(wgts_A)
-        # wgts_B /= np.sum(wgts_B)
-        # wgts_C /= np.sum(wgts_C)
-        # mix_A = defaultdict(float)
-        # mix_B = defaultdict(float)
-        # mix_C = defaultdict(float)
-        # for (mat, p_t, frac) in zip(materials, percent_type, fracs):#TODO handle frac=None
-        #     nuc_dict = mat.get_nuclide_atom_densities()
-        #     for nuc, val in nuc_dict.items():
-        #         if p_t == 'ao':
-        #             mix_A[nuc] += val
-        #         elif p_t == 'wo':
-        #             mix_B[nuc] += val
-        #         elif p_t == 'vo':
-        #             mix_C[nuc] += val
-        
-        
-        # def _average_molar_mass(nuc_dict):
-        #     # Using the sum of specified atomic or weight amounts as a basis, sum
-        #     # the mass and moles of the material
-        #     mass = 0.
-        #     moles = 0.
-        #     for nuc in mat.nuclides:
-        #         if (nuc,val) in nuc_dict.values():
-        #                 mass += val * openmc.data.atomic_mass(nuc)
-        #                 moles += val
-        #     # Compute and return the molar mass
-        #     return mass / moles
-        
-        # M_A = _average_molar_mass(mix_A)
-        # M_B = _average_molar_mass(mix_B)
-        # M_C = _average_molar_mass(mix_C)
-        
-        # def _get_mass_density(nuc_dict) -> float:
-        #     """Return mass density of one or all nuclides
-
-        #     Parameters
-        #     ----------
-        #     nuclides : str, optional
-        #         Nuclide for which density is desired. If not specified, the density
-        #         for the entire material is given.
-
-        #     Returns
-        #     -------
-        #     float
-        #         Density of the nuclide/material in [g/cm^3]
-
-        #     """
-        #     mass_density = 0.0
-        #     for nuc, atoms_per_bcm in nuc_dict.items():
-        #         density_i = 1e24 * atoms_per_bcm * openmc.data.atomic_mass(nuc) \
-        #                     / openmc.data.AVOGADRO
-        #         mass_density += density_i
-        #     return mass_density
-        
-        # rho_A = _get_mass_density(mix_A)
-        # rho_B = _get_mass_density(mix_B)
-        # rho_C = _get_mass_density(mix_C)
-        # index_None = np.argwhere(np.array(fracs) == None)
-        # a = 1 - sum_ao
-        # b = -sum_ao * M_B / M_C
-        
-            
-        # # elif sum_wo == 0:
-        # #     fracs[index_None] = 1 - sum_ao
-        # # else: # wo to ao conversion
-        # #     if "wo" in percent_type:  #TODO handle frac=None
-        # #         M_avg_ao = 0
-        # #         inv_M_avg_wo = 0
-        # #         for (mat, p_t, frac) in zip(materials, percent_type, fracs):
-        # #             if p_t == 'ao':
-        # #                 M_avg += frac * mat.average_molar_mass
-        # #             elif p_t == 'wo':
-        # #                 inv_M_avg_wo += frac / mat.average_molar_mass
-        # #         inv_M_avg_wo /= sum_wo
-        # #         M_avg_ao /= (sum_ao if sum_ao != 0 else 1)
-        # #         M_avg = sum_ao * M_avg_ao + (1 - sum_ao) / inv_M_avg_wo
-                
-        # #         for (mat, p_t, frac, index) in zip(materials, percent_type, fracs, range(len(fracs))): # wo to ao conversion
-        # #             if p_t == 'wo':
-        # #                 fracs[index] = (frac / mat.average_molar_mass * M_avg if frac is not None else None)
-        # #                 percent_type[index] = "ao"
-            
-        
-        # if "vo" in percent_type: # Mixing ao, wo, vo
-        #     N_mix_top = 0.0
-        #     N_mix_bot = 1.0
-        #     for (mat, p_t, frac) in zip(materials, percent_type, fracs):#TODO handle frac=None
-        #         if p_t == 'ao':
-        #             N_mix_bot -= frac
-        #         elif p_t == 'wo':
-        #             for (mat2, p_t2, frac2) in zip(materials, percent_type, fracs):
-        #                 if p_t2 == 'ao':
-        #                     N_mix_bot -= frac * mat2.average_molar_mass / mat.average_molar_mass * frac2
-        #                 elif p_t2 == 'vo':
-        #                     N_mix_top +=  frac / (1 - sum_wo) * AVOGADRO * BARN / mat.average_molar_mass * frac2 * np.sum(list(mat2.get_mass_density().values()))
-        #         elif p_t == 'vo':
-        #             N_mix_top += frac * np.sum(list(mat.get_nuclide_atom_densities().values()))
-        #         print( mat, N_mix_top, N_mix_bot)
-        #     if N_mix_bot == 0:
-        #         raise ValueError("Unable to calculate fractions: Internal: N_mix_bot = 0)")
-        #     N_mix = N_mix_top / N_mix_bot
-        #     print( N_mix, N_mix_top, N_mix_bot)
-            
-        #     m_mix_top = 0.0
-        #     m_mix_bot = 1.0 - sum_wo
-        #     for (mat, p_t, frac) in zip(materials, percent_type, fracs):
-        #         if p_t == 'ao':
-        #             m_mix_top += frac * N_mix * mat.average_molar_mass * AVOGADRO * BARN
-        #         if p_t == 'vo':
-        #             m_mix_top += mat.get_mass_density()
-
-        #     m_mix = m_mix_top / m_mix_bot
-        #     print(m_mix, m_mix_top, m_mix_bot)
-            
-        #     wgts = []
-        #     for (mat, p_t, frac) in zip(materials, percent_type, fracs):
-        #         if p_t == 'ao':
-        #             wgts += [frac * np.sum(list(mat.get_nuclide_atom_densities().values())) / N_mix]
-        #         if p_t == 'wo':
-        #             wgts += [frac * mat.get_mass_density() / m_mix]
-        #         if p_t == 'vo':
-        #             wgts += [frac]#TODO
-        # else:
-
-            
-                    
-        #     if "wo" in percent_type: # wo to ao conversion #TODO handle frac=None
-        #         M_avg_ao = 0
-        #         inv_M_avg_wo = 0
-        #         for (mat, p_t, frac) in zip(materials, percent_type, fracs):
-        #             if p_t == 'ao':
-        #                 M_avg += frac * mat.average_molar_mass
-        #             elif p_t == 'wo':
-        #                 inv_M_avg_wo += frac / mat.average_molar_mass
-        #         inv_M_avg_wo /= sum_wo
-        #         M_avg_ao /= (sum_ao if sum_ao != 0 else 1)
-        #         M_avg = sum_ao * M_avg_ao + (1 - sum_ao) / inv_M_avg_wo
-                
-        #         for (mat, p_t, frac, index) in zip(materials, percent_type, fracs, range(len(fracs))): # wo to ao conversion
-        #             if p_t == 'wo':
-        #                 fracs[index] = (frac / mat.average_molar_mass * M_avg if frac is not None else None)
-        #                 percent_type[index] = "ao"
-        #     print("fracs", fracs, np.sum(fracs))
-        #     wgts = []
-        #     for (mat, frac) in zip(materials, fracs): # ao to vo conversion
-        #         wgts += [frac * mat.average_molar_mass / mat.get_mass_density()]
-        #     wgts /= np.sum(wgts)
-        #     print("weights", wgts, np.sum(wgts))
-                        
-            
-        # # for (mat, p_t, wgt, index) in zip(materials, percent_type, wgts, range(len(wgts))):
-        # #     if wgt is None:
-        # #         wgts[index] = 1 - np.sum(wgts)
-
-                
-            
-        # print(wgts)
-        # print(materials,percent_type,fracs)
-        # wgts = mix_ao_wo_vo(materials,percent_type,fracs)
-        # Add nuclide densities weighted by appropriate fractions
         nuclides_per_bmc = defaultdict(float)
         
         for (mat, wgt) in zip(materials, wgts):
@@ -845,87 +630,3 @@ def get_wo_fraction(material):
         # print(key, value)
         new_dict2[key] = value/mat_dens
     return new_dict2
-
-
-def mix_ao_wo_vo(materials, fraction_types, fraction_values, V_tot=1.0):
-    """
-    Exact mixture calculation with one filler material.
-    
-    Returns:
-        - vo_fractions: volume fractions
-        - wo_fractions: mass fractions
-        - ao_fractions: mole fractions
-    """
-
-    N = len(materials)
-    M = np.array([m.average_molar_mass for m in materials], dtype=float)
-    rho = np.array([m.get_mass_density() for m in materials], dtype=float)
-
-    volumes = np.zeros(N)
-    masses  = np.zeros(N)
-    moles   = np.zeros(N)
-
-    unknown_idx = []
-
-    # Step 1: assign volumes for explicit volume fractions
-    for i, (ftype, fval) in enumerate(zip(fraction_types, fraction_values)):
-        if ftype == "vo":
-            volumes[i] = fval * V_tot
-            masses[i] = rho[i] * volumes[i]
-            moles[i]  = masses[i] / M[i]
-        elif ftype in ("wo", "ao"):
-            unknown_idx.append(i)
-        elif ftype is None:
-            unknown_idx = i
-            break
-        else:
-            raise ValueError(f"Invalid fraction type {ftype}")
-
-    # Step 2: handle the simple case of **one unknown** (filler or mass/mole fraction)
-    vec = []
-    def calc_values(guess_rho, guess_M):
-        s_ao = 0
-        s_wo = 0
-        s_vo = 0
-        for i, (IM, Irho, ftype, fval) in enumerate(zip(M, rho, fraction_types, fraction_values)):
-            if ftype == "ao":
-                s_ao += fval
-                s_wo += fval * Irho / IM / guess_M / guess_rho 
-                s_vo += fval * IM / Irho * guess_rho / guess_M
-            elif ftype == "wo":
-                s_ao += fval * guess_M / IM
-                s_wo += fval 
-                s_vo += fval * guess_rho / Irho
-            elif ftype == "vo":
-                if fval == None: continue
-                s_ao += fval * Irho / IM * guess_M / guess_rho
-                s_wo += fval * Irho / guess_rho
-                s_vo += fval
-            
-        
-    
-    for i, (ftype, fval) in enumerate(zip(fraction_types, fraction_values)):
-        volumes[i] = fval * V_tot
-        masses[i] = rho[i] * volumes[i]
-        moles[i]  = masses[i] / M[i]
-    if len(unknown_idx) == 1:
-        idx = unknown_idx[0]
-        # Remaining volume goes to the filler
-        V_remain = V_tot - volumes.sum()
-        volumes[idx] = V_remain
-        masses[idx] = volumes[idx] * rho[idx]
-        moles[idx]  = masses[idx] / M[idx]
-
-        # Compute exact fractions
-        v_fractions = volumes / volumes.sum()
-        w_fractions = masses / masses.sum()
-        x_fractions = moles / moles.sum()
-        return v_fractions#, w_fractions, x_fractions
-
-    # Step 3: multiple unknowns (mass/mole fractions) -> solve exactly
-    # For exact results, we solve **linear equations symbolically** if possible
-    # Here, for simplicity, raise an error if multiple unknowns are present
-    raise ValueError(
-        "Exact solution only implemented for one filler or single unknown. "
-        "Use simpler constraints or one filler."
-    )
