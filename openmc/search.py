@@ -767,109 +767,81 @@ def get_wo_fraction(material):
     return new_dict2
 
 
-def mix_ao_wo_vo(materials, fraction_types, fraction_values, V_tot=1.0, tol=1e-10):
+def mix_ao_wo_vo(materials, fraction_types, fraction_values, V_tot=1.0):
     """
-    Compute mixture composition that satisfies given fraction constraints,
-    scaled so that total volume = V_tot (default = 1 cm^3).
-    
-    Parameters
-    ----------
-    materials : list
-        List of material objects with attributes:
-            - .average_molar_mass
-            - .get_mass_density()
-    fraction_types : list of str or None
-        Each entry is one of: "w" (mass fraction), "x" (mole fraction),
-        "v" (volume fraction), or None.
-    fraction_values : list of float
-        Fraction value corresponding to fraction_types.
-    V_tot : float
-        Desired total volume (cm^3).
-    tol : float
-        Numerical tolerance.
+    Compute mixture composition that satisfies given fraction constraints.
+    Always scales total volume to V_tot (default = 1 cm^3).
 
-    Returns
-    -------
-    v_fractions : np.ndarray
-        Volume fractions of each component (sums to 1).
+    Returns volume fractions of each material.
     """
 
     N = len(materials)
-    assert len(fraction_types) == N
-    assert len(fraction_values) == N
 
     # Extract properties
     M = np.array([m.average_molar_mass for m in materials], dtype=float)
     rho = np.array([m.get_mass_density() for m in materials], dtype=float)
 
-    unknown_idx = []
-    mass_frac_constraints = []
+    # Initialize volumes, masses, moles
+    volumes = np.zeros(N)
+    masses  = np.zeros(N)
+    moles   = np.zeros(N)
 
+    # --- Handle direct volume-fraction constraints
+    for i, (ftype, fval) in enumerate(zip(fraction_types, fraction_values)):
+        if ftype == "v":
+            volumes[i] = fval * V_tot
+            masses[i]  = rho[i] * volumes[i]
+            moles[i]   = masses[i] / M[i]
+
+    # --- Build unknowns for mass- and mole-fractions
+    unknown_idx = [i for i, t in enumerate(fraction_types) if t != "v"]
+
+    # If everything specified by volume fraction, we’re done
+    if len(unknown_idx) == 0:
+        return volumes / volumes.sum()
+
+    # Otherwise, set up linear system
+    A = []
+    b = []
+
+    # Mass fraction constraints: m_i / sum(m) = w_i
     for i, (ftype, fval) in enumerate(zip(fraction_types, fraction_values)):
         if ftype == "w":
-            mass_frac_constraints.append((i, fval))
-        else:
-            unknown_idx.append(i)
+            row = np.zeros(len(unknown_idx) + 1)  # +1 for total mass
+            if i in unknown_idx:
+                row[unknown_idx.index(i)] = 1
+            row[-1] = -fval
+            A.append(row)
+            b.append(0.0)
 
-    # Build equations for mole- and volume-fraction constraints
-    equations = []
-    rhs = []
-
-    for j, (ftype, fval) in enumerate(zip(fraction_types, fraction_values)):
+    # Mole fraction constraints: n_i / sum(n) = x_i
+    for i, (ftype, fval) in enumerate(zip(fraction_types, fraction_values)):
         if ftype == "x":
-            row = np.zeros(len(unknown_idx))
-            for k, idx in enumerate(unknown_idx):
-                row[k] = (1.0 if idx == j else 0.0)/M[idx] - fval/M[idx]
-            equations.append(row)
-            rhs.append(0.0)
+            row = np.zeros(len(unknown_idx) + 1)  # +1 for total moles
+            if i in unknown_idx:
+                row[unknown_idx.index(i)] = 1/M[i]
+            row[-1] = -fval
+            A.append(row)
+            b.append(0.0)
 
-        if ftype == "v":
-            row = np.zeros(len(unknown_idx))
-            for k, idx in enumerate(unknown_idx):
-                row[k] = (1.0 if idx == j else 0.0)/rho[idx] - fval/rho[idx]
-            equations.append(row)
-            rhs.append(0.0)
-
-    # Add Mt (total mass) as auxiliary unknown
-    extra_rows = []
-    extra_rhs = []
-
-    # Mass-fraction: m_j - w_j*Mt = 0
-    for (j, w_val) in mass_frac_constraints:
-        row = np.zeros(len(unknown_idx) + 1)
-        if j in unknown_idx:
-            row[unknown_idx.index(j)] = 1.0
-        row[-1] = -w_val
-        extra_rows.append(row)
-        extra_rhs.append(0.0)
-
-    # Total volume constraint: sum(m_i/rho_i) = V_tot
+    # Volume constraint: sum(V_known) + sum(m_i/rho_i) = V_tot
     row = np.zeros(len(unknown_idx) + 1)
     for k, idx in enumerate(unknown_idx):
-        row[k] = 1.0/rho[idx]
-    for (j, w_val) in mass_frac_constraints:
-        row[-1] += w_val/rho[j]
-    extra_rows.append(row)
-    extra_rhs.append(V_tot)
+        row[k] = 1.0 / rho[idx]
+    A.append(row)
+    b.append(V_tot - volumes.sum())
 
-    # Assemble and solve
-    A = np.array(extra_rows)
-    b = np.array(extra_rhs)
+    # Solve
+    A = np.array(A)
+    b = np.array(b)
     sol, *_ = np.linalg.lstsq(A, b, rcond=None)
 
-    m_unknown = sol[:-1]
-    Mt = sol[-1]
-
-    # Reconstruct full masses
-    masses = np.zeros(N)
+    # Extract masses for unknowns
     for k, idx in enumerate(unknown_idx):
-        masses[idx] = m_unknown[k]
-    for (j, w_val) in mass_frac_constraints:
-        masses[j] = w_val * Mt
+        masses[idx] = sol[k]
+        volumes[idx] = masses[idx] / rho[idx]
+        moles[idx] = masses[idx] / M[idx]
 
-    # Convert to volume fractions
-    volumes = masses / rho
-    v_fractions = volumes / volumes.sum()
-
-    return v_fractions
-
+    # Normalize to volume fractions
+    v_fracs = volumes / volumes.sum()
+    return v_fracs
