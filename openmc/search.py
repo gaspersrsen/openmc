@@ -600,7 +600,11 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
         
         if None in fracs:
             index_none = np.argwhere(fracs == None)
+            fracs[index_none] = 0
             fracs[index_none] = 1 - np.sum(fracs)
+        else:
+            if not np.abs(np.sum(fracs)-1) < 1e8:
+                warnings.warn(f"Resulting weights do not sum to one: {np.sum(wgts)}.\n Please set set one of 'fracs' to None for automatic correction")
         
         amms = np.asarray([mat.average_molar_mass for mat in materials])
         mass_dens = np.asarray([mat.get_mass_density() for mat in materials])
