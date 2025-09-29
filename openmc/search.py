@@ -485,8 +485,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     return model
 
 
-def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterable[str] | None = None,
-                      percent_type: str = 'ao'):#TODO also handle chemical equations, ex. CO2
+def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao'):#TODO also handle chemical equations, ex. CO2
         """Mix materials together based on atom, weight, or volume fractions
 
         .. versionadded:: 0.12
@@ -519,7 +518,7 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
         #     for f_t in fracs_target:
         #         cv.check_value('percent type', f_t, {'ao', 'wo', 'vo'})
 
-        fracs = np.asarray(fracs)
+        fracs = np.array(fracs)
         
         if len(materials) != len(fracs):
             raise ValueError(f"Number of provided materials: {len(materials)}; does not match the number of provided material fractions: {len(fracs)}")
