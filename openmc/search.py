@@ -594,7 +594,7 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao')
         for (mat, p_t) in zip(materials, percent_type):
             norm_wgt += [process_new_frac_target(mat, p_t) if p_t is not None else 1]
             
-        fracs = [frac * wgt if frac is not None else None for (frac,wgt) in zip(fracs,norm_wgt)]
+        fracs = np.array([frac * wgt if frac is not None else None for (frac,wgt) in zip(fracs,norm_wgt)])
         print("norm_wgts",norm_wgt)
         
         if None in fracs:
