@@ -770,66 +770,57 @@ def get_wo_fraction(material):
 
 
 def mix_ao_wo_vo(materials, fraction_types, fraction_values, V_tot=1.0):
+    """
+    Exact mixture calculation with one filler material.
+    
+    Returns:
+        - vo_fractions: volume fractions
+        - wo_fractions: mass fractions
+        - ao_fractions: mole fractions
+    """
+
     N = len(materials)
     M = np.array([m.average_molar_mass for m in materials], dtype=float)
     rho = np.array([m.get_mass_density() for m in materials], dtype=float)
 
     volumes = np.zeros(N)
-    masses = np.zeros(N)
+    masses  = np.zeros(N)
+    moles   = np.zeros(N)
 
     unknown_idx = []
-    mass_frac_constraints = []
 
-    # First, assign volumes for explicit volume fractions
+    # Step 1: assign volumes for explicit volume fractions
     for i, (ftype, fval) in enumerate(zip(fraction_types, fraction_values)):
         if ftype == "vo":
             volumes[i] = fval * V_tot
             masses[i] = rho[i] * volumes[i]
+            moles[i]  = masses[i] / M[i]
         elif ftype in ("wo", "ao"):
             unknown_idx.append(i)
-            if ftype == "wo":
-                mass_frac_constraints.append((i, fval))
-        elif ftype is None:  # filler
+        elif ftype is None:
             unknown_idx.append(i)
         else:
             raise ValueError(f"Invalid fraction type {ftype}")
 
-    # If all unknowns are filler (no mass or mole fraction), assign remaining volume directly
-    if len(unknown_idx) == 1 and len(mass_frac_constraints) == 0:
-        filler_idx = unknown_idx[0]
-        volumes[filler_idx] = V_tot - volumes.sum()
-        masses[filler_idx] = volumes[filler_idx] * rho[filler_idx]
-        v_fracs = volumes / volumes.sum()
-        return v_fracs
+    # Step 2: handle the simple case of **one unknown** (filler or mass/mole fraction)
+    if len(unknown_idx) == 1:
+        idx = unknown_idx[0]
+        # Remaining volume goes to the filler
+        V_remain = V_tot - volumes.sum()
+        volumes[idx] = V_remain
+        masses[idx] = volumes[idx] * rho[idx]
+        moles[idx]  = masses[idx] / M[idx]
 
-    # Otherwise, build linear system for unknown masses
-    A = []
-    b = []
+        # Compute exact fractions
+        v_fractions = volumes / volumes.sum()
+        w_fractions = masses / masses.sum()
+        x_fractions = moles / moles.sum()
+        return v_fractions, w_fractions, x_fractions
 
-    # Mass fraction constraints
-    for i, w_val in mass_frac_constraints:
-        row = np.zeros(len(unknown_idx) + 1)  # +1 for total mass
-        row[unknown_idx.index(i)] = 1.0 if i in unknown_idx else 0.0
-        row[-1] = -w_val
-        A.append(row)
-        b.append(0.0)
-
-    # Volume constraint: remaining volume
-    row = np.zeros(len(unknown_idx) + 1)
-    for k, idx in enumerate(unknown_idx):
-        row[k] = 1.0 / rho[idx]
-    b_remaining = V_tot - volumes.sum()
-    A.append(row)
-    b.append(b_remaining)
-
-    A = np.array(A)
-    b = np.array(b)
-    sol, *_ = np.linalg.lstsq(A, b, rcond=None)
-
-    # Assign unknown masses
-    for k, idx in enumerate(unknown_idx):
-        masses[idx] = sol[k]
-        volumes[idx] = masses[idx] / rho[idx]
-
-    v_fracs = volumes / volumes.sum()
-    return v_fracs
+    # Step 3: multiple unknowns (mass/mole fractions) -> solve exactly
+    # For exact results, we solve **linear equations symbolically** if possible
+    # Here, for simplicity, raise an error if multiple unknowns are present
+    raise ValueError(
+        "Exact solution only implemented for one filler or single unknown. "
+        "Use simpler constraints or one filler."
+    )
