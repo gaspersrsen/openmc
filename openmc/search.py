@@ -634,7 +634,7 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
                 if p_t == 'ao':
                     m_mix_top += frac * N_mix * mat.average_molar_mass * AVOGADRO * BARN
                 if p_t == 'vo':
-                    m_mix_top += mat.get_mass_density().values()
+                    m_mix_top += mat.get_mass_density()
 
             m_mix = m_mix_top / m_mix_bot
             print(m_mix, m_mix_top, m_mix_bot)
