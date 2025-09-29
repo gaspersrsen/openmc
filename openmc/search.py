@@ -598,39 +598,38 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
         fracs *= norm_wgt
         print("norm_wgts",norm_wgt)
         
-        
-        
         # if None not in wgts and (np.abs(np.sum(wgts) - 1) < 1e-6): #TODO make the proper checks
         #     warnings.warn(f"Resulting weights do not sum to one: {np.sum(wgts)}.\n Please set set one of 'fracs' to None for automatic correction")
         AVOGADRO = openmc.data.AVOGADRO
         BARN = 1e-24
         sum_wo = 0.0
         sum_ao = 0.0
+        sum_vo = 0.0
         for (p_t, frac) in zip(percent_type, fracs):
             if p_t == 'ao': sum_ao += frac
             if p_t == 'wo': sum_wo += frac
+            if p_t == 'vo': sum_vo += frac
             
-
+        # First mix to get only 1 or 0 of each ao, wo, vo
+        # def mix_all_ao(materials, fracs, fracs_target, percent_type):
+        wgts_A = [] #All wo
+        wgts_B = [] #All ao
+        wgts_C = [] #All vo + None
+        for (mat, p_t, frac) in zip(materials, percent_type, fracs):#TODO handle frac=None
+                if p_t == 'ao':
+                    wgts_B += [frac * mat.average_molar_mass / mat.get_mass_density()]
+                if p_t == 'wo':
+                    wgts_B += [frac / mat.get_mass_density()]
+                if p_t == 'vo':
+                    wgts_C += [frac]
+        wgts_A /= np.sum(wgts_A)
+        wgts_B /= np.sum(wgts_B)
+        wgts_C /= np.sum(wgts_C)
         # Calculate the missing fracton
-        # index_None = np.argwhere(np.array(fracs) == None)
-        # rho_mix = 0
-        # n_moles_mix = 0
-        # for (mat, p_t, frac, index) in zip(materials, percent_type, fracs, range(len(fracs))): # wo to ao conversion
-        #     if frac is None: continue
-        #     if p_t == "wo":
-        #         rho_mix = mat.get_mass_density() * frac
-        #     if p_t == "ao":
-        #         n_moles_mix = mat.get_mass_density() / mat.average_molar_mass / frac
-        # if rho_mix == 0 and n_moles_mix == 0: # Only vo
-        #     fracs[index_None] = 1 - np.sum(fracs)
-        # elif rho_mix != 0: 
-        #     fracs[index_None] =  materials[index_None].get_mass_density() / rho_mix
-        #     percent_type[index_None] = "wo"
-        # elif n_moles_mix != 0: 
-        #     fracs[index_None] =  materials[index_None].get_mass_density() / materials[index_None].average_molar_mass / n_moles_mix
-        #     percent_type[index_None] = "ao"
-        # else:
-        #     raise ValueError("Could not calculate missing fraction")
+        index_None = np.argwhere(np.array(fracs) == None)
+        a = 1 - sum_ao
+        b = sum_ao
+        
             
         # elif sum_wo == 0:
         #     fracs[index_None] = 1 - sum_ao
@@ -742,6 +741,7 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
                 nuc_per_bmc = wgt * atoms_per_bcm
                 nuclide_ao_fr_per_submat[nuc][index] = nuc_per_bmc / nuclides_per_bmc[nuc]
         return nuclides_per_bmc, nuclide_ao_fr_per_submat
+ 
 
 
 def get_ao_fraction(material):
@@ -765,3 +765,111 @@ def get_wo_fraction(material):
         # print(key, value)
         new_dict2[key] = value/mat_dens
     return new_dict2
+
+
+def mix_ao_wo_vo(materials, fraction_types, fraction_values, V_tot=1.0, tol=1e-10):
+    """
+    Compute mixture composition that satisfies given fraction constraints,
+    scaled so that total volume = V_tot (default = 1 cm^3).
+    
+    Parameters
+    ----------
+    materials : list
+        List of material objects with attributes:
+            - .average_molar_mass
+            - .get_mass_density()
+    fraction_types : list of str or None
+        Each entry is one of: "w" (mass fraction), "x" (mole fraction),
+        "v" (volume fraction), or None.
+    fraction_values : list of float
+        Fraction value corresponding to fraction_types.
+    V_tot : float
+        Desired total volume (cm^3).
+    tol : float
+        Numerical tolerance.
+
+    Returns
+    -------
+    v_fractions : np.ndarray
+        Volume fractions of each component (sums to 1).
+    """
+
+    N = len(materials)
+    assert len(fraction_types) == N
+    assert len(fraction_values) == N
+
+    # Extract properties
+    M = np.array([m.average_molar_mass for m in materials], dtype=float)
+    rho = np.array([m.get_mass_density() for m in materials], dtype=float)
+
+    unknown_idx = []
+    mass_frac_constraints = []
+
+    for i, (ftype, fval) in enumerate(zip(fraction_types, fraction_values)):
+        if ftype == "w":
+            mass_frac_constraints.append((i, fval))
+        else:
+            unknown_idx.append(i)
+
+    # Build equations for mole- and volume-fraction constraints
+    equations = []
+    rhs = []
+
+    for j, (ftype, fval) in enumerate(zip(fraction_types, fraction_values)):
+        if ftype == "x":
+            row = np.zeros(len(unknown_idx))
+            for k, idx in enumerate(unknown_idx):
+                row[k] = (1.0 if idx == j else 0.0)/M[idx] - fval/M[idx]
+            equations.append(row)
+            rhs.append(0.0)
+
+        if ftype == "v":
+            row = np.zeros(len(unknown_idx))
+            for k, idx in enumerate(unknown_idx):
+                row[k] = (1.0 if idx == j else 0.0)/rho[idx] - fval/rho[idx]
+            equations.append(row)
+            rhs.append(0.0)
+
+    # Add Mt (total mass) as auxiliary unknown
+    extra_rows = []
+    extra_rhs = []
+
+    # Mass-fraction: m_j - w_j*Mt = 0
+    for (j, w_val) in mass_frac_constraints:
+        row = np.zeros(len(unknown_idx) + 1)
+        if j in unknown_idx:
+            row[unknown_idx.index(j)] = 1.0
+        row[-1] = -w_val
+        extra_rows.append(row)
+        extra_rhs.append(0.0)
+
+    # Total volume constraint: sum(m_i/rho_i) = V_tot
+    row = np.zeros(len(unknown_idx) + 1)
+    for k, idx in enumerate(unknown_idx):
+        row[k] = 1.0/rho[idx]
+    for (j, w_val) in mass_frac_constraints:
+        row[-1] += w_val/rho[j]
+    extra_rows.append(row)
+    extra_rhs.append(V_tot)
+
+    # Assemble and solve
+    A = np.array(extra_rows)
+    b = np.array(extra_rhs)
+    sol, *_ = np.linalg.lstsq(A, b, rcond=None)
+
+    m_unknown = sol[:-1]
+    Mt = sol[-1]
+
+    # Reconstruct full masses
+    masses = np.zeros(N)
+    for k, idx in enumerate(unknown_idx):
+        masses[idx] = m_unknown[k]
+    for (j, w_val) in mass_frac_constraints:
+        masses[j] = w_val * Mt
+
+    # Convert to volume fractions
+    volumes = masses / rho
+    v_fractions = volumes / volumes.sum()
+
+    return v_fractions
+
