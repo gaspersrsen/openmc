@@ -815,7 +815,7 @@ def mix_ao_wo_vo(materials, fraction_types, fraction_values, V_tot=1.0):
         v_fractions = volumes / volumes.sum()
         w_fractions = masses / masses.sum()
         x_fractions = moles / moles.sum()
-        return v_fractions, w_fractions, x_fractions
+        return v_fractions#, w_fractions, x_fractions
 
     # Step 3: multiple unknowns (mass/mole fractions) -> solve exactly
     # For exact results, we solve **linear equations symbolically** if possible
