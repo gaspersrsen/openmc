@@ -789,13 +789,13 @@ def mix_ao_wo_vo(materials, fraction_types, fraction_values, V_tot=1.0):
 
     # --- Handle direct volume-fraction constraints
     for i, (ftype, fval) in enumerate(zip(fraction_types, fraction_values)):
-        if ftype == "v":
+        if ftype == "vo":
             volumes[i] = fval * V_tot
             masses[i]  = rho[i] * volumes[i]
             moles[i]   = masses[i] / M[i]
 
     # --- Build unknowns for mass- and mole-fractions
-    unknown_idx = [i for i, t in enumerate(fraction_types) if t != "v"]
+    unknown_idx = [i for i, t in enumerate(fraction_types) if t != "vo"]
 
     # If everything specified by volume fraction, we’re done
     if len(unknown_idx) == 0:
@@ -807,7 +807,7 @@ def mix_ao_wo_vo(materials, fraction_types, fraction_values, V_tot=1.0):
 
     # Mass fraction constraints: m_i / sum(m) = w_i
     for i, (ftype, fval) in enumerate(zip(fraction_types, fraction_values)):
-        if ftype == "w":
+        if ftype == "wo":
             row = np.zeros(len(unknown_idx) + 1)  # +1 for total mass
             if i in unknown_idx:
                 row[unknown_idx.index(i)] = 1
@@ -817,7 +817,7 @@ def mix_ao_wo_vo(materials, fraction_types, fraction_values, V_tot=1.0):
 
     # Mole fraction constraints: n_i / sum(n) = x_i
     for i, (ftype, fval) in enumerate(zip(fraction_types, fraction_values)):
-        if ftype == "x":
+        if ftype == "ao":
             row = np.zeros(len(unknown_idx) + 1)  # +1 for total moles
             if i in unknown_idx:
                 row[unknown_idx.index(i)] = 1/M[i]
