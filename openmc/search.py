@@ -583,7 +583,8 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao')
             elif p_t == 'wo':
                 #norm_mat = ((np.sum(list(mat.get_nuclide_atom_densities())) / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])) if target_nucs[mat] != [] else 1)
                 #return ((mat.average_molar_mass / _average_molar_mass(mat,target_nucs[mat]))  if target_nucs[mat] != [] else 1)
-                return ((mat.get_mass_density() / np.sum(mat.get_mass_density([nuc for nuc in target_nucs[mat]])))  if target_nucs[mat] != [] else 1)
+                print(((mat.get_mass_density(), np.sum(mat.get_mass_density([nuc for nuc in target_nucs[mat]]))), target_nucs[mat]))
+                return ((mat.get_mass_density() / np.sum(mat.get_mass_density([nuc for nuc in target_nucs[mat]]))) if target_nucs[mat] != [] else 1)
                 # print(norm_mat)
                 # return frac / mat.get_mass_density() * norm_mat
             elif p_t == 'vo':
