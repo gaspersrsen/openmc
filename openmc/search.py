@@ -666,9 +666,8 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
                         percent_type[index] = "ao"
             print("fracs", fracs, np.sum(fracs))
             wgts = []
-            for (mat, p_t, frac, index) in zip(materials, percent_type, fracs, range(len(fracs))): # wo to ao conversion
-                    if p_t == 'wo':
-                        wgts += [frac * mat.average_molar_mass / mat.get_mass_density()]
+            for (mat, frac) in zip(materials, fracs): # ao to vo conversion
+                    wgts += [frac * mat.average_molar_mass / mat.get_mass_density()]
             wgts /= np.sum(wgts)
             print("weights", wgts, np.sum(wgts))
                         
