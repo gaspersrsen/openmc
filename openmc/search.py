@@ -548,7 +548,6 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
             elif type(target) == str:
                 if target.isalpha():
                     element = openmc.Element(target)
-                    print(element)
                     element_nucs = []
                     for nuc in element.expand(1, "ao"):
                         element_nucs += [nuc[0]]
@@ -557,7 +556,6 @@ def get_ao_mix_materials(materials, fracs: Iterable[float], fracs_target: Iterab
             else:
                 element_nucs = target
             target_nucs[mat] = element_nucs
-        print(target_nucs)
         
         def _average_molar_mass(mat,nucs):
             # Using the sum of specified atomic or weight amounts as a basis, sum
