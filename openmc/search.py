@@ -523,8 +523,8 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao')
         if len(materials) != len(fracs):
             raise ValueError(f"Number of provided materials: {len(materials)}; does not match the number of provided material fractions: {len(fracs)}")
         
-        if type(percent_type) == str:
-            percent_type = [percent_type] * len(fracs)
+        # if type(percent_type) == str:
+        #     percent_type = [percent_type] * len(fracs)
         if fracs_target is None:
             fracs_target = [None] * len(fracs)
 
@@ -591,14 +591,14 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao')
                 # print(norm_mat)
                 # return frac * norm_mat
                 
-        for (mat, p_t) in zip(materials, percent_type):
-            norm_wgt += [process_new_frac_target(mat, p_t) if p_t is not None else 1]
+        for mat in materials:
+            norm_wgt += [process_new_frac_target(mat, percent_type)]
             
         fracs = np.array([frac * wgt if frac is not None else None for (frac,wgt) in zip(fracs,norm_wgt)])
         print("norm_wgts",norm_wgt)
         
         if None in fracs:
-            index_none = np.argwhere(fracs == None)
+            index_none = np.argwhere(fracs == None)#[0]
             print(index_none, fracs)
             print(fracs[index_none])
             fracs[index_none] = 0
