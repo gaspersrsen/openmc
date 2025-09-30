@@ -213,7 +213,8 @@ def search_for_keff(model_builder, initial_guess=None, target=1.0,
 
 
 def critical_density_iteration(model, iso=None, batches=None, bracket=None, 
-                        materials=None, initial_value=None, target=1., perfer_all_xml=True, debug=False): # TODO allow for change in number of neutrons and then return settings to previous values
+                        materials=None, initial_value=None, target=1., perfer_all_xml=True, debug=False):
+    # TODO allow for change in number of neutrons and then return settings to previous values
     """
     Runs a simulation where 'iso' nuclide values converge in such a way to obtain the desired k_eff.
     Operator.model materials are updated in the process
@@ -222,6 +223,8 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     Higher (>10 000) particle numbers in 'openmc.settings' are recommended for more accurate simulation.
     Atleast 30 batches are required for adequate convergence, recommended >50.
 
+    .. versionadded:: 0.15.3
+    
     Parameters
     ----------
     model: openmc.model, required
@@ -326,6 +329,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
         if M < starting_batch: continue
         # Only change concentrations during the additional batches
         if M <= starting_batch + batches and not skip_steps:
+            if debug is True: print(f"Batch: {M}")
             #k = openmc.lib.keff()[0]
             talliez = copy.copy(openmc.lib.tallies)
             curr_res = []
@@ -402,7 +406,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 pass
             else:
                 p_n = 1/(1/p + 1/p_measure)
-                print(f"Propagating uncertainty: p_prev {p}, p_measure {p_measure}, p_next {p_n}")
+                if debug is True: print(f"Propagating uncertainty: p_prev {p}, p_measure {p_measure}, p_next {p_n}")
             z = f_prev * g_est
             
             if bracket is not None:
@@ -410,7 +414,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                     z = bracket[1]/initial_value
                 elif z*initial_value < bracket[0]:
                     z = bracket[0]/initial_value
-            print(f"Changing concentration mult from {x} to {x + p_n/p_measure * (z - x)}, by {p_n/p_measure * (z - x)}, innovation factor: {p_n/p_measure}")
+            if debug is True: print(f"Changing concentration mult from {x} to {x + p_n/p_measure * (z - x)}, by {p_n/p_measure * (z - x)}, innovation factor: {p_n/p_measure}")
             x = x + p_n/p_measure * (z - x)
             p = copy.copy(p_n)
             f = copy.copy(x)
@@ -419,7 +423,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
 
             if debug is True:
                 k = (P_fiss) / (L_abs + (P_fiss + P_nxn)*L_leak - P_nxn)
-                print(f"Batch: {M}")
+                # print(f"Batch: {M}")
                 print(f"k_absorption: {k}")
                 print(f"Batch uncertainty: p: {p_measure}, sig_g: {sig_g_est}")
                 print(f"top: {top}, bot: {bot}")
@@ -485,10 +489,10 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     return model
 
 
-def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao'):#TODO also handle chemical equations, ex. CO2
+def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao'):
         """Mix materials together based on atom, weight, or volume fractions
 
-        .. versionadded:: 0.12
+        .. versionadded:: 0.15.3
 
         Parameters
         ----------
@@ -497,7 +501,7 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao')
         fracs : Iterable of float
             Fractions of each material to be combined
         fracs_target : Iterable of str, optional
-            Fraction target of each material to be combined, can be nuclide (ex. "B10")
+            Fraction target of each material to be combined, can be nuclide (i.e. "B10"), or element (i.e. "B")
             or element (ex. "B")
         percent_type : {'ao', 'wo', 'vo'}
             Type of percentage, must be one of 'ao', 'wo', or 'vo', to signify atom
@@ -511,20 +515,12 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao')
 
         cv.check_type('materials', materials, Iterable, Material)
         # cv.check_type('fracs', fracs, Iterable, Real)
-        # cv.check_type('fracs', fracs_target, Iterable, str)
-        # if type(fracs_target) ==  str:
-        #     cv.check_value('percent type', percent_type, {'ao', 'wo', 'vo'})
-        # else:
-        #     for f_t in fracs_target:
         cv.check_value('percent type', percent_type, {'ao', 'wo', 'vo'})
 
         fracs = np.array(fracs)
         
         if len(materials) != len(fracs):
             raise ValueError(f"Number of provided materials: {len(materials)}; does not match the number of provided material fractions: {len(fracs)}")
-        
-        # if type(percent_type) == str:
-        #     percent_type = [percent_type] * len(fracs)
         if fracs_target is None:
             fracs_target = [None] * len(fracs)
 
@@ -557,29 +553,12 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao')
             target_nucs[mat] = element_nucs
         
         norm_wgt = []
-        def nuc_average_molar_mass(mat_nuc_dict):
-            # Using the sum of specified atomic or weight amounts as a basis, sum
-            # the mass and moles of the material
-            mass = 0.
-            moles = 0.
-            for (nuc,val) in mat_nuc_dict.items():
-                if nuc.percent_type == 'ao':
-                    mass += val * openmc.data.atomic_mass(nuc)
-                    moles += val
-                else:
-                    moles +=val / openmc.data.atomic_mass(nuc)
-                    mass += val
-
-            # Compute and return the molar mass
-            return mass / moles
         def process_new_frac_target(mat, p_t):
             if not target_nucs[mat]:
                 return 1
             if p_t == 'ao':
                 return 1 / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
             elif p_t == 'wo':
-                #return mat.get_mass_density() / np.sum([mat.get_mass_density(nuc) for nuc in target_nucs[mat]])
-                print([wo_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
                 return 1 / np.sum([wo_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
             elif p_t == 'vo':
                 return 1 / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
@@ -595,7 +574,7 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao')
             fracs[index_none] = 0
             fracs[index_none] = 1 - np.sum(fracs)
         else:
-            if not np.abs(np.sum(fracs)-1) < 1e8:
+            if not np.abs(np.sum(fracs)-1) < 1e6:
                 warnings.warn(f"Resulting weights do not sum to one: {np.sum(wgts)}.\n Please set set one of 'fracs' to None for automatic correction")
         
         amms = np.asarray([mat.average_molar_mass for mat in materials])
@@ -625,7 +604,6 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao')
         return nuclides_per_bmc, nuclide_ao_fr_per_submat
  
 
-
 def get_ao_fraction(material):
     nuc_dict = material.get_nuclide_atom_densities()
     mat_ao = np.sum(list(nuc_dict.values()))
@@ -636,8 +614,9 @@ def get_ao_fraction(material):
         new_dict2[key] = value/mat_ao
     return new_dict2
 
+
 def get_wo_fraction(material):
-    nuc_dict= {}
+    nuc_dict = {}
     for nuc in material.nuclides:
         nuc_dict[nuc.name] = material.get_mass_density(nuc.name)
     mat_dens = material.get_mass_density()
