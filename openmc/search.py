@@ -490,118 +490,118 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
 
 
 def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao'):
-        """Mix materials together based on atom, weight, or volume fractions
+    """Mix materials together based on atom, weight, or volume fractions
 
-        .. versionadded:: 0.15.3
+    .. versionadded:: 0.15.3
 
-        Parameters
-        ----------
-        materials : Iterable of openmc.Material
-            Materials to combine
-        fracs : Iterable of float
-            Fractions of each material to be combined
-        fracs_target : Iterable of str, optional
-            Fraction target of each material to be combined, can be nuclide (i.e. "B10"), or element (i.e. "B")
-            or element (ex. "B")
-        percent_type : {'ao', 'wo', 'vo'}
-            Type of percentage, must be one of 'ao', 'wo', or 'vo', to signify atom
-            percent (molar percent), weight percent, or volume percent,
-            optional. Defaults to 'ao'
+    Parameters
+    ----------
+    materials : Iterable of openmc.Material
+        Materials to combine
+    fracs : Iterable of float
+        Fractions of each material to be combined
+    fracs_target : Iterable of str, optional
+        Fraction target of each material to be combined, can be nuclide (i.e. "B10"), or element (i.e. "B")
+        or element (ex. "B")
+    percent_type : {'ao', 'wo', 'vo'}
+        Type of percentage, must be one of 'ao', 'wo', or 'vo', to signify atom
+        percent (molar percent), weight percent, or volume percent,
+        optional. Defaults to 'ao'
 
-        Returns
-        -------
+    Returns
+    -------
 
-        """
+    """
 
-        cv.check_type('materials', materials, Iterable, Material)
-        # cv.check_type('fracs', fracs, Iterable, Real)
-        cv.check_value('percent type', percent_type, {'ao', 'wo', 'vo'})
+    cv.check_type('materials', materials, Iterable, Material)
+    # cv.check_type('fracs', fracs, Iterable, Real)
+    cv.check_value('percent type', percent_type, {'ao', 'wo', 'vo'})
 
-        fracs = np.array(fracs)
-        
-        if len(materials) != len(fracs):
-            raise ValueError(f"Number of provided materials: {len(materials)}; does not match the number of provided material fractions: {len(fracs)}")
-        if fracs_target is None:
-            fracs_target = [None] * len(fracs)
+    fracs = np.array(fracs)
+    
+    if len(materials) != len(fracs):
+        raise ValueError(f"Number of provided materials: {len(materials)}; does not match the number of provided material fractions: {len(fracs)}")
+    if fracs_target is None:
+        fracs_target = [None] * len(fracs)
 
-        # Calculate appropriate weights which are how many cc's of each
-        # material are found in 1cc of the composite material
-        # avg_mol_mass = np.asarray([mat.average_molar_mass for mat in materials])
-        # mass_dens = np.asarray([mat.get_mass_density() for mat in materials])
-        ao_mats = {}
-        ao_fr_mats = {}
-        wo_fr_mats = {}
-        for mat in materials:
-            ao_mats[mat] = mat.get_mass_density()
-            ao_fr_mats[mat] = get_ao_fraction(mat)
-            wo_fr_mats[mat] = get_wo_fraction(mat)
-        target_nucs = {}
-        for (mat, target) in zip(materials, fracs_target):
-            if target is None:
-                target_nucs[mat] = []
-                continue
-            elif type(target) == str:
-                if target.isalpha():
-                    element = openmc.Element(target)
-                    element_nucs = []
-                    for nuc in element.expand(1, "ao"):
-                        element_nucs += [nuc[0]]
-                else:
-                    element_nucs = [target]
+    # Calculate appropriate weights which are how many cc's of each
+    # material are found in 1cc of the composite material
+    # avg_mol_mass = np.asarray([mat.average_molar_mass for mat in materials])
+    # mass_dens = np.asarray([mat.get_mass_density() for mat in materials])
+    ao_mats = {}
+    ao_fr_mats = {}
+    wo_fr_mats = {}
+    for mat in materials:
+        ao_mats[mat] = mat.get_mass_density()
+        ao_fr_mats[mat] = get_ao_fraction(mat)
+        wo_fr_mats[mat] = get_wo_fraction(mat)
+    target_nucs = {}
+    for (mat, target) in zip(materials, fracs_target):
+        if target is None:
+            target_nucs[mat] = []
+            continue
+        elif type(target) == str:
+            if target.isalpha():
+                element = openmc.Element(target)
+                element_nucs = []
+                for nuc in element.expand(1, "ao"):
+                    element_nucs += [nuc[0]]
             else:
-                element_nucs = target
-            target_nucs[mat] = element_nucs
-        
-        norm_wgt = []
-        def process_new_frac_target(mat, p_t):
-            if not target_nucs[mat]:
-                return 1
-            if p_t == 'ao':
-                return 1 / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
-            elif p_t == 'wo':
-                return 1 / np.sum([wo_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
-            elif p_t == 'vo':
-                return 1 / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
-                
-        for mat in materials:
-            norm_wgt += [process_new_frac_target(mat, percent_type)]
-            
-        fracs = np.array([frac * wgt if frac is not None else None for (frac,wgt) in zip(fracs,norm_wgt)])
-        print("norm_wgts",norm_wgt)
-        
-        if None in fracs:
-            index_none = np.argwhere(fracs == None)
-            fracs[index_none] = 0
-            fracs[index_none] = 1 - np.sum(fracs)
+                element_nucs = [target]
         else:
-            if not np.abs(np.sum(fracs)-1) < 1e6:
-                warnings.warn(f"Resulting weights do not sum to one: {np.sum(wgts)}.\n Please set set one of 'fracs' to None for automatic correction")
-        
-        amms = np.asarray([mat.average_molar_mass for mat in materials])
-        mass_dens = np.asarray([mat.get_mass_density() for mat in materials])
-        if percent_type == 'ao':
-            wgts = fracs * amms / mass_dens
-            wgts /= np.sum(wgts)
-        elif percent_type == 'wo':
-            wgts = fracs / mass_dens
-            wgts /= np.sum(wgts)
-        elif percent_type == 'vo':
-            wgts = fracs
+            element_nucs = target
+        target_nucs[mat] = element_nucs
+    
+    norm_wgt = []
+    def process_new_frac_target(mat, p_t):
+        if not target_nucs[mat]:
+            return 1
+        if p_t == 'ao':
+            return 1 / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
+        elif p_t == 'wo':
+            return 1 / np.sum([wo_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
+        elif p_t == 'vo':
+            return 1 / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
             
-        nuclides_per_bmc = defaultdict(float)
+    for mat in materials:
+        norm_wgt += [process_new_frac_target(mat, percent_type)]
         
-        for (mat, wgt) in zip(materials, wgts):
-            for nuc, atoms_per_bcm in mat.get_nuclide_atom_densities().items():
-                nuc_per_bmc = wgt * atoms_per_bcm
-                nuclides_per_bmc[nuc] += nuc_per_bmc
-        nuclide_ao_fr_per_submat = defaultdict(float)
-        for nuc, _ in nuclides_per_bmc.items():
-            nuclide_ao_fr_per_submat[nuc] = [0] * len(wgts)
-        for (mat, wgt, index) in zip(materials, wgts, range(len(wgts))):
-            for nuc, atoms_per_bcm in mat.get_nuclide_atom_densities().items():
-                nuc_per_bmc = wgt * atoms_per_bcm
-                nuclide_ao_fr_per_submat[nuc][index] = nuc_per_bmc / nuclides_per_bmc[nuc]
-        return nuclides_per_bmc, nuclide_ao_fr_per_submat
+    fracs = np.array([frac * wgt if frac is not None else None for (frac,wgt) in zip(fracs,norm_wgt)])
+    print("norm_wgts",norm_wgt)
+    
+    if None in fracs:
+        index_none = np.argwhere(fracs == None)
+        fracs[index_none] = 0
+        fracs[index_none] = 1 - np.sum(fracs)
+    else:
+        if not np.abs(np.sum(fracs)-1) < 1e6:
+            warnings.warn(f"Resulting weights do not sum to one: {np.sum(wgts)}.\n Please set set one of 'fracs' to None for automatic correction")
+    
+    amms = np.asarray([mat.average_molar_mass for mat in materials])
+    mass_dens = np.asarray([mat.get_mass_density() for mat in materials])
+    if percent_type == 'ao':
+        wgts = fracs * amms / mass_dens
+        wgts /= np.sum(wgts)
+    elif percent_type == 'wo':
+        wgts = fracs / mass_dens
+        wgts /= np.sum(wgts)
+    elif percent_type == 'vo':
+        wgts = fracs
+        
+    nuclides_per_bmc = defaultdict(float)
+    
+    for (mat, wgt) in zip(materials, wgts):
+        for nuc, atoms_per_bcm in mat.get_nuclide_atom_densities().items():
+            nuc_per_bmc = wgt * atoms_per_bcm
+            nuclides_per_bmc[nuc] += nuc_per_bmc
+    nuclide_ao_fr_per_submat = defaultdict(float)
+    for nuc, _ in nuclides_per_bmc.items():
+        nuclide_ao_fr_per_submat[nuc] = [0] * len(wgts)
+    for (mat, wgt, index) in zip(materials, wgts, range(len(wgts))):
+        for nuc, atoms_per_bcm in mat.get_nuclide_atom_densities().items():
+            nuc_per_bmc = wgt * atoms_per_bcm
+            nuclide_ao_fr_per_submat[nuc][index] = nuc_per_bmc / nuclides_per_bmc[nuc]
+    return nuclides_per_bmc, nuclide_ao_fr_per_submat
  
 
 def get_ao_fraction(material):
