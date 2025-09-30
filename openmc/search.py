@@ -657,10 +657,11 @@ def get_wo_fraction(material):
     return new_dict2
 
 def update_material(mat, nuc_dict):
+    nuc_remove = []
     for nuc in mat.nuclides:
-        print(nuc)
+        nuc_remove += [nuc.name]
+    for nuc in nuc_remove:
         mat.remove_nuclide(nuc.name)
-    return 0
     for nuc, val in nuc_dict.items():
         mat.add_nuclide(nuc, val)
     nuc_dict2 = mat.get_nuclide_atom_densities()
