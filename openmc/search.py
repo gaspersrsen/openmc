@@ -237,7 +237,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     model: openmc.model, required
     iso: array of str, required or mat_builder is provided
         Nuclide name, ex. ["B10", "B11"]
-        Mat builder overwrites isotops provided by this option.
+        'mat_builder' overwrites isotopes provided by this option.
     batches: int, optional
         Number of inactive batches added to the begining of simulation where
         'iso' concentration converges.
@@ -247,6 +247,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
         Inteded to be used in tandem with initial_value.
         Otherwise just a multiple of initial concentration at step 0.
     materials: materials in which nuclide concentrations are changed, optional
+        'mat_builder' overwrites materials provided by this option.
         Defaults to all materials.
     initial_value: float > 0, optional
         Used in first call, used for intermediate critical concentration message output.
@@ -255,7 +256,10 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     target: float, optional
         Target k_eff, defaults to 1.0
     mat_builder: function optional
-        Callable builder function, that returns a dictionary of isotope concentrations
+        Callable builder function, that returns a list of materials.
+        
+        
+        dictionary of isotope concentrations
         ('nuclide':value in atoms/b-cm) for each flagged material.
         It is called in each step of CDI.
         When used 'initial_value' parameter is required.
@@ -270,7 +274,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
 
     """
     if mat_builder is not None:
-        mat_builder(initial_value)
+        materials = mat_builder(initial_value)
         iso = []
         for mat in materials:
             for nuc in mat.nuclides:
@@ -457,30 +461,33 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 print(f"Batch estimated concentration: {f*initial_value} +/- {f*initial_value*(p**(1/2))}")
 
             # Update densities on C API side
-            for mat in openmc.lib.materials:
-                if materials is not None:
-                    if int(mat) not in mat_ids:
-                        continue
-                nuclides=[]
-                densities=[]
-                all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
-                all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
-                
-                for nuc in all_nuc:
-                    val = float((all_dens[all_nuc==str(nuc)])[0])
-                    # If nuclide is zero, do not add to the problem.
-                    if val > 0: # 1 atom/barn-cm
-                        if str(nuc) in iso:
+            if 0:#mat_builder is not None:
+                mat_builder(f*initial_value)
+            else:
+                for mat in openmc.lib.materials:
+                    if materials is not None:
+                        if int(mat) not in mat_ids:
+                            continue
+                    nuclides=[]
+                    densities=[]
+                    all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
+                    all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
+                    
+                    for nuc in all_nuc:
+                        val = float((all_dens[all_nuc==str(nuc)])[0])
+                        # If nuclide is zero, do not add to the problem.
+                        if val > 0: # 1 atom/barn-cm
+                            if str(nuc) in iso:
+                                val *= g
+                            nuclides.append(nuc)
+                            densities.append(val)
+                        elif str(nuc) in iso:
                             val *= g
-                        nuclides.append(nuc)
-                        densities.append(val)
-                    elif str(nuc) in iso:
-                        val *= g
-                        nuclides.append(nuc)
-                        densities.append(val)
-                # Update densities on C API side
-                mat_internal = openmc.lib.materials[int(mat)]
-                mat_internal.set_densities(nuclides, densities)
+                            nuclides.append(nuc)
+                            densities.append(val)
+                    # Update densities on C API side
+                    mat_internal = openmc.lib.materials[int(mat)]
+                    mat_internal.set_densities(nuclides, densities)
         # if M == model.settings.inactive:
         #     openmc.lib.reset()
     openmc.lib.simulation_finalize()
