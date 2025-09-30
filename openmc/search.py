@@ -383,6 +383,9 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             L_abs = curr_res[0][0][1][1]                                # Total neutron absorption
             # Total flagged nuclide absorption
             if materials is not None:
+                print("abs flagged nucs tally", curr_res[1],np.array(curr_res[1])[:,:,1])
+                print("flagged nucs fracs",np.array(nuc_fractions))
+                print("flagged nucs abs", np.array(curr_res[1])[:,:,1] * np.array(nuc_fractions))
                 L_abs_nucs = np.sum(np.array(curr_res[1])[:,:,1] * np.array(nuc_fractions))
             else:
                 L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
@@ -611,7 +614,6 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao')
         norm_wgt += [process_new_frac_target(mat, percent_type)]
         
     fracs = np.array([frac * wgt if frac is not None else None for (frac,wgt) in zip(fracs,norm_wgt)])
-    print("norm_wgts",norm_wgt)
     
     if None in fracs:
         index_none = np.argwhere(fracs == None)
