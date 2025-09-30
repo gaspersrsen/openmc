@@ -461,7 +461,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 print(f"Batch estimated concentration: {f*initial_value} +/- {f*initial_value*(p**(1/2))}")
 
             # Update densities on C API side
-            if 0:#mat_builder is not None:
+            if mat_builder is not None:
                 mat_builder(f*initial_value)
             else:
                 for mat in openmc.lib.materials:
@@ -470,22 +470,35 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                             continue
                     nuclides=[]
                     densities=[]
-                    all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
                     all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
                     
-                    for nuc in all_nuc:
-                        val = float((all_dens[all_nuc==str(nuc)])[0])
-                        # If nuclide is zero, do not add to the problem.
-                        if val > 0: # 1 atom/barn-cm
-                            if str(nuc) in iso:
+                    
+                    if mat_builder is None:
+                        all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
+                        for nuc in all_nuc:
+                            val = float((all_dens[all_nuc==str(nuc)])[0])
+                            # If nuclide is zero, do not add to the problem.
+                            if val > 0: # 1 atom/barn-cm
+                                if str(nuc) in iso:
+                                    val *= g
+                                nuclides.append(nuc)
+                                densities.append(val)
+                            elif str(nuc) in iso:
                                 val *= g
-                            nuclides.append(nuc)
-                            densities.append(val)
-                        elif str(nuc) in iso:
-                            val *= g
-                            nuclides.append(nuc)
-                            densities.append(val)
-                    # Update densities on C API side
+                                nuclides.append(nuc)
+                                densities.append(val)
+                        # Update densities on C API side
+                    else:
+                        for matpy in materials:
+                            matpy_nuc_dict = matpy.get_nuclide_atom_densities()
+                            if matpy.id == int(mat):
+                                for nuc in all_nuc:
+                                    val = matpy_nuc_dict.get(str(nuc),0)
+                                    # If nuclide is zero, do not add to the problem.
+                                    if val > 0: # 1 atom/barn-cm
+                                        nuclides.append(nuc)
+                                        densities.append(val)
+                                break
                     mat_internal = openmc.lib.materials[int(mat)]
                     mat_internal.set_densities(nuclides, densities)
         # if M == model.settings.inactive:
