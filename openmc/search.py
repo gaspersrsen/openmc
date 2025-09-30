@@ -270,8 +270,12 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
 
     """
     if mat_builder is not None:
-        ao_dict, nuclide_ao_fr_per_submat = get_ao_mix_materials(**mix_materials_args)
-        iso = list(ao_dict.keys())
+        mat_builder
+        iso = []
+        for mat in materials:
+            for nuc in mat.nuclides:
+                if nuc not in iso:
+                    iso += [nuc]
         
     if iso is None:
         raise ValueError("'iso' argument is empty")
