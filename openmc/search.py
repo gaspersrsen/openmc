@@ -213,23 +213,31 @@ def search_for_keff(model_builder, initial_guess=None, target=1.0,
 
 
 def critical_density_iteration(model, iso=None, batches=None, bracket=None, 
-                        materials=None, initial_value=None, target=1., perfer_all_xml=True, debug=False):
+                        materials=None, initial_value=None, target=1.,
+                        mat_builder=None, perfer_all_xml=True, debug=False):
     # TODO allow for change in number of neutrons and then return settings to previous values
+    # TODO allow mixing for multiple materials
+    # TODO CDI for neutron producing nuclides, Be, U, Pu,... Probably a new function
+    # TODO overwrite iso option in mix_materials
     """
     Runs a simulation where 'iso' nuclide values converge in such a way to obtain the desired k_eff.
+    This option assumes that flagged 'iso' nuclides are absorbers and do not produce neutrons by either fission or (n, xn) reactions.
+    For that use function: NOT YET DEVELOPED.
     Operator.model materials are updated in the process
     Optional initial value is the value given in your material building process, must be strictly bigger than 0.
     All 'iso' nuclides are multiplied by the same scaling factor.
     Higher (>10 000) particle numbers in 'openmc.settings' are recommended for more accurate simulation.
-    Atleast 30 batches are required for adequate convergence, recommended >50.
+    Atleast 30 batches are required for adequate convergence, recommended >50 or roughly
+    sqrt(number of particles per batch) to achieve best results.
 
     .. versionadded:: 0.15.3
     
     Parameters
     ----------
     model: openmc.model, required
-    iso: array of str, required
+    iso: array of str, required or mat_builder is provided
         Nuclide name, ex. ["B10", "B11"]
+        Mat builder overwrites isotops provided by this option.
     batches: int, optional
         Number of inactive batches added to the begining of simulation where
         'iso' concentration converges.
@@ -241,10 +249,16 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     materials: materials in which nuclide concentrations are changed, optional
         Defaults to all materials.
     initial_value: float > 0, optional
-        Only used in first call, used for intermediate critical concentration message output.
+        Used in first call, used for intermediate critical concentration message output.
+        Required when mat_builder option is used
         Defaults to 1.0.
     target: float, optional
         Target k_eff, defaults to 1.0
+    mat_builder: function optional
+        Callable builder function, that returns a dictionary of isotope concentrations
+        ('nuclide':value in atoms/b-cm) for each flagged material.
+        It is called in each step of CDI.
+        When used 'initial_value' parameter is required.
     debug: Bool, optional
         Wether to print out batch number, tally results of each batch,
         batch k_absorption and current concentration.
@@ -255,6 +269,10 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     openmc.model.model, with updated critical density concentrations of flagged nuclides in flagged materials
 
     """
+    if mat_builder is not None:
+        ao_dict, nuclide_ao_fr_per_submat = get_ao_mix_materials(**mix_materials_args)
+        iso = list(ao_dict.keys())
+        
     if iso is None:
         raise ValueError("'iso' argument is empty")
     if initial_value is not None:
@@ -626,3 +644,12 @@ def get_wo_fraction(material):
         # print(key, value)
         new_dict2[key] = value/mat_dens
     return new_dict2
+
+def update_material(mat, nuc_dict):
+    for nuc in mat.nuclides:
+        mat.remove_nuclide(nuc)
+    for nuc, val in nuc_dict.items:
+        mat.add_nuclide(nuc, val)
+    nuc_dict2 = mat.get_nuclide_atom_densities()
+    mat_ao = np.sum(list(nuc_dict2.values()))
+    mat.set_density(mat_ao, 'atom/b-cm')
