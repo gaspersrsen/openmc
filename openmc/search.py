@@ -464,7 +464,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
 
             # Update densities on C API side
             if mat_builder is not None:
-                mat_builder(f*initial_value)
+                materials, nuc_fractions = mat_builder(f*initial_value)
             else:
                 for mat in openmc.lib.materials:
                     if materials is not None:
