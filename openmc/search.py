@@ -380,12 +380,13 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             P_fiss = curr_res[0][0][0][1]                               # Neutrons produced by fission (prompt and delayed)
             P_nxn = curr_res[0][0][2][1] - curr_res[0][0][3][1]         # Additional neutrons produced by (n,xn) reactions
             L_leak = (leak if leak > 0 else 0)                          # Neutron leakage fraction, very low, may happen to be negative due to floating point percision
-            L_abs = np.array(curr_res[0][0][1][1]) * (nuc_fractions if mat_builder is not None else 1)                                # Total neutron absorption
+            L_abs = curr_res[0][0][1][1]                                # Total neutron absorption
             # Total flagged nuclide absorption
             if materials is not None:
                 L_abs_nucs = np.sum(np.array(np.sum(curr_res[1], axis=0)).T, axis=1)[1]
             else:
-                L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
+                print("Abs on flagged nucs",curr_res[1][0])
+                L_abs_nucs = np.sum((np.array(curr_res[1][0]) * (nuc_fractions if mat_builder is not None else 1)).T, axis=1)[1]
             if L_abs_nucs == 0:
                 if not skip_steps: print(f"No nuclide absorption tallied, skipping from step {M} onwards")
                 skip_steps = True
