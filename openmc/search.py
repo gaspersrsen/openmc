@@ -557,13 +557,29 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao')
             target_nucs[mat] = element_nucs
         
         norm_wgt = []
+        def nuc_average_molar_mass(mat_nuc_dict):
+            # Using the sum of specified atomic or weight amounts as a basis, sum
+            # the mass and moles of the material
+            mass = 0.
+            moles = 0.
+            for (nuc,val) in mat_nuc_dict.items():
+                if nuc.percent_type == 'ao':
+                    mass += val * openmc.data.atomic_mass(nuc)
+                    moles += val
+                else:
+                    moles +=val / openmc.data.atomic_mass(nuc)
+                    mass += val
+
+            # Compute and return the molar mass
+            return mass / moles
         def process_new_frac_target(mat, p_t):
             if not target_nucs[mat]:
                 return 1
             if p_t == 'ao':
                 return 1 / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
             elif p_t == 'wo':
-                return mat.get_mass_density() / np.sum([mat.get_mass_density(nuc) for nuc in target_nucs[mat]])
+                #return mat.get_mass_density() / np.sum([mat.get_mass_density(nuc) for nuc in target_nucs[mat]])
+                return 1 / np.sum([wo_fr_mats[mat][nuc] for nuc in target_nucs[mat]])
             elif p_t == 'vo':
                 return 1 / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
                 
