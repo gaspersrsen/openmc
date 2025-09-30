@@ -270,7 +270,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
 
     """
     if mat_builder is not None:
-        mat_builder
+        mat_builder(initial_value)
         iso = []
         for mat in materials:
             for nuc in mat.nuclides:
