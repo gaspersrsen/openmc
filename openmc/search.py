@@ -663,4 +663,5 @@ def update_material(mat, nuc_dict):
         mat.add_nuclide(nuc, val)
     nuc_dict2 = mat.get_nuclide_atom_densities()
     mat_ao = np.sum(list(nuc_dict2.values()))
-    mat.set_density(mat_ao, units='atom/b-cm')
+    print(mat_ao)
+    mat.set_density(mat_ao)
