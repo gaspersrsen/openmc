@@ -282,7 +282,8 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             for nuc in mat.nuclides:
                 if nuc.name not in iso:
                     iso += [nuc.name]
-        
+    else:
+        nuc_fractions = np.array([[1 for i in iso] for m in materials])
     if iso is None:
         raise ValueError("'iso' argument is empty")
     if initial_value is not None:
@@ -382,21 +383,30 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             L_leak = (leak if leak > 0 else 0)                          # Neutron leakage fraction, very low, may happen to be negative due to floating point percision
             L_abs = curr_res[0][0][1][1]                                # Total neutron absorption
             # Total flagged nuclide absorption
-            if materials is not None:
-                print("abs flagged nucs tally", curr_res[1],np.array(curr_res[1])[:,:,1])
-                print("flagged nucs fracs",np.array(nuc_fractions))
-                print("flagged nucs abs", np.array(curr_res[1])[:,:,1] * np.array(nuc_fractions))
-                L_abs_nucs = np.sum(np.array(curr_res[1][2])[:,1] * np.array(nuc_fractions))
-            else:
-                L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
+            # if materials is not None:
+            #     print("abs flagged nucs tally", curr_res[1],np.array(curr_res[1])[:,:,1])
+            #     print("flagged nucs fracs",np.array(nuc_fractions))
+            #     print("flagged nucs abs", np.array(curr_res[1])[:,:,1] * np.array(nuc_fractions))
+            #     L_abs_nucs = np.sum(np.array(curr_res[1][2])[:,1] * np.array(nuc_fractions))
+            # else:
+            #     L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
+
+            N_nucs = len(iso)
+            P_fiss_nucs = 0
+            P_nxn_nucs = 0
+            L_abs_nucs = 0
+            for index, mat in enumerate(materials):
+                Res_nucs_mat = np.array(curr_res[1][i])
+                
+                N_nucs = len(iso)
+                P_fiss_nucs += np.sum((Res_nucs_mat[0::N_nucs,1]) * np.array(nuc_fractions[index]))
+                P_nxn_nucs += np.sum((Res_nucs_mat[2::N_nucs,1] - Res_nucs_mat[3::N_nucs,1]) * np.array(nuc_fractions[index]))
+                L_abs_nucs += np.sum((Res_nucs_mat[1::N_nucs,1]) * np.array(nuc_fractions[index]))
+            
             if L_abs_nucs == 0:
                 if not skip_steps: print(f"No nuclide absorption tallied, skipping from step {M} onwards")
                 skip_steps = True
                 continue
-            
-            P_fiss_nucs = curr_res[0][1][0][1]                               # Neutrons produced by fission (prompt and delayed)
-            P_nxn_nucs = curr_res[0][1][2][1] - curr_res[0][1][3][1]         # Additional neutrons produced by (n,xn) reactions
-            L_leak_nucs = (leak if leak > 0 else 0)                          # Neutron leakage fraction, very low, may happen to be negative due to floating point percision
             
             # Predict concentration change
             top = (P_fiss/target + P_nxn) - (L_abs - L_abs_nucs) - (P_fiss + P_nxn) * L_leak
