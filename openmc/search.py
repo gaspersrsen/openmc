@@ -312,7 +312,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
         if iso is None:
             raise ValueError("'iso' argument in conc_args is empty")
         tallyTest2.nuclides = iso
-        tallyTest2.scores = ["absorption"]
+        tallyTest2.scores = ["nu-fission", "absorption", "nu-scatter", "scatter"]
         if materials is not None:
             tallyTest2.filters = [MaterialFilter(materials,filter_id=8888)]
         model.tallies += [tallyTest2]
@@ -386,7 +386,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 print("abs flagged nucs tally", curr_res[1],np.array(curr_res[1])[:,:,1])
                 print("flagged nucs fracs",np.array(nuc_fractions))
                 print("flagged nucs abs", np.array(curr_res[1])[:,:,1] * np.array(nuc_fractions))
-                L_abs_nucs = np.sum(np.array(curr_res[1])[:,:,1] * np.array(nuc_fractions))
+                L_abs_nucs = np.sum(np.array(curr_res[1][2])[:,1] * np.array(nuc_fractions))
             else:
                 L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
             if L_abs_nucs == 0:
@@ -394,9 +394,15 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 skip_steps = True
                 continue
             
+            P_fiss_nucs = curr_res[0][1][0][1]                               # Neutrons produced by fission (prompt and delayed)
+            P_nxn_nucs = curr_res[0][1][2][1] - curr_res[0][1][3][1]         # Additional neutrons produced by (n,xn) reactions
+            L_leak_nucs = (leak if leak > 0 else 0)                          # Neutron leakage fraction, very low, may happen to be negative due to floating point percision
+            
             # Predict concentration change
             top = (P_fiss/target + P_nxn) - (L_abs - L_abs_nucs) - (P_fiss + P_nxn) * L_leak
             bot = L_abs_nucs
+            # top = ((P_fiss - P_fiss_nucs)/target + P_nxn - P_nxn_nucs) - (L_abs - L_abs_nucs) - (P_fiss - P_fiss_nucs + P_nxn - P_nxn_nucs) * L_leak
+            # bot = L_abs_nucs - P_fiss_nucs/target + (P_fiss_nucs + P_nxn_nucs) * L_leak
             g_est = top / bot
             # Optimal following (Kalman filter for narrowing to a scalar value):
             if M == starting_batch: #Start the iteration at step 10, handled before, this is only K.f initialization
