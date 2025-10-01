@@ -453,6 +453,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 if g_est <= 0.1: g_est = 0.1
                 elif g_est >= 2.5: g_est = 2.5
                 p_measure = 1e16
+                sig_g_est = p_measure**(1/2)
             
             if p_n >= 1e16 and p_measure >= 1e16:
                 pass
@@ -482,7 +483,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 print(f"Batch estimated correction - 1: {g_est-1}")
                 print(f"Batch filtered correction - 1: {g-1}")
                 # print(f"Search algorithm internal tally:\n{curr_res}")
-                print(f"Correction coefficients [P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs, P_fiss_nuc, P_nxn_nucs, L_abs_nucs]: {P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs, P_fiss_nucs, P_nxn_nucs,L_abs_nucs}")
+                print(f"Correction coefficients [P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs, P_fiss_nuc, P_nxn_nucs]: {P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs, P_fiss_nucs, P_nxn_nucs}")
                 print(f"Sigmas: [sig1, sig2, sig3]: {sig1, sig2, sig3}")
                 if initial_value:
                     print(f"Batch estimated concentration: {f*initial_value} +/- {f*initial_value*(p**(1/2))}")
