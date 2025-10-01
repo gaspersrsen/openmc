@@ -417,6 +417,8 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             top = ((P_fiss - P_fiss_nucs)/target + P_nxn - P_nxn_nucs) - (L_abs - L_abs_nucs) - (P_fiss - P_fiss_nucs + P_nxn - P_nxn_nucs) * L_leak
             bot = L_abs_nucs - P_fiss_nucs/target - P_nxn_nucs + (P_fiss_nucs + P_nxn_nucs) * L_leak
             g_est = top / bot
+            print(f"top: {top}, bot: {bot}")
+            print(f"Correction coefficients [P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs, P_fiss_nuc, P_nxn_nucs, L_abs_nucs]: {P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs, P_fiss_nucs, P_nxn_nucs,L_abs_nucs}")
             # Optimal following (Kalman filter for narrowing to a scalar value):
             if M == starting_batch: #Start the iteration at step 10, handled before, this is only K.f initialization
                 x = 1
