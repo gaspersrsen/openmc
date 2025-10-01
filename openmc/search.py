@@ -536,14 +536,13 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     for mat in openmc.lib.materials:
         all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
         all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
-        i = 0
-        for matPY in model.materials:#TODO check if model.materials[i] or model.materials[matPY.id]
+        for i, matPY in enumerate(model.materials):
             if matPY.id == int(mat):
+                print(matPY)
                 for nuc in all_nuc:
                     val = (all_dens[all_nuc==str(nuc)])[0]
                     model.materials[i].remove_nuclide(nuc)
                     model.materials[i].add_nuclide(nuc,val)
-            i += 1
     if not perfer_all_xml:
         model.export_to_xml()
     else:
