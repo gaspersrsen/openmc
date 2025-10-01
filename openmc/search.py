@@ -399,7 +399,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             print(materials)
             print(enumerate(materials))
             for index, mat in enumerate(materials):
-                Res_nucs_mat = np.array(curr_res[1][i])
+                Res_nucs_mat = np.array(curr_res[1][index])
                 
                 N_nucs = len(iso)
                 P_fiss_nucs += np.sum((Res_nucs_mat[0::N_nucs,1]) * np.array(nuc_fractions[index]))
@@ -415,7 +415,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             # top = (P_fiss/target + P_nxn) - (L_abs - L_abs_nucs) - (P_fiss + P_nxn) * L_leak
             # bot = L_abs_nucs
             top = ((P_fiss - P_fiss_nucs)/target + P_nxn - P_nxn_nucs) - (L_abs - L_abs_nucs) - (P_fiss - P_fiss_nucs + P_nxn - P_nxn_nucs) * L_leak
-            bot = L_abs_nucs - P_fiss_nucs/target + (P_fiss_nucs + P_nxn_nucs) * L_leak
+            bot = L_abs_nucs - P_fiss_nucs/target - P_nxn_nucs + (P_fiss_nucs + P_nxn_nucs) * L_leak
             g_est = top / bot
             # Optimal following (Kalman filter for narrowing to a scalar value):
             if M == starting_batch: #Start the iteration at step 10, handled before, this is only K.f initialization
