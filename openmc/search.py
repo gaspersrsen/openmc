@@ -537,7 +537,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     return model
 
 
-def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao'):
+def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao', return_wgts=False):
     """Mix materials together based on atom, weight, or volume fractions
 
     .. versionadded:: 0.15.3
@@ -648,8 +648,10 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao')
         for nuc, atoms_per_bcm in mat.get_nuclide_atom_densities().items():
             nuc_per_bmc = wgt * atoms_per_bcm
             nuclide_ao_fr_per_submat[nuc][index] = nuc_per_bmc / nuclides_per_bmc[nuc]
-            
-    return nuclides_per_bmc, nuclide_ao_fr_per_submat, wgts
+    if return_wgts:        
+        return nuclides_per_bmc, nuclide_ao_fr_per_submat, wgts
+    else:        
+        return nuclides_per_bmc, nuclide_ao_fr_per_submat
  
 
 def get_ao_fraction(material):
