@@ -463,11 +463,14 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 # print(f"Search algorithm internal tally:\n{curr_res}")
                 print(f"Correction coefficients [P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs]: {P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs}")
                 print(f"Sigmas: [sig1, sig2, sig3]: {sig1, sig2, sig3}")
-                print(f"Batch estimated concentration: {f*initial_value} +/- {f*initial_value*(p**(1/2))}")
+                if initial_value:
+                    print(f"Batch estimated concentration: {f*initial_value} +/- {f*initial_value*(p**(1/2))}")
+                else:
+                    print(f"Batch estimated multiplier: {f} +/- {f*(p**(1/2))}")
 
             # Update densities on C API side
             if mat_builder is not None:
-                materials, nuc_fractions = mat_builder(f*initial_value)
+                materials, nuc_fractions = mat_builder(f)
             else:
                 for mat in openmc.lib.materials:
                     if materials is not None:
