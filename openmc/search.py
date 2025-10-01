@@ -648,7 +648,8 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao')
         for nuc, atoms_per_bcm in mat.get_nuclide_atom_densities().items():
             nuc_per_bmc = wgt * atoms_per_bcm
             nuclide_ao_fr_per_submat[nuc][index] = nuc_per_bmc / nuclides_per_bmc[nuc]
-    return nuclides_per_bmc, nuclide_ao_fr_per_submat
+            
+    return nuclides_per_bmc, nuclide_ao_fr_per_submat, wgts
  
 
 def get_ao_fraction(material):
@@ -673,6 +674,7 @@ def get_wo_fraction(material):
         # print(key, value)
         new_dict2[key] = value/mat_dens
     return new_dict2
+
 
 def update_material(mat, nuc_dict):
     nuc_remove = []
