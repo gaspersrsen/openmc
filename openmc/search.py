@@ -395,6 +395,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             P_fiss_nucs = 0
             P_nxn_nucs = 0
             L_abs_nucs = 0
+            print(curr_res[1])
             print(materials)
             print(enumerate(materials))
             for index, mat in enumerate(materials):
