@@ -385,8 +385,8 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             if materials is not None:
                 print("abs flagged nucs tally", curr_res[1],np.array(curr_res[1])[:,:,1])
                 print("flagged nucs fracs",np.array(nuc_fractions))
-                print("flagged nucs abs", np.array(curr_res[1])[1:,:,1] * np.array(nuc_fractions))
-                L_abs_nucs = np.sum(np.array(curr_res[1])[1:,:,1] * np.array(nuc_fractions))
+                print("flagged nucs abs", np.array(curr_res[1])[:,:,1] * np.array(nuc_fractions))
+                L_abs_nucs = np.sum(np.array(curr_res[1])[:,:,1] * np.array(nuc_fractions))
             else:
                 L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
             if L_abs_nucs == 0:
