@@ -505,6 +505,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                                         densities.append(val)
                                 break
                     mat_internal = openmc.lib.materials[int(mat)]
+                    mat_internal.set_density(np.sum(densities))
                     mat_internal.set_densities(nuclides, densities)
         # if M == model.settings.inactive:
         #     openmc.lib.reset()
