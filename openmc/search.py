@@ -523,6 +523,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                         for matpy in materials:
                             matpy_nuc_dict = matpy.get_nuclide_atom_densities()
                             if matpy.id == int(mat):
+                                print(*zip(mat.nuclides, mat.densities))
                                 for nuc in all_nuc:
                                     val = matpy_nuc_dict.get(str(nuc),0)
                                     # If nuclide is zero, do not add to the problem.
@@ -533,6 +534,8 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                     mat_internal = openmc.lib.materials[int(mat)]
                     mat_internal.set_density(np.sum(densities))
                     mat_internal.set_densities(nuclides, densities)
+                    print(*zip(mat_internal.nuclides, mat_internal.densities))
+                    print(*zip(mat.nuclides, mat.densities))
         # if M == model.settings.inactive:
         #     openmc.lib.reset()
     openmc.lib.simulation_finalize()
