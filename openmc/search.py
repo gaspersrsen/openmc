@@ -522,6 +522,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                     else:
                         for matpy in materials:
                             matpy_nuc_dict = matpy.get_nuclide_atom_densities()
+                            print("Mat change ids:",matpy.id,int(mat),matpy.id == int(mat))
                             if matpy.id == int(mat):
                                 print(*zip(mat.nuclides, mat.densities))
                                 for nuc in all_nuc:
