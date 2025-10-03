@@ -395,12 +395,8 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             P_fiss_nucs = 0
             P_nxn_nucs = 0
             L_abs_nucs = 0
-            print(curr_res[1])
-            print(materials)
-            print(enumerate(materials))
             for index, mat in enumerate(materials):
                 Res_nucs_mat = np.array(curr_res[1][index])
-                
                 N_nucs = len(iso)
                 P_fiss_nucs += np.sum((Res_nucs_mat[0::N_nucs,1]) * np.array(nuc_fractions[index]))
                 P_nxn_nucs += np.sum((Res_nucs_mat[2::N_nucs,1] - Res_nucs_mat[3::N_nucs,1]) * np.array(nuc_fractions[index]))
@@ -417,8 +413,6 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             top = ((P_fiss - P_fiss_nucs)/target + P_nxn - P_nxn_nucs) - (L_abs - L_abs_nucs) - (P_fiss - P_fiss_nucs + P_nxn - P_nxn_nucs) * L_leak
             bot = L_abs_nucs - P_fiss_nucs/target - P_nxn_nucs + (P_fiss_nucs + P_nxn_nucs) * L_leak
             g_est = top / bot
-            print(f"top: {top}, bot: {bot}")
-            print(f"Correction coefficients [P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs, P_fiss_nuc, P_nxn_nucs, L_abs_nucs]: {P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs, P_fiss_nucs, P_nxn_nucs,L_abs_nucs}")
             # Optimal following (Kalman filter for narrowing to a scalar value):
             if M == starting_batch: #Start the iteration at step 10, handled before, this is only K.f initialization
                 x = 1
@@ -523,7 +517,6 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                     for matpy in materials:
                         matpy_nuc_dict = matpy.get_nuclide_atom_densities()
                         if matpy.id == int(mat):
-                            print(*zip(mat_internal.nuclides, mat_internal.densities))
                             for nuc in all_nuc:
                                 val = matpy_nuc_dict.get(str(nuc),0)
                                 # If nuclide is zero, do not add to the problem.
@@ -533,7 +526,6 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                             break
                 mat_internal.set_density(np.sum(densities))
                 mat_internal.set_densities(nuclides, densities)
-                print(*zip(mat_internal.nuclides, mat_internal.densities))
         # if M == model.settings.inactive:
         #     openmc.lib.reset()
     openmc.lib.simulation_finalize()
@@ -544,7 +536,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
         all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
         for i, matPY in enumerate(model.materials):
             if matPY.id == int(mat):
-                print(matPY)
+                # print(matPY)
                 for nuc in all_nuc:
                     val = (all_dens[all_nuc==str(nuc)])[0]
                     model.materials[i].remove_nuclide(nuc)
