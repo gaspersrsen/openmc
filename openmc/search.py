@@ -276,7 +276,11 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
 
     """
     if mat_builder is not None:
-        materials, nuc_fractions = mat_builder(1)
+        try:
+            materials, nuc_fractions = mat_builder(1)
+        except:
+            materials = mat_builder(1)
+            nuc_fractions = np.array([[1 for i in iso] for m in materials])
         iso = []
         for mat in materials:
             for nuc in mat.nuclides:
@@ -354,25 +358,30 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     openmc.lib.simulation_init()
     # Run simulation
     for _ in openmc.lib.iter_batches():
+        if M > model.settings.inactive: continue
         M = openmc.lib.current_batch()
-        if M < starting_batch: continue
+        # print(M)
+        talliez = copy.copy(openmc.lib.tallies)
+        curr_res = []
+        if M == 1:
+            # talliez = copy.copy(openmc.lib.tallies)
+            for tally_ in talliez.values():
+                if tally_.id in [8888,8889]:
+                    prev_res += [tally_.results - tally_.results]
         # Only change concentrations during the additional batches
-        if M <= starting_batch + batches and not skip_steps:
-            if debug is True: print(f"Batch: {M}")
+        elif not skip_steps:
             #k = openmc.lib.keff()[0]
-            talliez = copy.copy(openmc.lib.tallies)
-            curr_res = []
-            if M == starting_batch:
-                for tally_ in talliez.values():
-                    if tally_.id in [8888,8889]:
-                        prev_res += [tally_.results - tally_.results]
+            # talliez = copy.copy(openmc.lib.tallies)
+            # curr_res = []
             i=0
             for tally_ in talliez.values():
                 if tally_.id in [8888,8889]:
                     curr_res += [tally_.results - prev_res[i]]
                     prev_res[i] = copy.copy(tally_.results)
                     i+=1
-                    
+        if M <= starting_batch + batches and not skip_steps:
+            if M < starting_batch: continue
+            if debug is True: print(f"Batch: {M}")
             # Tally results are added (summed) in each batch - measurement is the difference
             glob_tall = copy.copy(openmc.lib.global_tallies())
             leak = glob_tall[3][0]*M - prev_leak
@@ -395,16 +404,14 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             # else:
             #     L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
 
-            N_nucs = len(iso)
             P_fiss_nucs = 0
             P_nxn_nucs = 0
             L_abs_nucs = 0
             for index, mat in enumerate(materials):
                 Res_nucs_mat = np.array(curr_res[1][index])
-                N_nucs = len(iso)
-                P_fiss_nucs += np.sum((Res_nucs_mat[0::N_nucs,1]) * np.array(nuc_fractions[index]))
-                P_nxn_nucs += np.sum((Res_nucs_mat[2::N_nucs,1] - Res_nucs_mat[3::N_nucs,1]) * np.array(nuc_fractions[index]))
-                L_abs_nucs += np.sum((Res_nucs_mat[1::N_nucs,1]) * np.array(nuc_fractions[index]))
+                P_fiss_nucs += np.sum((Res_nucs_mat[0::4,1]) * np.array(nuc_fractions[index]))
+                P_nxn_nucs += np.sum((Res_nucs_mat[2::4,1] - Res_nucs_mat[3::4,1]) * np.array(nuc_fractions[index]))
+                L_abs_nucs += np.sum((Res_nucs_mat[1::4,1]) * np.array(nuc_fractions[index]))
             P_fiss_nucs = P_fiss_nucs if P_fiss_nucs > 0 else 0
             P_nxn_nucs = P_nxn_nucs if P_nxn_nucs > 0 else 0
             L_abs_nucs = L_abs_nucs if L_abs_nucs > 0 else 0
@@ -440,7 +447,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 #Division by target must not influence relative errors
                 rel_err_top = (np.abs(sig1) + np.abs(sig2) + np.abs(sig3)) / top
                 rel_err_bot = rel_err_MC * np.sqrt(loss * L_abs_nucs) / bot
-                rel_err_g_est = (rel_err_top + rel_err_bot)  * (1 + (100*np.exp(-(M - starting_batch)**2 / (batches / 6)) if (M - starting_batch) < (batches / 3) else 0)) #Slowly relax uncertainty, as first are inaccurate, 2/3 of batches do not extra uncertainty, this improves convergence when initial guess is bad, but increases final uncertainty
+                rel_err_g_est = (rel_err_top + rel_err_bot) * (1 + (100*np.exp(-(M - starting_batch)**2 / (batches / 6)) if (M - starting_batch) < (batches / 3) else 0)) #Slowly relax uncertainty, as first are inaccurate, 2/3 of batches do not extra uncertainty, this improves convergence when initial guess is bad, but increases final uncertainty
                 sig_g_est = f_prev * g_est * rel_err_g_est
                 p_measure = sig_g_est**2
                 
