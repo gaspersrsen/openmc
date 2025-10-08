@@ -358,8 +358,8 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     openmc.lib.simulation_init()
     # Run simulation
     for _ in openmc.lib.iter_batches():
-        if M > model.settings.inactive: continue
         M = openmc.lib.current_batch()
+        if M > model.settings.inactive: continue
         # print(M)
         talliez = copy.copy(openmc.lib.tallies)
         curr_res = []
