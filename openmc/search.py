@@ -433,7 +433,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 p_n = 1e16
                 p_measure = 1e16
             if (g_est >= 0.1 and g_est <= 10.0):
-                rel_err_MC = 1/np.sqrt(model.settings.particles)
+                rel_err_MC = 1/np.sqrt(model.settings.particles * (model.settings.generations_per_batch if model.settings.generations_per_batch is not None else 1))
                 prod = P_fiss + P_nxn
                 loss = L_abs + prod * L_leak
                 # rel_err = sqrt(1/N_part_tally) = 1/sqrt(N_tot) * sqrt(N_tot/N_part_tally) = rel_err_MC * sqrt(N_tot/N_part_tally) = rel_err_MC * sqrt(tot_tally/part_tally)
