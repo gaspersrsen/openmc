@@ -439,7 +439,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 # rel_err = sqrt(1/N_part_tally) = 1/sqrt(N_tot) * sqrt(N_tot/N_part_tally) = rel_err_MC * sqrt(N_tot/N_part_tally) = rel_err_MC * sqrt(tot_tally/part_tally)
                 # Sig = part_tally * rel_err = part_tally * rel_err_MC * sqrt(tot/part_tally) = rel_err_MC * sqrt(tot*part_tally)
                 sig1 = rel_err_MC * (np.sqrt(prod * P_fiss)/target + np.sqrt(prod * P_nxn)) #sig for (P_fiss + P_nxn)/target
-                sig2 = rel_err_MC * (np.sqrt(loss * L_abs) + np.sqrt(loss * L_abs_nucs) ) #sig for (L_abs - L_abs_nucs)
+                sig2 = rel_err_MC * (0*np.sqrt(loss * L_abs) + np.sqrt(loss * L_abs_nucs) ) #sig for (L_abs - L_abs_nucs) # L_abs + L_leak = 1 (+ P_nxn) beacuse k = (P_fiss - P_nxn) / (L_abs + L_leak - P_nxn) that is why sigma_loss must be 0, because all neutrons are either abosrbed or escape the reactor
                 #logic: prod = loss = abs + leak; leak = prod - abs
                 #sig_leak = rel_err_MC*(np.sqrt(prod/P_fiss) + np.sqrt(prod/P_nxn)) + rel_err_MC*np.sqrt(loss/L_abs) #sig for L_leak
                 #sig3 = (sig1/prod + sig_leak/loss) * prod * L_leak  #sig for (P_fiss + P_nxn)/target * L_leak; Sig = L_leak * prod * (rel_err(prod) + rel_err(L_leak)) / target
@@ -447,7 +447,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 #Division by target must not influence relative errors
                 rel_err_top = (np.abs(sig1) + np.abs(sig2) + np.abs(sig3)) / top
                 rel_err_bot = rel_err_MC * np.sqrt(loss * L_abs_nucs) / bot
-                rel_err_g_est = (rel_err_top + rel_err_bot) * (1 + (100*np.exp(-(M - starting_batch)**2 / (batches / 6)) if (M - starting_batch) < (batches / 3) else 0)) #Slowly relax uncertainty, as first are inaccurate, 2/3 of batches do not extra uncertainty, this improves convergence when initial guess is bad, but increases final uncertainty
+                rel_err_g_est = (rel_err_top + rel_err_bot) * (1 + (100*np.exp(-(M - starting_batch) / batches * 3 * np.log(100)) - 1 if (M - starting_batch) < (batches / 3) else 0)) #Slowly relax uncertainty, as first are inaccurate, 2/3 of batches do not extra uncertainty, this improves convergence when initial guess is bad, but increases final uncertainty
                 sig_g_est = f_prev * g_est * rel_err_g_est
                 p_measure = sig_g_est**2
                 
@@ -493,6 +493,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 if g_est > 0.1 and g_est < 2.5:
                     print(f"Correction coefficients [P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs, P_fiss_nuc, P_nxn_nucs]: {P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs, P_fiss_nucs, P_nxn_nucs}")
                     print(f"Sigmas: [sig1, sig2, sig3]: {sig1, sig2, sig3}")
+                    print(f"Relative errors top, bo: {rel_err_bot,rel_err_g_est}")
                     if initial_value:
                         print(f"Batch estimated concentration: {f*initial_value} +/- {f*initial_value*(p**(1/2))}")
                     else:
