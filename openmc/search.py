@@ -366,7 +366,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
         if M == 1:
             # talliez = copy.copy(openmc.lib.tallies)
             for tally_ in talliez.values():
-                if tally_.id in [8888,8889]:
+                if tally_.id == 8888 or tally_.id == 8889:
                     prev_res += [tally_.results - tally_.results]
         # Only change concentrations during the additional batches
         elif not skip_steps:
@@ -375,7 +375,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             # curr_res = []
             i=0
             for tally_ in talliez.values():
-                if tally_.id in [8888,8889]:
+                if tally_.id == 8888 or tally_.id == 8889:
                     curr_res += [tally_.results - prev_res[i]]
                     prev_res[i] = copy.copy(tally_.results)
                     i+=1
@@ -469,7 +469,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 if debug is True: print(f"Propagating uncertainty: p_prev {p}, p_measure {p_measure}, p_next {p_n}")
             z = f_prev * g_est
             
-            if bracket is not None:
+            if bracket is not None: #TODO using builder function
                 if z*initial_value > bracket[1]:
                     z = bracket[1]/initial_value
                 elif z*initial_value < bracket[0]:
@@ -493,7 +493,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 if g_est > 0.1 and g_est < 2.5:
                     print(f"Correction coefficients [P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs, P_fiss_nuc, P_nxn_nucs]: {P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs, P_fiss_nucs, P_nxn_nucs}")
                     print(f"Sigmas: [sig1, sig2, sig3]: {sig1, sig2, sig3}")
-                    print(f"Relative errors top, bo: {rel_err_bot,rel_err_g_est}")
+                    print(f"Relative errors top, bot, combined: {rel_err_top,rel_err_bot, rel_err_g_est}")
                     if initial_value:
                         print(f"Batch estimated concentration: {f*initial_value} +/- {f*initial_value*(p**(1/2))}")
                     else:
@@ -527,7 +527,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                             val *= g
                             nuclides.append(nuc)
                             densities.append(val)
-                else:
+                else: #Check cool in not in materials
                     for matpy in materials:
                         matpy_nuc_dict = matpy.get_nuclide_atom_densities()
                         if matpy.id == int(mat):
@@ -569,7 +569,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     return model
 
 
-def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao', return_wgts=False):
+def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao', return_wgts=False): #TODO when returning weights, allow for wo replacement, another weight by materials density
     """Mix materials together based on atom, weight, or volume fractions
 
     .. versionadded:: 0.15.3

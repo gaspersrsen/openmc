@@ -507,11 +507,11 @@ class CoupledOperator(OpenMCOperator):
                 curr_res = []
                 if M == 10:
                     for tally_ in talliez.values():
-                        if tally_.id in [8888,8889]:
+                        if tally_.id == 8888 or tally_.id == 8889:
                             prev_res += [tally_.results - tally_.results]
                 i=0
                 for tally_ in talliez.values():
-                    if tally_.id in [8888,8889]:
+                    if tally_.id == 8888 or tally_.id == 8889:
                         curr_res += [tally_.results - prev_res[i]]
                         prev_res[i] = copy.copy(tally_.results)
                         i+=1
