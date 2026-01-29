@@ -38,11 +38,9 @@ Each ``<surface>`` element can have the following attributes or sub-elements:
 
   :boundary:
      The boundary condition for the surface. This can be "transmission",
-     "vacuum", "reflective", or "periodic". Periodic boundary conditions can
-     only be applied to x-, y-, and z-planes. Only axis-aligned periodicity is
-     supported, i.e., x-planes can only be paired with x-planes. Specify which
-     planes are periodic and the code will automatically identify which planes
-     are paired together.
+     "vacuum", "reflective", or "periodic". Specify which planes are
+     periodic and the code will automatically identify which planes are
+     paired together.
 
     *Default*: "transmission"
 
@@ -318,9 +316,10 @@ the following attributes or sub-elements:
     *Default*: None
 
   :orientation:
-    The orientation of the hexagonal lattice. The string "x" indicates that two
-    sides of the lattice are parallel to the x-axis, whereas the string "y"
-    indicates that two sides are parallel to the y-axis.
+    The orientation of the hexagonal lattice. The string "x" indicates that each
+    lattice element has two faces that are perpendicular to the x-axis, whereas
+    the string "y" indicates that each lattice element has two faces that are
+    perpendicular to the y-axis.
 
     *Default*: "y"
 
@@ -407,13 +406,33 @@ Each ``<dagmc_universe>`` element can have the following attributes or sub-eleme
 
     *Default*: None
 
+  :material_overrides:
+    This element contains information on material overrides to be applied to the
+    DAGMC universe. It has the following attributes and sub-elements:
 
-  .. note:: A geometry.xml file containing only a DAGMC model for a file named `dagmc.h5m` (no CSG)
-            looks as follows
+    :cell:
+      Material override information for a single cell. It contains the following
+      attributes and sub-elements:
 
-            .. code-block:: xml
+      :id:
+        The cell ID in the DAGMC geometry for which the material override will
+        apply.
 
-              <?xml version='1.0' encoding='utf-8'?>
-              <geometry>
-                <dagmc_universe filename="dagmc.h5m" id="1" />
-              </geometry>
+      :materials:
+        A list of material IDs that will apply to instances of the cell. If the
+        list contains only one ID, it will replace the original material
+        assignment of all instances of the DAGMC cell. If the list contains more
+        than one material, each material ID of the list will be assigned to the
+        various instances of the DAGMC cell.
+
+    *Default*: None
+
+.. note:: A geometry.xml file containing only a DAGMC model for a file named
+          `dagmc.h5m` (no CSG) looks as follows:
+
+    .. code-block:: xml
+
+        <?xml version='1.0' encoding='utf-8'?>
+        <geometry>
+          <dagmc_universe filename="dagmc.h5m" id="1" />
+        </geometry>

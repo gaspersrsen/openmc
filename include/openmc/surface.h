@@ -2,6 +2,7 @@
 #define OPENMC_SURFACE_H
 
 #include <limits> // For numeric_limits
+#include <set>
 #include <string>
 #include <unordered_map>
 
@@ -38,7 +39,6 @@ public:
   int id_;                           //!< Unique ID
   std::string name_;                 //!< User-defined name
   unique_ptr<BoundaryCondition> bc_; //!< Boundary condition
-  GeometryType geom_type_;           //!< Geometry type indicator (CSG or DAGMC)
   bool surf_source_ {false}; //!< Activate source banking for the surface?
 
   explicit Surface(pugi::xml_node surf_node);
@@ -63,7 +63,7 @@ public:
     Position r, Direction u, GeometryState* p = nullptr) const;
 
   virtual Direction diffuse_reflect(
-    Position r, Direction u, uint64_t* seed, GeometryState* p = nullptr) const;
+    Position r, Direction u, uint64_t* seed) const;
 
   //! Evaluate the equation describing the surface.
   //!
@@ -91,14 +91,17 @@ public:
   //! Get the BoundingBox for this surface.
   virtual BoundingBox bounding_box(bool /*pos_side*/) const { return {}; }
 
+  /* Must specify if this is a CSG or DAGMC-type surface. Only
+   * the DAGMC surface should return the DAG type geometry, so
+   * by default, this returns the CSG. The main difference is that
+   * if the geom_type is found to be DAG in the geometry handling code,
+   * some DAGMC-specific operations get carried out like resetting
+   * the particle's intersection history when necessary.
+   */
+  virtual GeometryType geom_type() const { return GeometryType::CSG; }
+
 protected:
   virtual void to_hdf5_inner(hid_t group_id) const = 0;
-};
-
-class CSGSurface : public Surface {
-public:
-  explicit CSGSurface(pugi::xml_node surf_node);
-  CSGSurface();
 };
 
 //==============================================================================
@@ -107,7 +110,7 @@ public:
 //! The plane is described by the equation \f$x - x_0 = 0\f$
 //==============================================================================
 
-class SurfaceXPlane : public CSGSurface {
+class SurfaceXPlane : public Surface {
 public:
   explicit SurfaceXPlane(pugi::xml_node surf_node);
   double evaluate(Position r) const override;
@@ -125,7 +128,7 @@ public:
 //! The plane is described by the equation \f$y - y_0 = 0\f$
 //==============================================================================
 
-class SurfaceYPlane : public CSGSurface {
+class SurfaceYPlane : public Surface {
 public:
   explicit SurfaceYPlane(pugi::xml_node surf_node);
   double evaluate(Position r) const override;
@@ -143,7 +146,7 @@ public:
 //! The plane is described by the equation \f$z - z_0 = 0\f$
 //==============================================================================
 
-class SurfaceZPlane : public CSGSurface {
+class SurfaceZPlane : public Surface {
 public:
   explicit SurfaceZPlane(pugi::xml_node surf_node);
   double evaluate(Position r) const override;
@@ -161,7 +164,7 @@ public:
 //! The plane is described by the equation \f$A x + B y + C z - D = 0\f$
 //==============================================================================
 
-class SurfacePlane : public CSGSurface {
+class SurfacePlane : public Surface {
 public:
   explicit SurfacePlane(pugi::xml_node surf_node);
   double evaluate(Position r) const override;
@@ -179,7 +182,7 @@ public:
 //! \f$(y - y_0)^2 + (z - z_0)^2 - R^2 = 0\f$
 //==============================================================================
 
-class SurfaceXCylinder : public CSGSurface {
+class SurfaceXCylinder : public Surface {
 public:
   explicit SurfaceXCylinder(pugi::xml_node surf_node);
   double evaluate(Position r) const override;
@@ -198,7 +201,7 @@ public:
 //! \f$(x - x_0)^2 + (z - z_0)^2 - R^2 = 0\f$
 //==============================================================================
 
-class SurfaceYCylinder : public CSGSurface {
+class SurfaceYCylinder : public Surface {
 public:
   explicit SurfaceYCylinder(pugi::xml_node surf_node);
   double evaluate(Position r) const override;
@@ -217,7 +220,7 @@ public:
 //! \f$(x - x_0)^2 + (y - y_0)^2 - R^2 = 0\f$
 //==============================================================================
 
-class SurfaceZCylinder : public CSGSurface {
+class SurfaceZCylinder : public Surface {
 public:
   explicit SurfaceZCylinder(pugi::xml_node surf_node);
   double evaluate(Position r) const override;
@@ -236,7 +239,7 @@ public:
 //! \f$(x - x_0)^2 + (y - y_0)^2 + (z - z_0)^2 - R^2 = 0\f$
 //==============================================================================
 
-class SurfaceSphere : public CSGSurface {
+class SurfaceSphere : public Surface {
 public:
   explicit SurfaceSphere(pugi::xml_node surf_node);
   double evaluate(Position r) const override;
@@ -255,7 +258,7 @@ public:
 //! \f$(y - y_0)^2 + (z - z_0)^2 - R^2 (x - x_0)^2 = 0\f$
 //==============================================================================
 
-class SurfaceXCone : public CSGSurface {
+class SurfaceXCone : public Surface {
 public:
   explicit SurfaceXCone(pugi::xml_node surf_node);
   double evaluate(Position r) const override;
@@ -273,7 +276,7 @@ public:
 //! \f$(x - x_0)^2 + (z - z_0)^2 - R^2 (y - y_0)^2 = 0\f$
 //==============================================================================
 
-class SurfaceYCone : public CSGSurface {
+class SurfaceYCone : public Surface {
 public:
   explicit SurfaceYCone(pugi::xml_node surf_node);
   double evaluate(Position r) const override;
@@ -291,7 +294,7 @@ public:
 //! \f$(x - x_0)^2 + (y - y_0)^2 - R^2 (z - z_0)^2 = 0\f$
 //==============================================================================
 
-class SurfaceZCone : public CSGSurface {
+class SurfaceZCone : public Surface {
 public:
   explicit SurfaceZCone(pugi::xml_node surf_node);
   double evaluate(Position r) const override;
@@ -309,7 +312,7 @@ public:
 //! 0\f$
 //==============================================================================
 
-class SurfaceQuadric : public CSGSurface {
+class SurfaceQuadric : public Surface {
 public:
   explicit SurfaceQuadric(pugi::xml_node surf_node);
   double evaluate(Position r) const override;
@@ -327,7 +330,7 @@ public:
 //! \f$(x-x_0)^2/B^2 + (\sqrt{(y-y_0)^2 + (z-z_0)^2} - A)^2/C^2 -1 \f$
 //==============================================================================
 
-class SurfaceXTorus : public CSGSurface {
+class SurfaceXTorus : public Surface {
 public:
   explicit SurfaceXTorus(pugi::xml_node surf_node);
   double evaluate(Position r) const override;
@@ -344,7 +347,7 @@ public:
 //! \f$(y-y_0)^2/B^2 + (\sqrt{(x-x_0)^2 + (z-z_0)^2} - A)^2/C^2 -1 \f$
 //==============================================================================
 
-class SurfaceYTorus : public CSGSurface {
+class SurfaceYTorus : public Surface {
 public:
   explicit SurfaceYTorus(pugi::xml_node surf_node);
   double evaluate(Position r) const override;
@@ -361,7 +364,7 @@ public:
 //! \f$(z-z_0)^2/B^2 + (\sqrt{(x-x_0)^2 + (y-y_0)^2} - A)^2/C^2 -1 \f$
 //==============================================================================
 
-class SurfaceZTorus : public CSGSurface {
+class SurfaceZTorus : public Surface {
 public:
   explicit SurfaceZTorus(pugi::xml_node surf_node);
   double evaluate(Position r) const override;
@@ -376,7 +379,39 @@ public:
 // Non-member functions
 //==============================================================================
 
-void read_surfaces(pugi::xml_node node);
+//! Read surface definitions from XML and populate the global surfaces vector.
+//!
+//! This function parses surface elements from the XML input, creates the
+//! appropriate surface objects, and identifies periodic surfaces along with
+//! their albedo values and sense information.
+//!
+//! \param node XML node containing surface definitions
+//! \param[out] periodic_pairs Set of surface ID pairs representing periodic
+//!   boundary conditions
+//! \param[out] albedo_map Map of surface IDs to albedo values for periodic
+//!   surfaces
+//! \param[out] periodic_sense_map Map of surface IDs to their sense values
+//!   (used to determine orientation for periodic BCs)
+void read_surfaces(pugi::xml_node node,
+  std::set<std::pair<int, int>>& periodic_pairs,
+  std::unordered_map<int, double>& albedo_map,
+  std::unordered_map<int, int>& periodic_sense_map);
+
+//! Resolve periodic surface pairs and assign boundary conditions.
+//!
+//! This function completes the setup of periodic boundary conditions by
+//! resolving unpaired periodic surfaces, determining whether each pair
+//! represents translational or rotational periodicity based on surface
+//! normals, and assigning the appropriate boundary condition objects.
+//!
+//! \param[inout] periodic_pairs Set of surface ID pairs representing periodic
+//!   boundary conditions; unpaired entries are resolved
+//! \param albedo_map Map of surface IDs to albedo values for periodic surfaces
+//! \param periodic_sense_map Map of surface IDs to their sense values (used to
+//!   determine orientation for periodic BCs)
+void prepare_boundary_conditions(std::set<std::pair<int, int>>& periodic_pairs,
+  std::unordered_map<int, double>& albedo_map,
+  std::unordered_map<int, int>& periodic_sense_map);
 
 void free_memory_surfaces();
 

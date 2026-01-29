@@ -20,6 +20,85 @@ source neutrons.
 
   *Default*: None
 
+-----------------------------
+``<collision_track>`` Element
+-----------------------------
+
+The ``<collision_track>`` element indicates to track information about particle
+collisions based on a set of criteria and store these events in a file named
+``collision_track.h5``. This file records details such as the position of the
+interaction, direction of the incoming particle, incident energy and deposited
+energy, weight, time of the interaction, and the delayed neutron group (0 for
+prompt neutrons). Additional information such as the cell ID, material ID,
+universe ID, nuclide ZAID, particle type, and event MT number are also stored.
+Users can specify one or more criterion to filter collisions. If no criteria are
+specified, it defaults to tracking all collisions across the model.
+
+.. warning::
+    Storing all collisions can be very memory intensive. For more targeted
+    tracking, users can employ a variety of parameters such as ``cell_ids``,
+    ``reactions``, ``universe_ids``, ``material_ids``, ``nuclides``, and
+    ``deposited_E_threshold`` to refine the selection of particle interactions
+    to be banked.
+
+This element can contain one or more of the following attributes or
+sub-elements:
+
+  :max_collisions:
+    An integer indicating the maximum number of collisions to be banked per file.
+
+    *Default*: 1000
+
+  :max_collision_track_files:
+    An integer indicating the number of collision_track files to be used.
+
+    *Default*: 1
+
+  :mcpl:
+    An optional boolean to enable MCPL_-format instead of the native HDF5-based
+    format. If activated, the output file name and type is changed to
+    ``collision_track.mcpl``.
+
+    *Default*: false
+
+    .. _MCPL: https://mctools.github.io/mcpl/mcpl.pdf
+
+  :cell_ids:
+    A list of integers representing cell IDs to define specific cells in which
+    collisions are to be banked.
+
+    *Default*: None
+
+  :universe_ids:
+    A list of integers representing the universe IDs to define specific
+    universes in which collisions are to be banked.
+
+    *Default*: None
+
+  :material_ids:
+    A list of integers representing the material IDs to define specific
+    materials in which collisions are to be banked.
+
+    *Default*: None
+
+  :nuclides:
+    A list of strings representing the nuclide, to define specific
+    define specific target nuclide collisions to be banked.
+
+    *Default*: None
+
+  :reactions:
+    A list of integers representing the ENDF-6 format MT numbers or strings
+    (e.g. (n,fission)) to define specific reaction types to be banked.
+
+    *Default*: None
+
+  :deposited_E_threshold:
+    A float defining the minimum deposited energy per collision (in eV) to
+    trigger banking.
+
+    *Default*: 0.0
+
 ----------------------------------
 ``<confidence_intervals>`` Element
 ----------------------------------
@@ -80,6 +159,13 @@ time.
     roulette.
 
     *Default*: 1.0
+
+  :survival_normalization:
+    If this element is set to "true", this will enable the use of survival
+    biasing source normalization, whereby the weight parameters, weight and
+    weight_avg, are multiplied per history by the start weight of said history.
+
+    *Default*: false
 
   :energy_neutron:
     The energy under which neutrons will be killed.
@@ -171,6 +257,16 @@ history-based parallelism.
 
   *Default*: false
 
+--------------------------------
+``<free_gas_threshold>`` Element
+--------------------------------
+
+The ``<free_gas_threshold>`` element specifies the energy multiplier, expressed
+in units of :math:`kT`, that determines when the free gas scattering approach is
+used for elastic scattering. Values must be positive.
+
+  *Default*: 400.0
+
 -----------------------------------
 ``<generations_per_batch>`` Element
 -----------------------------------
@@ -180,6 +276,15 @@ source iterations per batch for an eigenvalue calculation. This element is
 ignored for all run modes other than "eigenvalue".
 
   *Default*: 1
+
+------------------------------
+``<ifp_n_generation>`` Element
+------------------------------
+
+The ``<ifp_n_generation>`` element indicates the number of generations to
+consider for the Iterated Fission Probability method.
+
+  *Default*: 10
 
 ----------------------
 ``<inactive>`` Element
@@ -238,7 +343,7 @@ based on the recommended value in LA-UR-14-24530_.
 
   .. note:: This element is not used in the multi-group :ref:`energy_mode`.
 
-.. _LA-UR-14-24530: https://laws.lanl.gov/vhosts/mcnp.lanl.gov/pdf_files/la-ur-14-24530.pdf
+.. _LA-UR-14-24530: https://mcnp.lanl.gov/pdf_files/TechReport_2014_LANL_LA-UR-14-24530_Brown.pdf
 
 ---------------------------
 ``<material_cell_offsets>``
@@ -252,11 +357,29 @@ to false.
 
   *Default*: true
 
+--------------------------------
+``<max_lost_particles>`` Element
+--------------------------------
+
+This element indicates the maximum number of lost particles.
+
+  *Default*: 10
+
+------------------------------------
+``<rel_max_lost_particles>`` Element
+------------------------------------
+
+
+This element indicates the maximum number of lost particles, relative to the
+total number of particles.
+
+  *Default*: 1.0e-6
+
 -------------------------------------
 ``<max_particles_in_flight>`` Element
 -------------------------------------
 
-This element indicates the number of neutrons to run in flight concurrently
+This element indicates the number of particles to run in flight concurrently
 when using event-based parallelism. A higher value uses more memory, but
 may be more efficient computationally.
 
@@ -288,7 +411,25 @@ then, OpenMC will only use up to the :math:`P_1` data.
 ``<max_history_splits>`` Element
 --------------------------------
 
-The ``<max_history_splits>`` element indicates the number of times a particle can split during a history.
+The ``<max_history_splits>`` element indicates the number of times a particle
+can split during a history.
+
+  *Default*: 1000
+
+-----------------------------
+``<max_secondaries>`` Element
+-----------------------------
+
+The ``<max_secondaries>`` element indicates the maximum secondary bank size.
+
+  *Default*: 10000
+
+------------------------
+``<max_tracks>`` Element
+------------------------
+
+The ``<max_tracks>`` element indicates the maximum number of tracks written to a
+track file (per MPI process).
 
   *Default*: 1000
 
@@ -439,6 +580,38 @@ found in the :ref:`random ray user guide <random_ray>`.
 
     *Default*: None
 
+  :sample_method:
+    Specifies the method for sampling the starting ray distribution. This
+    element can be set to "prng" or "halton".
+
+    *Default*: prng
+
+  :source_region_meshes:
+    Relates meshes to spatial domains for subdividing source regions with each domain.
+
+    :mesh:
+      Contains an ``id`` attribute and one or more ``<domain>`` sub-elements.
+
+      :id:
+        The unique identifier for the mesh.
+
+      :domain:
+        Each domain element has an ``id`` attribute and a ``type`` attribute.
+
+        :id:
+          The unique identifier for the domain.
+
+        :type:
+          The type of the domain. Can be ``material``, ``cell``, or ``universe``.
+
+  :diagonal_stabilization_rho:
+    The rho factor for use with diagonal stabilization. This technique is
+    applied when negative diagonal (in-group) elements are detected in
+    the scattering matrix of input MGXS data, which is a common feature
+    of transport corrected MGXS data.
+
+    *Default*: 1.0
+
 ----------------------------------
 ``<resonance_scattering>`` Element
 ----------------------------------
@@ -514,6 +687,15 @@ pseudo-random number generator.
 
   *Default*: 1
 
+--------------------
+``<stride>`` Element
+--------------------
+
+The ``stride`` element is used to specify how many random numbers are allocated
+for each source particle history.
+
+  *Default*: 152,917
+
 .. _source_element:
 
 --------------------
@@ -579,23 +761,37 @@ attributes/sub-elements:
 
     :type:
       The type of spatial distribution. Valid options are "box", "fission",
-      "point", "cartesian", "cylindrical", and "spherical". A "box" spatial
-      distribution has coordinates sampled uniformly in a parallelepiped. A
-      "fission" spatial distribution samples locations from a "box"
+      "point", "cartesian", "cylindrical", "spherical", "mesh", and "cloud".
+
+      A "box" spatial distribution has coordinates sampled uniformly in a
+      parallelepiped.
+
+      A "fission" spatial distribution samples locations from a "box"
       distribution but only locations in fissionable materials are accepted.
+
       A "point" spatial distribution has coordinates specified by a triplet.
+
       A "cartesian" spatial distribution specifies independent distributions of
-      x-, y-, and z-coordinates. A "cylindrical" spatial distribution specifies
-      independent distributions of r-, phi-, and z-coordinates where phi is the
-      azimuthal angle and the origin for the cylindrical coordinate system is
-      specified by origin. A "spherical" spatial distribution specifies
-      independent distributions of r-, cos_theta-, and phi-coordinates where
-      cos_theta is the cosine of the angle with respect to the z-axis, phi is
-      the azimuthal angle, and the sphere is centered on the coordinate
-      (x0,y0,z0). A "mesh" spatial distribution samples source sites from a mesh element
+      x-, y-, and z-coordinates.
+
+      A "cylindrical" spatial distribution specifies independent distributions
+      of r-, phi-, and z-coordinates where phi is the azimuthal angle and the
+      origin for the cylindrical coordinate system is specified by origin.
+
+      A "spherical" spatial distribution specifies independent distributions of
+      r-, cos_theta-, and phi-coordinates where cos_theta is the cosine of the
+      angle with respect to the z-axis, phi is the azimuthal angle, and the
+      sphere is centered on the coordinate (x0,y0,z0).
+
+      A "mesh" spatial distribution samples source sites from a mesh element
       based on the relative strengths provided in the node. Source locations
       within an element are sampled isotropically. If no strengths are provided,
       the space within the mesh is uniformly sampled.
+
+      A "cloud" spatial distribution samples source sites from a list of spatial
+      positions provided in the node, based on the relative strengths provided
+      in the node. If no strengths are provided, the positions are uniformly
+      sampled.
 
       *Default*: None
 
@@ -662,6 +858,31 @@ attributes/sub-elements:
       For "cylindrical and "spherical" distributions, this element specifies
       the coordinates for the origin of the coordinate system.
 
+    :mesh_id:
+      For "mesh" spatial distributions, this element specifies which mesh ID to
+      use for the geometric description of the mesh.
+
+    :coords:
+      For "cloud" distributions, this element specifies a list of coordinates
+      for each of the points in the cloud.
+
+    :strengths:
+      For "mesh" and "cloud" spatial distributions, this element specifies the
+      relative source strength of each mesh element or each point in the cloud.
+
+    :volume_normalized:
+      For "mesh" spatial distributions, this optional boolean element specifies
+      whether the vector of relative strengths should be multiplied by the mesh
+      element volume. This is most common if the strengths represent a source
+      per unit volume.
+
+      *Default*: false
+
+    :bias:
+      For "mesh" and "cloud" spatial distributions, this optional element
+      specifies floating point values corresponding to alternative probabilities
+      for each value/component to use for biased sampling.
+
   :angle:
     An element specifying the angular distribution of source sites. This element
     has the following attributes:
@@ -694,6 +915,10 @@ attributes/sub-elements:
       are those of a univariate probability distribution (see the description in
       :ref:`univariate`).
 
+    :bias:
+      For "isotropic" angular distributions, this optional element specifies a
+      "mu-phi" angular distribution used for biased sampling.
+
   :energy:
     An element specifying the energy distribution of source sites. The necessary
     sub-elements/attributes are those of a univariate probability distribution
@@ -716,6 +941,10 @@ attributes/sub-elements:
     For mesh sources, this sub-element specifies the source for an individual
     mesh element and follows the format for :ref:`source_element`. The number of
     ``<source>`` sub-elements should correspond to the number of mesh elements.
+
+  .. note:: Biased sampling can be applied to the spatial and energy distributions
+            of a source by using the ``<bias>`` sub-element (see
+            :ref:`univariate` for details on how to specify bias distributions).
 
   :constraints:
     This sub-element indicates the presence of constraints on sampled source
@@ -809,13 +1038,36 @@ variable and whose sub-elements/attributes are as follows:
   *Default*: histogram
 
 :pair:
-  For a "mixture" distribution, this element provides a distribution and its corresponding probability.
+  For a "mixture" distribution, this element provides a distribution and its
+  corresponding probability.
 
   :probability:
-    An attribute or ``pair`` that provides the probability of a univariate distribution within a "mixture" distribution.
+    An attribute or ``pair`` that provides the probability of a univariate
+    distribution within a "mixture" distribution.
 
   :dist:
-    This sub-element of a ``pair`` element provides information on the corresponding univariate distribution.
+    This sub-element of a ``pair`` element provides information on the
+    corresponding univariate distribution.
+
+:bias:
+  This optional element specifies a biased distribution for importance sampling.
+  For continuous distributions, the ``bias`` element should contain another
+  univariate distribution with the same support (interval) as the parent
+  distribution. For discrete distributions, the ``bias`` element should contain
+  floating point values corresponding to alternative probabilities for each
+  value/component to be used for biased sampling.
+
+  *Default*: None
+
+---------------------------------------
+``<source_rejection_fraction>`` Element
+---------------------------------------
+
+The ``<source_rejection_fraction>`` element specifies the minimum fraction of
+external source sites that must be accepted when applying rejection sampling
+based on constraints.
+
+   *Default*: 0.05
 
 -------------------------
 ``<state_point>`` Element
@@ -922,6 +1174,15 @@ attributes/sub-elements:
     processors.
 
     *Default*: None
+
+  :max_source_files:
+    An integer value indicating the number of surface source files to be written
+    containing the maximum number of particles each. The surface source bank
+    will be cleared in simulation memory each time a surface source file is
+    written. By default a ``surface_source.h5`` file will be created when the
+    maximum number of saved particles is reached.
+
+    *Default*: 1
 
   :mcpl:
     An optional boolean which indicates if the banked particles should be
@@ -1144,6 +1405,15 @@ has the following attributes/sub-elements:
               for fixed source and small criticality calculations, but is very
               optimistic for highly coupled full-core reactor problems.
 
+-------------------------------------
+``<uniform_source_sampling>`` Element
+-------------------------------------
+
+The ``<uniform_source_sampling>`` element indicates whether to sample among
+multiple sources uniformly, applying their strengths as weights to sampled
+particles.
+
+  *Default*: False
 
 ------------------------
 ``<ufs_mesh>`` Element
@@ -1155,6 +1425,16 @@ methodology described in Kelly et al., "MC21 Analysis of the Nuclear Energy
 Agency Monte Carlo Performance Benchmark Problem," Proceedings of *Physor 2012*,
 Knoxville, TN (2012). The mesh should cover all possible fissionable materials
 in the problem and is specified using a :ref:`mesh_element`.
+
+-------------------------------
+``<use_decay_photons>`` Element
+-------------------------------
+
+The ``<use_decay_photons>`` element indicates whether to produce decay photons
+from neutron reactions instead of prompt photons. This is used in conjunction
+with the direct 1-step method for shutdown dose rate calculations.
+
+  *Default*: False
 
 .. _verbosity:
 
@@ -1337,7 +1617,7 @@ mesh-based weight windows.
     *Default*: true
 
   :method:
-    Method used to update weight window values (currently only 'magic' is supported)
+    Method used to update weight window values (one of 'magic' or 'fw_cadis')
 
     *Default*: magic
 
@@ -1386,3 +1666,21 @@ following sub-elements/attributes:
 
   The ``weight_windows_file`` element has no attributes and contains the path to
   a weight windows HDF5 file to load during simulation initialization.
+
+-------------------------------
+``<weight_windows_on>`` Element
+-------------------------------
+
+  The ``weight_windows_on`` element indicates whether weight windows are
+  enabled.
+
+  *Default*: False
+
+----------------------------------
+``<write_initial_source>`` Element
+----------------------------------
+
+  The ``write_initial_source`` element indicates whether to write the initial
+  source distribution to file.
+
+  *Default*: False
