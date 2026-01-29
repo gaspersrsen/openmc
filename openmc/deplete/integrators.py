@@ -207,7 +207,7 @@ class CELIIntegrator(Integrator):
     """
     _num_stages = 2
 
-    def __call__(self, n_bos, rates, dt, source_rate, _i=None):
+    def __call__(self, n_bos, rates, dt, source_rate, _i=None, conc_run=False, conc_args={}):
         """Perform the integration across one time step
 
         Parameters
@@ -347,7 +347,7 @@ class LEQIIntegrator(Integrator):
     """
     _num_stages = 2
 
-    def __call__(self, n_bos, bos_rates, dt, source_rate, i):
+    def __call__(self, n_bos, bos_rates, dt, source_rate, i, conc_run=False, conc_args={}):
         """Perform the integration across one time step
 
         Parameters
@@ -375,7 +375,7 @@ class LEQIIntegrator(Integrator):
             if self._i_res < 1:  # need at least previous transport solution
                 self._prev_rates = bos_rates
                 return CELIIntegrator.__call__(
-                    self, n_bos, bos_rates, dt, source_rate, i)
+                    self, n_bos, bos_rates, dt, source_rate, i, conc_run, conc_args)
             prev_res = self.operator.prev_res[-2]
             prev_dt = self.timesteps[i] - prev_res.time[0]
             self._prev_rates = prev_res.rates
@@ -383,20 +383,23 @@ class LEQIIntegrator(Integrator):
             prev_dt = self.timesteps[i - 1]
 
         # Remaining LE/QI
-        bos_res = self.operator(n_bos, source_rate)
+        #bos_res = self.operator(n_bos, source_rate)
 
         le_inputs = list(zip(
-            self._prev_rates, bos_res.rates, repeat(prev_dt), repeat(dt)))
+            self._prev_rates, bos_rates, repeat(prev_dt), repeat(dt)))
 
         time1, n_inter = self._timed_deplete(
             n_bos, le_inputs, dt, i, matrix_func=leqi_f1)
         time2, n_eos0 = self._timed_deplete(
             n_inter, le_inputs, dt, i, matrix_func=leqi_f2)
 
-        res_inter = self.operator(n_eos0, source_rate)
+        if conc_run:
+            res_inter = self.operator.search_crit_conc(n_eos0, source_rate, **conc_args)
+        else:
+            res_inter = self.operator(n_eos0, source_rate)
 
         qi_inputs = list(zip(
-            self._prev_rates, bos_res.rates, res_inter.rates,
+            self._prev_rates, bos_rates, res_inter.rates,
             repeat(prev_dt), repeat(dt)))
 
         time3, n_inter = self._timed_deplete(
@@ -405,7 +408,7 @@ class LEQIIntegrator(Integrator):
             n_inter, qi_inputs, dt, i, matrix_func=leqi_f4)
 
         # store updated rates
-        self._prev_rates = copy.deepcopy(bos_res.rates)
+        self._prev_rates = copy.deepcopy(bos_rates)
 
         return time1 + time2 + time3 + time4, n_eos1
 

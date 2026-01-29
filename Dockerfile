@@ -66,8 +66,8 @@ ENV LD_LIBRARY_PATH=${DAGMC_INSTALL_DIR}/lib:$LD_LIBRARY_PATH \
     DEBIAN_FRONTEND=noninteractive
 
 # Install and update dependencies from Debian package manager
-RUN apt-get update -y && \
-    apt-get upgrade -y && \
+RUN apt-get update -y || true && \
+    apt-get upgrade -y || true && \
     apt-get install -y \
         python3-pip python-is-python3 wget git build-essential cmake \
         mpich libmpich-dev libhdf5-serial-dev libhdf5-mpich-dev \
@@ -80,6 +80,7 @@ ENV PATH=/openmc_venv/bin:$PATH
 
 # Update system-provided pip
 RUN pip install --upgrade pip
+#RUN pip install vtk
 
 # Clone and install NJOY2016
 RUN cd $HOME \
@@ -183,8 +184,8 @@ FROM dependencies AS build
 
 ENV HOME=/root
 
-ARG openmc_branch=master
-ENV OPENMC_REPO='https://github.com/openmc-dev/openmc'
+ARG openmc_branch=15_1_dev_01_2026
+ENV OPENMC_REPO='https://github.com/gaspersrsen/openmc.git'
 
 ARG compile_cores
 ARG build_dagmc
@@ -192,6 +193,8 @@ ARG build_libmesh
 
 ENV DAGMC_INSTALL_DIR=$HOME/DAGMC/
 ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH
+ARG CACHEBUST=1
+RUN echo "$CACHEBUST"
 
 # clone and install openmc
 RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
@@ -234,8 +237,8 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
 
 FROM build AS release
 
-ENV HOME=/root
-ENV OPENMC_CROSS_SECTIONS=/root/nndc_hdf5/cross_sections.xml
+#ENV HOME=/root
+#ENV OPENMC_CROSS_SECTIONS=/root/nndc_hdf5/cross_sections.xml
 
 # Download cross sections (NNDC and WMP) and ENDF data needed by test suite
-RUN ${HOME}/OpenMC/openmc/tools/ci/download-xs.sh
+#RUN ${HOME}/OpenMC/openmc/tools/ci/download-xs.sh

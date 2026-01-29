@@ -23,7 +23,7 @@ from uncertainties import ufloat
 from openmc.checkvalue import check_type, check_greater_than, PathLike
 from openmc.mpi import comm
 from openmc.utility_funcs import change_directory
-from openmc import Material
+from openmc import Material, Tally, MaterialFilter
 from .stepresult import StepResult
 from .chain import _get_chain
 from .results import Results, _SECONDS_PER_MINUTE, _SECONDS_PER_HOUR, \
@@ -787,11 +787,15 @@ class Integrator(ABC):
         """Return integer number of depletion intervals"""
         return len(self.timesteps)
 
-    def _get_bos_data_from_operator(self, step_index, source_rate, bos_conc):
+    def _get_bos_data_from_operator(self, step_index, source_rate, bos_conc,
+            conc_run = False, conc_args = {}):
         """Get beginning of step concentrations, reaction rates from Operator
         """
         x = deepcopy(bos_conc)
-        res = self.operator(x, source_rate)
+        if conc_run:
+            res = self.operator.search_crit_conc(x, source_rate, **conc_args)
+        else:
+            res = self.operator(x, source_rate)
         self.operator.write_bos_data(step_index + self._i_res)
         return x, res
 
@@ -924,6 +928,88 @@ class Integrator(ABC):
 
         self.operator.finalize()
 
+    def custom_integrate(
+            self,
+            conc_run: bool = False,
+            conc_args: dict = {},
+            final_step: bool = True,
+            output: bool = True,
+            path: PathLike = 'depletion_results.h5'
+        ):
+        #Add required tallies and parse some potentially problematic parameters
+        if conc_run:
+                if "batches" not in conc_args.keys():
+                    conc_args["batches"] = 50
+                self.operator.model.settings.batches += conc_args["batches"]
+                self.operator.model.settings.inactive += conc_args["batches"]
+                tallyTest = Tally(tally_id=8888, name="search_crit_conc_tally_1")
+                tallyTest.scores = ["nu-fission", "absorption", "nu-scatter", "scatter"]
+                self.operator.model.tallies += [tallyTest]
+                
+                tallyTest2 = Tally(tally_id=8889, name="search_crit_conc_tally_2")
+                if "iso" not in conc_args.keys():
+                    raise ValueError("'iso' argument in conc_args is empty")
+                tallyTest2.nuclides = conc_args["iso"]
+                tallyTest2.scores = ["absorption"]
+                if "materials" in conc_args.keys():
+                    tallyTest2.filters = [MaterialFilter(conc_args["materials"],filter_id=8888)]
+                self.operator.model.tallies += [tallyTest2]
+                self.operator.model.tallies.export_to_xml()
+        
+        with change_directory(self.operator.output_dir):
+            
+            n = self.operator.initial_condition()
+            t, self._i_res = self._get_start_data()
+
+            for i, (dt, source_rate) in enumerate(self):
+                if output and comm.rank == 0:
+                    print(f"[openmc.deplete] t={t} s, dt={dt} s, source={source_rate}")
+
+                # Update the model and run transport unless already corrected at the end of prevoius step
+                if i > 0 or self.operator.prev_res is None:
+                    # if model_builder is not None:
+                    #     openmc.lib.finalize()
+                    #     #For any other simulations resources need to be released
+                    #     new_model  = model_builder(self.operator.model, **model_args)
+                    #     self.operator.model= new_model
+                    #     self.operator.materials = new_model.materials
+                    #     n = self.operator.initial_condition()
+                    n, res = self._get_bos_data_from_operator(i, source_rate, n, conc_run, conc_args)
+                else:
+                    n, res = self._get_bos_data_from_restart(source_rate, n)
+                
+                # Solve Bateman equations over time interval
+                proc_time, n_list, res_list = self(n, res.rates, dt, source_rate, i, conc_run, conc_args)
+
+                # Insert BOS concentration, transport results
+                n_list.insert(0, n)
+                res_list.insert(0, res)
+
+                # Remove actual EOS concentration for next step
+                n = n_list.pop()
+
+                StepResult.save(self.operator, n_list, res_list, [t, t + dt],
+                                source_rate, self._i_res + i, proc_time, path)
+
+                t += dt
+
+            # Final simulation -- in the case that final_step is False, a zero
+            # source rate is passed to the transport operator (which knows to
+            # just return zero reaction rates without actually doing a transport
+            # solve)
+            
+            if output and final_step and comm.rank == 0:
+                print(f"[openmc.deplete] t={t} (final operator evaluation)")
+            if conc_run and final_step:
+                res_list = [self.operator.search_crit_conc(n, source_rate, **conc_args)]
+            else:
+                res_list = [self.operator(n, source_rate if final_step else 0.0)]
+            StepResult.save(self.operator, [n], res_list, [t, t],
+                         source_rate, self._i_res + len(self), proc_time, path)
+            self.operator.write_bos_data(len(self) + self._i_res)
+
+        self.operator.finalize()
+    
     def add_transfer_rate(
         self,
         material: str | int | Material,

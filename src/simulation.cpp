@@ -387,9 +387,15 @@ void initialize_batch()
   // Manage active/inactive timers and activate tallies if necessary.
   if (first_inactive) {
     simulation::time_inactive.start();
+    for (auto& t : model::tallies) {
+      t->active_ = true;
+    }
   } else if (first_active) {
     simulation::time_inactive.stop();
     simulation::time_active.start();
+    for (auto& t : model::tallies) {
+      t->reset();
+    }
     for (auto& t : model::tallies) {
       t->active_ = true;
     }
@@ -412,7 +418,7 @@ void finalize_batch()
   }
 
   // Reset global tally results
-  if (simulation::current_batch <= settings::n_inactive) {
+  if (simulation::current_batch == settings::n_inactive) {
     xt::view(simulation::global_tallies, xt::all()) = 0.0;
     simulation::n_realizations = 0;
   }
