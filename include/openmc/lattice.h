@@ -231,9 +231,9 @@ public:
 
   void to_hdf5_inner(hid_t group_id) const override;
 
-  array<int, 3> n_cells() {return n_cells_; } //!< Number of cells along each axis
-  Position lower_left() {return lower_left_; }   //!< Global lower-left corner of the lattice
-  Position pitch() {return pitch_; }        //!< Lattice tile width along each axis
+  array<int, 3> n_cells() {return n_cells_; }
+  Position lower_left() {return lower_left_; }
+  Position pitch() {return pitch_; }
 
 protected:
   array<int, 3> n_cells_; //!< Number of cells along each axis
