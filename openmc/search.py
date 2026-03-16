@@ -279,9 +279,14 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
 
     """
     if mat_builder is not None:
-        try:
-            materials, nuc_fractions, *_ = mat_builder(1)
-        except:
+        mat_builder_res = mat_builder(1)
+        keys = mat_builder_res.keys() if type(mat_builder_res) == dict else None
+        if keys:
+            if "materials" in keys:
+                materials = [mat for mat in mat_builder_res["materials"]]
+            if "nuc_fractions" in keys:
+                nuc_fractions = mat_builder_res["nuc_fractions"]
+        else:
             materials = mat_builder(1)
             nuc_fractions = np.array([[1 for i in iso] for m in materials])
         if iso is None:
@@ -402,6 +407,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             L_leak = (leak if leak > 0 else 0)                          # Neutron leakage fraction, very low, may happen to be negative due to floating point percision
             L_abs = curr_res[0][0][1][1]                                # Total neutron absorption
             L_abs = L_abs if L_abs > 0 else 0
+            # WARNING: L_abs - P_nxn + L_leak === 1; by OpenMC def
             
             # Total flagged nuclide absorption
             # if materials is not None:
@@ -421,8 +427,8 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 P_fiss_nucs += np.sum((Res_nucs_mat[0::4,1]) * np.array(nuc_fractions[index]))
                 P_nxn_nucs += np.sum((Res_nucs_mat[2::4,1] - Res_nucs_mat[3::4,1]) * np.array(nuc_fractions[index]))
                 L_abs_nucs += np.sum((Res_nucs_mat[1::4,1]) * np.array(nuc_fractions[index]))
-            P_fiss_nucs = P_fiss_nucs if P_fiss_nucs > 0 else 0 #TODO implement
-            P_nxn_nucs = P_nxn_nucs if P_nxn_nucs > 0 else 0    #TODO implement
+            P_fiss_nucs = P_fiss_nucs if P_fiss_nucs > 0 else 0
+            P_nxn_nucs = P_nxn_nucs if P_nxn_nucs > 0 else 0
             L_abs_nucs = L_abs_nucs if L_abs_nucs > 0 else 0
             if L_abs_nucs == 0:
                 if not skip_steps: print(f"CDI: No nuclide absorption tallied, skipping from step {M} onwards")
@@ -430,11 +436,12 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 continue
             
             # Predict concentration change
-            top = (P_fiss/target + P_nxn) - (L_abs - L_abs_nucs) - (P_fiss/target + P_nxn) * L_leak
-            # top = P_fiss/target - 1 + L_abs_nucs
-            bot = L_abs_nucs
-            # top = ((P_fiss - P_fiss_nucs)/target + P_nxn - P_nxn_nucs) - (L_abs - L_abs_nucs) - (P_fiss - P_fiss_nucs + P_nxn - P_nxn_nucs) * L_leak
-            # bot = L_abs_nucs - P_fiss_nucs/target - P_nxn_nucs + (P_fiss_nucs + P_nxn_nucs) * L_leak
+            bot = L_abs_nucs - P_fiss_nucs/target - P_nxn_nucs
+            top = P_fiss - 1 + bot 
+            if bot == 0:
+                if not skip_steps: print(f"CDI: Combined effect of absorption, fission and (n,xn) reaction of flagged is 0, skipping step {M}")
+                continue
+            
             g_est = top / bot
             # Optimal following (Kalman filter for narrowing to a scalar value):
             if M == starting_batch: #Start the iteration at step 10, handled before, this is only K.f initialization
@@ -445,46 +452,26 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             if (g_est >= 1/(max_step_change-0.5) and g_est <= max_step_change):
                 rel_err_MC = 1/np.sqrt(model.settings.particles * (model.settings.generations_per_batch if model.settings.generations_per_batch is not None else 1))
                 prod = P_fiss + P_nxn
-                loss = L_abs + prod * L_leak # =1 + P_nxn; by OpenMC def
-                # L_abs - P_nxn + (P_fiss + P_nxn)*L_leak = 1 + , by OpenMC def, sigma = 0; therefore: # TODO maybe leakage normalized per source particles?
-                # g_est = (P_fiss/target - 1 + L_abs_nucs) / L_abs_nucs = (P_fiss/target - 1) / L_abs_nucs + 1
+                loss = L_abs + L_leak
+                ### g = (P_fiss/target - 1)/nucs + 1
+                ### Covariances between fission (or (n,xn) reactions) and absorption neglected
+                sig_nucs = rel_err_MC * np.sqrt(prod*P_fiss_nucs/target
+                                               + prod*P_nxn_nucs
+                                               + loss*L_abs_nucs
+                                               )
+                sig_fiss = rel_err_MC * np.sqrt(prod*P_fiss/target)
+                sig_res = (P_fiss/target-1)/bot *np.sqrt((sig_fiss/(P_fiss/target-1))**2 if (P_fiss/target-1) != 0 else 0
+                                                         + (sig_nucs/bot)**2
+                                                         )
                 
-                ### LOGIC ###
-                # rel_err = sqrt(1/N_part_tally)    =    1/sqrt(N_tot) * sqrt(N_tot/N_part_tally) =
-                # rel_err_MC * sqrt(N_tot/N_part_tally)     =   rel_err_MC * sqrt(tot_tally/part_tally)
-                
-                # Sig = part_tally * rel_err 
-                # = part_tally * rel_err_MC * sqrt(tot_tally/part_tally) =
-                # rel_err_MC * sqrt(tot_tally*part_tally)
-
-                sig_fiss = rel_err_MC * (np.sqrt(prod * P_fiss))
-                sig_nucs = rel_err_MC * (np.sqrt(loss * L_abs_nucs))
-                
-                sig_g_est = np.abs((g_est-1) * np.sqrt((sig_fiss/target/(P_fiss/target-1))**2 + (sig_nucs/L_abs_nucs)**2)
-                    * (1 + (100*np.exp(-(M - starting_batch) / batches * 3 * np.log(100)) - 1   if (M - starting_batch) < (batches / 3) else 0)))
+                sig_g_est = np.abs(sig_res * (1 + (100*np.exp(-(M - starting_batch) / batches * 3 * np.log(100)) - 1
+                                                   if (M - starting_batch) < (batches / 3) else 0)))
                 ### Slowly relax uncertainty, as first are inaccurate, 2/3 of batches do not extra uncertainty,
                 ### this improves convergence when initial guess is bad, but increases final uncertainty
                 rel_err_g_est = sig_g_est / g_est
                 
                 sig_g_est = f_prev * sig_g_est
                 p_measure = sig_g_est**2
-                
-                # OLD
-                # sig1 = rel_err_MC * (np.sqrt(prod * P_fiss)/target + np.sqrt(prod * P_nxn)) #sig for (P_fiss + P_nxn)/target
-                # sig2 = rel_err_MC * (np.sqrt(loss * L_abs) + np.sqrt(loss * L_abs_nucs) ) #sig for (L_abs - L_abs_nucs)
-                # # L_abs + L_leak = 1 (+ P_nxn) beacuse k = (P_fiss - P_nxn) / (L_abs + L_leak - P_nxn) that is why sigma_loss could be 0, because all neutrons are either abosrbed or escape the reactor
-                # sig3 = rel_err_MC * (np.sqrt(prod * P_fiss) + np.sqrt(prod * P_nxn)) * L_leak
-                # rel_err_top = (np.abs(sig1) + np.abs(sig2) + np.abs(sig3)) / top
-                # rel_err_bot = rel_err_MC * np.sqrt(loss * L_abs_nucs) / bot
-                # rel_err_g_est = (rel_err_top + rel_err_bot) * (1 + (100*np.exp(-(M - starting_batch) / batches * 3 * np.log(100)) - 1 if (M - starting_batch) < (batches / 3) else 0))
-                # #Slowly relax uncertainty, as first are inaccurate, 2/3 of batches do not extra uncertainty, this improves convergence when initial guess is bad, but increases final uncertainty
-                # sig_g_est = f_prev * g_est * rel_err_g_est
-                # p_measure = sig_g_est**2                
-                
-                # p_measure = ((batches+10)/M)/np.sqrt(self.model.settings.particles) #Slowly relax uncertainty; OLD-er version
-                
-                # Estimate the accuracy of the measurement with a quadratic difference of k and target
-                # p_measure = (1 + self.model.settings.particles * (k-target)**2)**2 / np.sqrt(self.model.settings.particles) #OLD-er-er version
             else:
                 if g_est <= 1/(max_step_change-0.5): g_est = 1/(max_step_change-0.5)
                 elif g_est >= max_step_change: g_est = max_step_change
@@ -512,15 +499,15 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
 
             if debug is True:
                 k = (P_fiss) / (L_abs + (P_fiss + P_nxn)*L_leak - P_nxn)
-                # print(f"Batch: {M}")
                 print(f"k_absorption: {k}")
                 print(f"Batch uncertainty: p: {p_measure}, sig_g: {sig_g_est}")
                 print(f"top: {top}, bot: {bot}")
                 print(f"Batch estimated correction - 1: {g_est-1}")
                 print(f"Batch filtered correction - 1: {g-1}")
-                # print(f"Search algorithm internal tally:\n{curr_res}")
                 if g_est > 1/(max_step_change-0.5) and g_est < max_step_change:
-                    print(f"Correction coefficients [P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs, P_fiss_nuc, P_nxn_nucs]: {P_fiss, P_nxn, L_leak, L_abs, L_abs_nucs, P_fiss_nucs, P_nxn_nucs}")
+                    print(f"Correction coefficients [P_fiss, P_nxn, L_leak, L_abs]: {P_fiss, P_nxn, L_leak, L_abs}")
+                    print(f"Correction coefficients nucs [L_abs_nucs, P_fiss_nuc, P_nxn_nucs]: {L_abs_nucs, P_fiss_nucs, P_nxn_nucs}")
+                    print(f"OpenMC def diff: L_abs+L_leak-P_nxn-1: {(L_abs+L_leak-P_nxn-1):.03e}")
                     print("sig_fiss", sig_fiss, "sig_nxn", sig_nucs, "sig_nucs")
                     print(f"Relative error g_est: {rel_err_g_est}")
                     if initial_value:
@@ -530,9 +517,16 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
 
             # Rebuild the material with the given function
             if mat_builder is not None:
-                materials, *_ = mat_builder(f)
-                if type(materials) == openmc.Material:
-                    materials = [materials]
+                # materials, *_ = mat_builder(f)
+                # if type(materials) == openmc.Material:
+                #     materials = [materials]
+                mat_builder_res = mat_builder(f)
+                keys = mat_builder_res.keys() if type(mat_builder_res) == dict else None
+                if keys:
+                    if "materials" in keys:
+                        materials = [mat for mat in mat_builder_res["materials"]]
+                    if "nuc_fractions" in keys:
+                        nuc_fractions = mat_builder_res["nuc_fractions"]
             
             # Update densities on C API side
             for mat in openmc.lib.materials:
