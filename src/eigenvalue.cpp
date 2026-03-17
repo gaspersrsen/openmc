@@ -1,6 +1,9 @@
 #include "openmc/eigenvalue.h"
 
-#include "openmc/tensor.h"
+#include "xtensor/xbuilder.hpp"
+#include "xtensor/xmath.hpp"
+#include "xtensor/xtensor.hpp"
+#include "xtensor/xview.hpp"
 
 #include "openmc/array.h"
 #include "openmc/bank.h"
@@ -36,7 +39,7 @@ namespace simulation {
 double keff_generation;
 array<double, 2> k_sum;
 vector<double> entropy;
-tensor::Tensor<double> source_frac;
+xt::xtensor<double, 1> source_frac;
 
 } // namespace simulation
 
@@ -189,9 +192,9 @@ void synchronize_bank()
   // TODO: protect for MPI_Exscan at rank 0
 
   // Allocate space for bank_position if this hasn't been done yet
-  std::vector<int64_t> bank_position(mpi::n_procs);
-  MPI_Allgather(&start, 1, MPI_INT64_T, bank_position.data(), 1, MPI_INT64_T,
-    mpi::intracomm);
+  int64_t bank_position[mpi::n_procs];
+  MPI_Allgather(
+    &start, 1, MPI_INT64_T, bank_position, 1, MPI_INT64_T, mpi::intracomm);
 #else
   start = 0;
   finish = index_temp;
@@ -286,7 +289,7 @@ void synchronize_bank()
     neighbor = mpi::n_procs - 1;
   } else {
     neighbor =
-      upper_bound_index(bank_position.begin(), bank_position.end(), start);
+      upper_bound_index(bank_position, bank_position + mpi::n_procs, start);
   }
 
   // Resize IFP receive buffers
@@ -449,7 +452,7 @@ int openmc_get_keff(double* k_combined)
   const auto& gt = simulation::global_tallies;
 
   array<double, 3> kv {};
-  tensor::Tensor<double> cov = tensor::zeros<double>({3, 3});
+  xt::xtensor<double, 2> cov = xt::zeros<double>({3, 3});
   kv[0] = gt(GlobalTally::K_COLLISION, TallyResult::SUM) / n;
   kv[1] = gt(GlobalTally::K_ABSORPTION, TallyResult::SUM) / n;
   kv[2] = gt(GlobalTally::K_TRACKLENGTH, TallyResult::SUM) / n;
@@ -588,7 +591,7 @@ void shannon_entropy()
 {
   // Get source weight in each mesh bin
   bool sites_outside;
-  tensor::Tensor<double> p =
+  xt::xtensor<double, 1> p =
     simulation::entropy_mesh->count_sites(simulation::fission_bank.data(),
       simulation::fission_bank.size(), &sites_outside);
 
@@ -600,7 +603,7 @@ void shannon_entropy()
 
   if (mpi::master) {
     // Normalize to total weight of bank sites
-    p /= p.sum();
+    p /= xt::sum(p);
 
     // Sum values to obtain Shannon entropy
     double H = 0.0;
@@ -624,7 +627,7 @@ void ufs_count_sites()
 
     std::size_t n = simulation::ufs_mesh->n_bins();
     double vol_frac = simulation::ufs_mesh->volume_frac_;
-    simulation::source_frac = tensor::Tensor<double>({n}, vol_frac);
+    simulation::source_frac = xt::xtensor<double, 1>({n}, vol_frac);
 
   } else {
     // count number of source sites in each ufs mesh cell
@@ -646,7 +649,7 @@ void ufs_count_sites()
 #endif
 
     // Normalize to total weight to get fraction of source in each cell
-    double total = simulation::source_frac.sum();
+    double total = xt::sum(simulation::source_frac)();
     simulation::source_frac /= total;
 
     // Since the total starting weight is not equal to n_particles, we need to

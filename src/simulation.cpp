@@ -30,7 +30,7 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
-#include "openmc/tensor.h"
+#include "xtensor/xview.hpp"
 
 #ifdef OPENMC_MPI
 #include <mpi.h>
@@ -122,7 +122,6 @@ int openmc_simulation_init()
   simulation::ssw_current_file = 1;
   simulation::k_generation.clear();
   simulation::entropy.clear();
-  reset_source_rejection_counters();
   openmc_reset();
 
   // If this is a restart run, load the state point data and binary source
@@ -388,9 +387,15 @@ void initialize_batch()
   // Manage active/inactive timers and activate tallies if necessary.
   if (first_inactive) {
     simulation::time_inactive.start();
+    for (auto& t : model::tallies) {
+      t->active_ = true;
+    }
   } else if (first_active) {
     simulation::time_inactive.stop();
     simulation::time_active.start();
+    for (auto& t : model::tallies) {
+      t->reset();
+    }
     for (auto& t : model::tallies) {
       t->active_ = true;
     }
@@ -413,8 +418,8 @@ void finalize_batch()
   }
 
   // Reset global tally results
-  if (simulation::current_batch <= settings::n_inactive) {
-    simulation::global_tallies.fill(0.0);
+  if (simulation::current_batch == settings::n_inactive) {
+    xt::view(simulation::global_tallies, xt::all()) = 0.0;
     simulation::n_realizations = 0;
   }
 
@@ -688,7 +693,7 @@ void initialize_data()
 
   for (const auto& nuc : data::nuclides) {
     if (nuc->grid_.size() >= 1) {
-      int neutron = ParticleType::neutron().transport_index();
+      int neutron = static_cast<int>(ParticleType::neutron);
       data::energy_min[neutron] =
         std::max(data::energy_min[neutron], nuc->grid_[0].energy.front());
       data::energy_max[neutron] =
@@ -699,7 +704,7 @@ void initialize_data()
   if (settings::photon_transport) {
     for (const auto& elem : data::elements) {
       if (elem->energy_.size() >= 1) {
-        int photon = ParticleType::photon().transport_index();
+        int photon = static_cast<int>(ParticleType::photon);
         int n = elem->energy_.size();
         data::energy_min[photon] =
           std::max(data::energy_min[photon], std::exp(elem->energy_(1)));
@@ -712,9 +717,9 @@ void initialize_data()
       // Determine if minimum/maximum energy for bremsstrahlung is greater/less
       // than the current minimum/maximum
       if (data::ttb_e_grid.size() >= 1) {
-        int photon = ParticleType::photon().transport_index();
-        int electron = ParticleType::electron().transport_index();
-        int positron = ParticleType::positron().transport_index();
+        int photon = static_cast<int>(ParticleType::photon);
+        int electron = static_cast<int>(ParticleType::electron);
+        int positron = static_cast<int>(ParticleType::positron);
         int n_e = data::ttb_e_grid.size();
 
         const std::vector<int> charged = {electron, positron};
@@ -738,7 +743,7 @@ void initialize_data()
     // grid has not been allocated
     if (nuc->grid_.size() > 0) {
       double max_E = nuc->grid_[0].energy.back();
-      int neutron = ParticleType::neutron().transport_index();
+      int neutron = static_cast<int>(ParticleType::neutron);
       if (max_E == data::energy_max[neutron]) {
         write_message(7, "Maximum neutron transport energy: {} eV for {}",
           data::energy_max[neutron], nuc->name_);
@@ -755,7 +760,7 @@ void initialize_data()
   for (auto& nuc : data::nuclides) {
     nuc->init_grid();
   }
-  int neutron = ParticleType::neutron().transport_index();
+  int neutron = static_cast<int>(ParticleType::neutron);
   simulation::log_spacing =
     std::log(data::energy_max[neutron] / data::energy_min[neutron]) /
     settings::n_log_bins;

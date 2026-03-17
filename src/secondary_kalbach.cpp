@@ -5,7 +5,8 @@
 #include <cstddef>   // for size_t
 #include <iterator>  // for back_inserter
 
-#include "openmc/tensor.h"
+#include "xtensor/xarray.hpp"
+#include "xtensor/xview.hpp"
 
 #include "openmc/hdf5_interface.h"
 #include "openmc/math_functions.h"
@@ -26,11 +27,11 @@ KalbachMann::KalbachMann(hid_t group)
   hid_t dset = open_dataset(group, "energy");
 
   // Get interpolation parameters
-  tensor::Tensor<int> temp;
+  xt::xarray<int> temp;
   read_attribute(dset, "interpolation", temp);
 
-  tensor::View<int> temp_b = temp.slice(0); // breakpoints
-  tensor::View<int> temp_i = temp.slice(1); // interpolation parameters
+  auto temp_b = xt::view(temp, 0); // view of breakpoints
+  auto temp_i = xt::view(temp, 1); // view of interpolation parameters
 
   std::copy(temp_b.begin(), temp_b.end(), std::back_inserter(breakpoints_));
   for (const auto i : temp_i)
@@ -51,7 +52,7 @@ KalbachMann::KalbachMann(hid_t group)
   read_attribute(dset, "interpolation", interp);
   read_attribute(dset, "n_discrete_lines", n_discrete);
 
-  tensor::Tensor<double> eout;
+  xt::xarray<double> eout;
   read_dataset(dset, eout);
   close_dataset(dset);
 
@@ -62,7 +63,7 @@ KalbachMann::KalbachMann(hid_t group)
     if (i < n_energy - 1) {
       n = offsets[i + 1] - j;
     } else {
-      n = eout.shape(1) - j;
+      n = eout.shape()[1] - j;
     }
 
     // Assign interpolation scheme and number of discrete lines
@@ -71,11 +72,11 @@ KalbachMann::KalbachMann(hid_t group)
     d.n_discrete = n_discrete[i];
 
     // Copy data
-    d.e_out = eout.slice(0, tensor::range(j, j + n));
-    d.p = eout.slice(1, tensor::range(j, j + n));
-    d.c = eout.slice(2, tensor::range(j, j + n));
-    d.r = eout.slice(3, tensor::range(j, j + n));
-    d.a = eout.slice(4, tensor::range(j, j + n));
+    d.e_out = xt::view(eout, 0, xt::range(j, j + n));
+    d.p = xt::view(eout, 1, xt::range(j, j + n));
+    d.c = xt::view(eout, 2, xt::range(j, j + n));
+    d.r = xt::view(eout, 3, xt::range(j, j + n));
+    d.a = xt::view(eout, 4, xt::range(j, j + n));
 
     // To get answers that match ACE data, for now we still use the tabulated
     // CDF values that were passed through to the HDF5 library. At a later
@@ -114,8 +115,8 @@ KalbachMann::KalbachMann(hid_t group)
   } // incoming energies
 }
 
-void KalbachMann::sample_params(
-  double E_in, double& E_out, double& km_a, double& km_r, uint64_t* seed) const
+void KalbachMann::sample(
+  double E_in, double& E_out, double& mu, uint64_t* seed) const
 {
   // Find energy bin and calculate interpolation factor
   int i;
@@ -170,6 +171,7 @@ void KalbachMann::sample_params(
 
   double E_l_k = distribution_[l].e_out[k];
   double p_l_k = distribution_[l].p[k];
+  double km_r, km_a;
   if (distribution_[l].interpolation == Interpolation::histogram) {
     // Histogram interpolation
     if (p_l_k > 0.0 && k >= n_discrete) {
@@ -215,13 +217,6 @@ void KalbachMann::sample_params(
       E_out = E_1 + (E_out - E_i1_1) * (E_K - E_1) / (E_i1_K - E_i1_1);
     }
   }
-}
-
-void KalbachMann::sample(
-  double E_in, double& E_out, double& mu, uint64_t* seed) const
-{
-  double km_r, km_a;
-  sample_params(E_in, E_out, km_a, km_r, seed);
 
   // Sampled correlated angle from Kalbach-Mann parameters
   if (prn(seed) > km_r) {
@@ -231,16 +226,6 @@ void KalbachMann::sample(
     double r1 = prn(seed);
     mu = std::log(r1 * std::exp(km_a) + (1.0 - r1) * std::exp(-km_a)) / km_a;
   }
-}
-double KalbachMann::sample_energy_and_pdf(
-  double E_in, double mu, double& E_out, uint64_t* seed) const
-{
-  double km_r, km_a;
-  sample_params(E_in, E_out, km_a, km_r, seed);
-
-  // https://docs.openmc.org/en/latest/methods/neutron_physics.html#equation-KM-pdf-angle
-  return km_a / (2 * std::sinh(km_a)) *
-         (std::cosh(km_a * mu) + km_r * std::sinh(km_a * mu));
 }
 
 } // namespace openmc

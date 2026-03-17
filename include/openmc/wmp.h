@@ -2,7 +2,7 @@
 #define OPENMC_WMP_H
 
 #include "hdf5.h"
-#include "openmc/tensor.h"
+#include "xtensor/xtensor.hpp"
 
 #include <complex>
 #include <string>
@@ -78,9 +78,9 @@ public:
   int fit_order_;                  //!< Order of the fit
   bool fissionable_;               //!< Is the nuclide fissionable?
   vector<WindowInfo> window_info_; // Information about a window
-  tensor::Tensor<double>
+  xt::xtensor<double, 3>
     curvefit_; // Curve fit coefficients (window, poly order, reaction)
-  tensor::Tensor<std::complex<double>> data_; //!< Poles and residues
+  xt::xtensor<std::complex<double>, 2> data_; //!< Poles and residues
 
   // Constant data
   static constexpr int MAX_POLY_COEFFICIENTS =

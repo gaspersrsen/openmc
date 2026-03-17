@@ -1,7 +1,6 @@
 import h5py
 
 import openmc.checkvalue as cv
-from .particle_type import ParticleType
 
 _VERSION_PARTICLE_RESTART = 2
 
@@ -29,8 +28,8 @@ class Particle:
         Type of simulation (criticality or fixed source)
     id : long
         Identifier of the particle
-    type : openmc.ParticleType
-        Particle type
+    type : int
+        Particle type (1 = neutron, 2 = photon, 3 = electron, 4 = positron)
     weight : float
         Weight of the particle
     energy : float
@@ -53,7 +52,7 @@ class Particle:
             self.energy = f['energy'][()]
             self.generations_per_batch = f['generations_per_batch'][()]
             self.id = f['id'][()]
-            self.type = ParticleType(f['type'][()])
+            self.type = f['type'][()]
             self.n_particles = f['n_particles'][()]
             self.run_mode = f['run_mode'][()].decode()
             self.uvw = f['uvw'][()]

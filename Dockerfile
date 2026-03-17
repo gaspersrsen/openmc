@@ -33,6 +33,11 @@ ARG build_libmesh
 # Set default value of HOME to /root
 ENV HOME=/root
 
+# Embree variables
+ENV EMBREE_TAG='v4.3.1'
+ENV EMBREE_REPO='https://github.com/embree/embree'
+ENV EMBREE_INSTALL_DIR=$HOME/EMBREE/
+
 # MOAB variables
 ENV MOAB_TAG='5.5.1'
 ENV MOAB_REPO='https://bitbucket.org/fathomteam/moab/'
@@ -56,17 +61,17 @@ ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH
 ENV NJOY_REPO='https://github.com/njoy/NJOY2016'
 
 # Setup environment variables for Docker image
-ENV LD_LIBRARY_PATH=${DAGMC_INSTALL_DIR}/lib:${LD_LIBRARY_PATH:-} \
+ENV LD_LIBRARY_PATH=${DAGMC_INSTALL_DIR}/lib:$LD_LIBRARY_PATH \
     OPENMC_ENDF_DATA=/root/endf-b-vii.1 \
     DEBIAN_FRONTEND=noninteractive
 
 # Install and update dependencies from Debian package manager
-RUN apt-get update -y && \
-    apt-get upgrade -y && \
+RUN apt-get update -y || true && \
+    apt-get upgrade -y || true && \
     apt-get install -y \
         python3-pip python-is-python3 wget git build-essential cmake \
         mpich libmpich-dev libhdf5-serial-dev libhdf5-mpich-dev \
-        libpng-dev libpugixml-dev libfmt-dev catch2 python3-venv && \
+        libpng-dev python3-venv && \
     apt-get autoremove
 
 # create virtual enviroment to avoid externally managed environment error
@@ -75,6 +80,7 @@ ENV PATH=/openmc_venv/bin:$PATH
 
 # Update system-provided pip
 RUN pip install --upgrade pip
+#RUN pip install vtk
 
 # Clone and install NJOY2016
 RUN cd $HOME \
@@ -89,12 +95,22 @@ RUN cd $HOME \
 
 RUN if [ "$build_dagmc" = "on" ]; then \
         # Install addition packages required for DAGMC
-        apt-get -y install \
-            libeigen3-dev libnetcdf-dev libtbb-dev libglfw3-dev libembree-dev \
+        apt-get -y install libeigen3-dev libnetcdf-dev libtbb-dev libglfw3-dev \
         && pip install --upgrade numpy \
         && pip install --no-cache-dir setuptools cython \
+        # Clone and install EMBREE
+        && mkdir -p $HOME/EMBREE && cd $HOME/EMBREE \
+        && git clone --single-branch -b ${EMBREE_TAG} --depth 1 ${EMBREE_REPO} \
+        && mkdir build && cd build \
+        && cmake ../embree \
+                    -DCMAKE_INSTALL_PREFIX=${EMBREE_INSTALL_DIR} \
+                    -DEMBREE_MAX_ISA=NONE \
+                    -DEMBREE_ISA_SSE42=ON \
+                    -DEMBREE_ISPC_SUPPORT=OFF \
+        && make 2>/dev/null -j${compile_cores} install \
+        && rm -rf ${EMBREE_INSTALL_DIR}/build ${EMBREE_INSTALL_DIR}/embree ; \
         # Clone and install MOAB
-        && mkdir -p $HOME/MOAB && cd $HOME/MOAB \
+        mkdir -p $HOME/MOAB && cd $HOME/MOAB \
         && git clone  --single-branch -b ${MOAB_TAG} --depth 1 ${MOAB_REPO} \
         && mkdir build && cd build \
         && cmake ../moab -DCMAKE_BUILD_TYPE=Release \
@@ -103,7 +119,6 @@ RUN if [ "$build_dagmc" = "on" ]; then \
                       -DBUILD_SHARED_LIBS=OFF \
                       -DENABLE_FORTRAN=OFF \
                       -DENABLE_BLASLAPACK=OFF \
-                      -DENABLE_TESTING=OFF \
         && make 2>/dev/null -j${compile_cores} install \
         && cmake ../moab \
                     -DENABLE_PYMOAB=ON \
@@ -119,7 +134,7 @@ RUN if [ "$build_dagmc" = "on" ]; then \
         && mkdir build && cd build \
         && cmake ../double-down -DCMAKE_INSTALL_PREFIX=${DD_INSTALL_DIR} \
                              -DMOAB_DIR=/usr/local \
-                             -DEMBREE_DIR=/usr \
+                             -DEMBREE_DIR=${EMBREE_INSTALL_DIR} \
         && make 2>/dev/null -j${compile_cores} install \
         && rm -rf ${DD_INSTALL_DIR}/build ${DD_INSTALL_DIR}/double-down ; \
         # Clone and install DAGMC
@@ -133,7 +148,6 @@ RUN if [ "$build_dagmc" = "on" ]; then \
                        -DDOUBLE_DOWN_DIR=${DD_INSTALL_DIR} \
                        -DCMAKE_PREFIX_PATH=${DD_INSTALL_DIR}/lib \
                        -DBUILD_STATIC_LIBS=OFF \
-                       -DBUILD_TESTS=OFF \
         && make 2>/dev/null -j${compile_cores} install \
         && rm -rf ${DAGMC_INSTALL_DIR}/DAGMC ${DAGMC_INSTALL_DIR}/build ; \
     fi
@@ -170,8 +184,8 @@ FROM dependencies AS build
 
 ENV HOME=/root
 
-ARG openmc_branch=master
-ENV OPENMC_REPO='https://github.com/openmc-dev/openmc'
+ARG openmc_branch=15_4_dev_29_1_2026
+ENV OPENMC_REPO='https://github.com/gaspersrsen/openmc.git'
 
 ARG compile_cores
 ARG build_dagmc
@@ -179,6 +193,8 @@ ARG build_libmesh
 
 ENV DAGMC_INSTALL_DIR=$HOME/DAGMC/
 ENV LIBMESH_INSTALL_DIR=$HOME/LIBMESH
+ARG CACHEBUST=1
+RUN echo "$CACHEBUST"
 
 # clone and install openmc
 RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
@@ -221,8 +237,8 @@ RUN mkdir -p ${HOME}/OpenMC && cd ${HOME}/OpenMC \
 
 FROM build AS release
 
-ENV HOME=/root
-ENV OPENMC_CROSS_SECTIONS=/root/nndc_hdf5/cross_sections.xml
+#ENV HOME=/root
+#ENV OPENMC_CROSS_SECTIONS=/root/nndc_hdf5/cross_sections.xml
 
 # Download cross sections (NNDC and WMP) and ENDF data needed by test suite
-RUN ${HOME}/OpenMC/openmc/tools/ci/download-xs.sh
+#RUN ${HOME}/OpenMC/openmc/tools/ci/download-xs.sh

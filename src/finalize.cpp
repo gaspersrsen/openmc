@@ -14,7 +14,6 @@
 #include "openmc/material.h"
 #include "openmc/mesh.h"
 #include "openmc/message_passing.h"
-#include "openmc/mgxs_interface.h"
 #include "openmc/nuclide.h"
 #include "openmc/photon.h"
 #include "openmc/plot.h"
@@ -30,7 +29,7 @@
 #include "openmc/volume_calc.h"
 #include "openmc/weight_windows.h"
 
-#include "openmc/tensor.h"
+#include "xtensor/xview.hpp"
 
 namespace openmc {
 
@@ -123,9 +122,6 @@ int openmc_finalize()
   settings::restart_run = false;
   settings::run_CE = true;
   settings::run_mode = RunMode::UNSET;
-  settings::surface_grazing_cutoff = 0.001;
-  settings::surface_grazing_ratio = 0.5;
-  settings::solver_type = SolverType::MONTE_CARLO;
   settings::source_latest = false;
   settings::source_rejection_fraction = 0.05;
   settings::source_separate = false;
@@ -140,7 +136,6 @@ int openmc_finalize()
   settings::temperature_multipole = false;
   settings::temperature_range = {0.0, 0.0};
   settings::temperature_tolerance = 10.0;
-  settings::properties_file.clear();
   settings::trigger_on = false;
   settings::trigger_predict = false;
   settings::trigger_batch_interval = 1;
@@ -167,7 +162,6 @@ int openmc_finalize()
   data::energy_min = {0.0, 0.0, 0.0, 0.0};
   data::temperature_min = 0.0;
   data::temperature_max = INFTY;
-  data::mg = {};
   model::root_universe = -1;
   model::plotter_seed = 1;
   openmc::openmc_set_seed(DEFAULT_SEED);
@@ -190,7 +184,7 @@ int openmc_finalize()
   }
 #endif
 
-  openmc_finalize_random_ray();
+  openmc_reset_random_ray();
 
   return 0;
 }
@@ -206,7 +200,7 @@ int openmc_reset()
 
   // Reset global tallies
   simulation::n_realizations = 0;
-  simulation::global_tallies.fill(0.0);
+  xt::view(simulation::global_tallies, xt::all()) = 0.0;
 
   simulation::k_col_abs = 0.0;
   simulation::k_col_tra = 0.0;

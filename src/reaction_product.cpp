@@ -1,6 +1,5 @@
 #include "openmc/reaction_product.h"
 
-#include <cassert>
 #include <string> // for string
 
 #include <fmt/core.h>
@@ -27,7 +26,7 @@ ReactionProduct::ReactionProduct(hid_t group)
   // Read particle type
   std::string temp;
   read_attribute(group, "particle", temp);
-  particle_ = ParticleType {temp};
+  particle_ = str_to_particle_type(temp);
 
   // Read emission mode and decay rate
   read_attribute(group, "emission_mode", temp);
@@ -43,7 +42,7 @@ ReactionProduct::ReactionProduct(hid_t group)
   if (emission_mode_ == EmissionMode::delayed) {
     if (attribute_exists(group, "decay_rate")) {
       read_attribute(group, "decay_rate", decay_rate_);
-    } else if (particle_.is_neutron()) {
+    } else if (particle_ == ParticleType::neutron) {
       warning(fmt::format("Decay rate doesn't exist for delayed neutron "
                           "emission ({}).",
         object_name(group)));
@@ -86,7 +85,7 @@ ReactionProduct::ReactionProduct(hid_t group)
 
 ReactionProduct::ReactionProduct(const ChainNuclide::Product& product)
 {
-  particle_ = ParticleType::photon();
+  particle_ = ParticleType::photon;
   emission_mode_ = EmissionMode::delayed;
 
   // Get chain nuclide object for radionuclide
@@ -107,10 +106,9 @@ ReactionProduct::ReactionProduct(const ChainNuclide::Product& product)
     make_unique<DecayPhotonAngleEnergy>(chain_nuc->photon_energy()));
 }
 
-AngleEnergy& ReactionProduct::sample_dist(double E_in, uint64_t* seed) const
+void ReactionProduct::sample(
+  double E_in, double& E_out, double& mu, uint64_t* seed) const
 {
-  assert(!distribution_.empty());
-
   auto n = applicability_.size();
   if (n > 1) {
     double prob = 0.0;
@@ -120,24 +118,15 @@ AngleEnergy& ReactionProduct::sample_dist(double E_in, uint64_t* seed) const
       prob += applicability_[i](E_in);
 
       // If i-th distribution is sampled, sample energy from the distribution
-      if (c <= prob)
-        return *distribution_[i];
+      if (c <= prob) {
+        distribution_[i]->sample(E_in, E_out, mu, seed);
+        break;
+      }
     }
+  } else {
+    // If only one distribution is present, go ahead and sample it
+    distribution_[0]->sample(E_in, E_out, mu, seed);
   }
-
-  return *distribution_.back();
-}
-
-void ReactionProduct::sample(
-  double E_in, double& E_out, double& mu, uint64_t* seed) const
-{
-  sample_dist(E_in, seed).sample(E_in, E_out, mu, seed);
-}
-
-double ReactionProduct::sample_energy_and_pdf(
-  double E_in, double mu, double& E_out, uint64_t* seed) const
-{
-  return sample_dist(E_in, seed).sample_energy_and_pdf(E_in, mu, E_out, seed);
 }
 
 } // namespace openmc

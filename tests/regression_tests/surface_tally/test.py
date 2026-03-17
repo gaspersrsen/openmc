@@ -169,6 +169,7 @@ class SurfaceTallyTestHarness(PyAPITestHarness):
         # Extract the relevant data as a CSV string.
         cols = ('mean', 'std. dev.')
         return df.to_csv(None, columns=cols, index=False, float_format='%.7e')
+        return outstr
 
 
 def test_surface_tally():
