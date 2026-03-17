@@ -2,8 +2,6 @@
 #include <mpi.h>
 #endif
 
-#include <cassert>
-
 #include "openmc/capi.h"
 #include "openmc/cell.h"
 #include "openmc/error.h"

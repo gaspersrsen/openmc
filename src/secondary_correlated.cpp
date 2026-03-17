@@ -5,7 +5,8 @@
 #include <cstddef>  // for size_t
 #include <iterator> // for back_inserter
 
-#include "openmc/tensor.h"
+#include "xtensor/xarray.hpp"
+#include "xtensor/xview.hpp"
 
 #include "openmc/endf.h"
 #include "openmc/hdf5_interface.h"
@@ -25,11 +26,11 @@ CorrelatedAngleEnergy::CorrelatedAngleEnergy(hid_t group)
   hid_t dset = open_dataset(group, "energy");
 
   // Get interpolation parameters
-  tensor::Tensor<int> temp;
+  xt::xarray<int> temp;
   read_attribute(dset, "interpolation", temp);
 
-  tensor::View<int> temp_b = temp.slice(0); // breakpoints
-  tensor::View<int> temp_i = temp.slice(1); // interpolation parameters
+  auto temp_b = xt::view(temp, 0); // view of breakpoints
+  auto temp_i = xt::view(temp, 1); // view of interpolation parameters
 
   std::copy(temp_b.begin(), temp_b.end(), std::back_inserter(breakpoints_));
   for (const auto i : temp_i)
@@ -50,12 +51,12 @@ CorrelatedAngleEnergy::CorrelatedAngleEnergy(hid_t group)
   read_attribute(dset, "interpolation", interp);
   read_attribute(dset, "n_discrete_lines", n_discrete);
 
-  tensor::Tensor<double> eout;
+  xt::xarray<double> eout;
   read_dataset(dset, eout);
   close_dataset(dset);
 
   // Read angle distributions
-  tensor::Tensor<double> mu;
+  xt::xarray<double> mu;
   read_dataset(group, "mu", mu);
 
   for (int i = 0; i < n_energy; ++i) {
@@ -65,7 +66,7 @@ CorrelatedAngleEnergy::CorrelatedAngleEnergy(hid_t group)
     if (i < n_energy - 1) {
       n = offsets[i + 1] - j;
     } else {
-      n = eout.shape(1) - j;
+      n = eout.shape()[1] - j;
     }
 
     // Assign interpolation scheme and number of discrete lines
@@ -74,9 +75,9 @@ CorrelatedAngleEnergy::CorrelatedAngleEnergy(hid_t group)
     d.n_discrete = n_discrete[i];
 
     // Copy data
-    d.e_out = eout.slice(0, tensor::range(j, j + n));
-    d.p = eout.slice(1, tensor::range(j, j + n));
-    d.c = eout.slice(2, tensor::range(j, j + n));
+    d.e_out = xt::view(eout, 0, xt::range(j, j + n));
+    d.p = xt::view(eout, 1, xt::range(j, j + n));
+    d.c = xt::view(eout, 2, xt::range(j, j + n));
 
     // To get answers that match ACE data, for now we still use the tabulated
     // CDF values that were passed through to the HDF5 library. At a later
@@ -118,10 +119,10 @@ CorrelatedAngleEnergy::CorrelatedAngleEnergy(hid_t group)
       // Determine offset and size of distribution
       int offset_mu = std::lround(eout(4, offsets[i] + j));
       int m;
-      if (offsets[i] + j + 1 < eout.shape(1)) {
+      if (offsets[i] + j + 1 < eout.shape()[1]) {
         m = std::lround(eout(4, offsets[i] + j + 1)) - offset_mu;
       } else {
-        m = mu.shape(1) - offset_mu;
+        m = mu.shape()[1] - offset_mu;
       }
 
       // For incoherent inelastic thermal scattering, the angle distributions
@@ -132,12 +133,9 @@ CorrelatedAngleEnergy::CorrelatedAngleEnergy(hid_t group)
         interp_mu = 1;
 
       auto interp = int2interp(interp_mu);
-      tensor::View<double> xs =
-        mu.slice(0, tensor::range(offset_mu, offset_mu + m));
-      tensor::View<double> ps =
-        mu.slice(1, tensor::range(offset_mu, offset_mu + m));
-      tensor::View<double> cs =
-        mu.slice(2, tensor::range(offset_mu, offset_mu + m));
+      auto xs = xt::view(mu, 0, xt::range(offset_mu, offset_mu + m));
+      auto ps = xt::view(mu, 1, xt::range(offset_mu, offset_mu + m));
+      auto cs = xt::view(mu, 2, xt::range(offset_mu, offset_mu + m));
 
       vector<double> x {xs.begin(), xs.end()};
       vector<double> p {ps.begin(), ps.end()};
@@ -155,8 +153,9 @@ CorrelatedAngleEnergy::CorrelatedAngleEnergy(hid_t group)
     distribution_.push_back(std::move(d));
   } // incoming energies
 }
-Distribution& CorrelatedAngleEnergy::sample_dist(
-  double E_in, double& E_out, uint64_t* seed) const
+
+void CorrelatedAngleEnergy::sample(
+  double E_in, double& E_out, double& mu, uint64_t* seed) const
 {
   // Find energy bin and calculate interpolation factor
   int i;
@@ -248,22 +247,10 @@ Distribution& CorrelatedAngleEnergy::sample_dist(
   // Find correlated angular distribution for closest outgoing energy bin
   if (r1 - c_k < c_k1 - r1 ||
       distribution_[l].interpolation == Interpolation::histogram) {
-    return *distribution_[l].angle[k];
+    mu = distribution_[l].angle[k]->sample(seed).first;
   } else {
-    return *distribution_[l].angle[k + 1];
+    mu = distribution_[l].angle[k + 1]->sample(seed).first;
   }
-}
-
-void CorrelatedAngleEnergy::sample(
-  double E_in, double& E_out, double& mu, uint64_t* seed) const
-{
-  mu = sample_dist(E_in, E_out, seed).sample(seed).first;
-}
-
-double CorrelatedAngleEnergy::sample_energy_and_pdf(
-  double E_in, double mu, double& E_out, uint64_t* seed) const
-{
-  return sample_dist(E_in, E_out, seed).evaluate(mu);
 }
 
 } // namespace openmc

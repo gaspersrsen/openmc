@@ -41,7 +41,6 @@ public:
   uint64_t transport_history_based_single_ray();
   SourceSite sample_prng();
   SourceSite sample_halton();
-  SourceSite sample_s2();
 
   //----------------------------------------------------------------------------
   // Static data members
@@ -66,7 +65,6 @@ private:
   vector<double> mesh_fractional_lengths_;
 
   int negroups_;
-  int ntemperature_;
   FlatSourceDomain* domain_ {nullptr}; // pointer to domain that has flat source
                                        // data needed for ray transport
   double distance_travelled_ {0};

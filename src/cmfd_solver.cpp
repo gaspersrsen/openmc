@@ -5,7 +5,7 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
-#include "openmc/tensor.h"
+#include "xtensor/xtensor.hpp"
 
 #include "openmc/bank.h"
 #include "openmc/capi.h"
@@ -36,7 +36,7 @@ double spectral;
 
 int nx, ny, nz, ng;
 
-tensor::Tensor<int> indexmap;
+xt::xtensor<int, 2> indexmap;
 
 int use_all_threads;
 
@@ -79,14 +79,15 @@ int get_cmfd_energy_bin(const double E)
 // COUNT_BANK_SITES bins fission sites according to CMFD mesh and energy
 //==============================================================================
 
-tensor::Tensor<double> count_bank_sites(
-  tensor::Tensor<int>& bins, bool* outside)
+xt::xtensor<double, 1> count_bank_sites(
+  xt::xtensor<int, 1>& bins, bool* outside)
 {
   // Determine shape of array for counts
   std::size_t cnt_size = cmfd::nx * cmfd::ny * cmfd::nz * cmfd::ng;
+  vector<std::size_t> cnt_shape = {cnt_size};
 
   // Create array of zeros
-  tensor::Tensor<double> cnt = tensor::zeros<double>({cnt_size});
+  xt::xarray<double> cnt {cnt_shape, 0.0};
   bool outside_ = false;
 
   auto bank_size = simulation::source_bank.size();
@@ -112,21 +113,28 @@ tensor::Tensor<double> count_bank_sites(
     bins[i] = mesh_bin * cmfd::ng + energy_bin;
   }
 
+  // Create copy of count data. Since ownership will be acquired by xtensor,
+  // std::allocator must be used to avoid Valgrind mismatched free() / delete
+  // warnings.
   int total = cnt.size();
-  tensor::Tensor<double> counts = tensor::zeros<double>({cnt_size});
+  double* cnt_reduced = std::allocator<double> {}.allocate(total);
 
 #ifdef OPENMC_MPI
   // collect values from all processors
   MPI_Reduce(
-    cnt.data(), counts.data(), total, MPI_DOUBLE, MPI_SUM, 0, mpi::intracomm);
+    cnt.data(), cnt_reduced, total, MPI_DOUBLE, MPI_SUM, 0, mpi::intracomm);
 
   // Check if there were sites outside the mesh for any processor
   MPI_Reduce(&outside_, outside, 1, MPI_C_BOOL, MPI_LOR, 0, mpi::intracomm);
 
 #else
-  std::copy(cnt.data(), cnt.data() + total, counts.data());
+  std::copy(cnt.data(), cnt.data() + total, cnt_reduced);
   *outside = outside_;
 #endif
+
+  // Adapt reduced values in array back into an xarray
+  auto arr = xt::adapt(cnt_reduced, total, xt::acquire_ownership(), cnt_shape);
+  xt::xarray<double> counts = arr;
 
   return counts;
 }
@@ -143,19 +151,19 @@ extern "C" void openmc_cmfd_reweight(
   std::size_t src_size = cmfd::nx * cmfd::ny * cmfd::nz * cmfd::ng;
 
   // count bank sites for CMFD mesh, store bins in bank_bins for reweighting
-  tensor::Tensor<int> bank_bins = tensor::zeros<int>({bank_size});
+  xt::xtensor<int, 1> bank_bins({bank_size}, 0);
   bool sites_outside;
-  tensor::Tensor<double> sourcecounts =
+  xt::xtensor<double, 1> sourcecounts =
     count_bank_sites(bank_bins, &sites_outside);
 
   // Compute CMFD weightfactors
-  tensor::Tensor<double> weightfactors = tensor::ones<double>({src_size});
+  xt::xtensor<double, 1> weightfactors = xt::xtensor<double, 1>({src_size}, 1.);
   if (mpi::master) {
     if (sites_outside) {
       fatal_error("Source sites outside of the CMFD mesh");
     }
 
-    double norm = sourcecounts.sum() / cmfd::norm;
+    double norm = xt::sum(sourcecounts)() / cmfd::norm;
     for (int i = 0; i < src_size; i++) {
       if (sourcecounts[i] > 0 && cmfd_src[i] > 0) {
         weightfactors[i] = cmfd_src[i] * norm / sourcecounts[i];
@@ -553,7 +561,7 @@ void free_memory_cmfd()
   cmfd::indices.clear();
   cmfd::egrid.clear();
 
-  // Resize tensors to be empty
+  // Resize xtensors to be empty
   cmfd::indexmap.resize({0});
 
   // Set pointers to null

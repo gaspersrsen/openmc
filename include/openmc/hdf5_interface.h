@@ -11,7 +11,8 @@
 
 #include "hdf5.h"
 #include "hdf5_hl.h"
-#include "openmc/tensor.h"
+#include "xtensor/xadapt.hpp"
+#include "xtensor/xarray.hpp"
 
 #include "openmc/array.h"
 #include "openmc/error.h"
@@ -165,19 +166,24 @@ void read_attribute(hid_t obj_id, const char* name, vector<T>& vec)
   read_attr(obj_id, name, H5TypeMap<T>::type_id, vec.data());
 }
 
-// Tensor version
+// Generic array version
 template<typename T>
-void read_attribute(hid_t obj_id, const char* name, tensor::Tensor<T>& tensor)
+void read_attribute(hid_t obj_id, const char* name, xt::xarray<T>& arr)
 {
-  // Get shape of attribute
+  // Get shape of attribute array
   auto shape = attribute_shape(obj_id, name);
 
-  // Resize tensor and read data directly
-  vector<size_t> tshape(shape.begin(), shape.end());
-  tensor.resize(tshape);
+  // Allocate new array to read data into
+  std::size_t size = 1;
+  for (const auto x : shape)
+    size *= x;
+  vector<T> buffer(size);
 
   // Read data from attribute
-  read_attr(obj_id, name, H5TypeMap<T>::type_id, tensor.data());
+  read_attr(obj_id, name, H5TypeMap<T>::type_id, buffer.data());
+
+  // Adapt array into xarray
+  arr = xt::adapt(buffer, shape);
 }
 
 // overload for std::string
@@ -284,32 +290,61 @@ void read_dataset(
 }
 
 template<typename T>
-void read_dataset(hid_t dset, tensor::Tensor<T>& tensor, bool indep = false)
+void read_dataset(hid_t dset, xt::xarray<T>& arr, bool indep = false)
 {
   // Get shape of dataset
   vector<hsize_t> shape = object_shape(dset);
 
-  // Resize tensor and read data directly
-  vector<size_t> tshape(shape.begin(), shape.end());
-  tensor.resize(tshape);
+  // Allocate space in the array to read data into
+  std::size_t size = 1;
+  for (const auto x : shape)
+    size *= x;
+  arr.resize(shape);
 
-  // Read data from dataset
+  // Read data from attribute
   read_dataset_lowlevel(
-    dset, nullptr, H5TypeMap<T>::type_id, H5S_ALL, indep, tensor.data());
+    dset, nullptr, H5TypeMap<T>::type_id, H5S_ALL, indep, arr.data());
 }
 
 template<>
 void read_dataset(
-  hid_t dset, tensor::Tensor<std::complex<double>>& tensor, bool indep);
+  hid_t dset, xt::xarray<std::complex<double>>& arr, bool indep);
 
 template<typename T>
 void read_dataset(
-  hid_t obj_id, const char* name, tensor::Tensor<T>& tensor, bool indep = false)
+  hid_t obj_id, const char* name, xt::xarray<T>& arr, bool indep = false)
 {
-  // Open dataset and read tensor
+  // Open dataset and read array
   hid_t dset = open_dataset(obj_id, name);
-  read_dataset(dset, tensor, indep);
+  read_dataset(dset, arr, indep);
   close_dataset(dset);
+}
+
+template<typename T, std::size_t N>
+void read_dataset(
+  hid_t obj_id, const char* name, xt::xtensor<T, N>& arr, bool indep = false)
+{
+  // Open dataset and read array
+  hid_t dset = open_dataset(obj_id, name);
+
+  // Get shape of dataset
+  vector<hsize_t> hsize_t_shape = object_shape(dset);
+  close_dataset(dset);
+
+  // cast from hsize_t to size_t
+  vector<size_t> shape(hsize_t_shape.size());
+  for (int i = 0; i < shape.size(); i++) {
+    shape[i] = static_cast<size_t>(hsize_t_shape[i]);
+  }
+
+  // Allocate new xarray to read data into
+  xt::xarray<T> xarr(shape);
+
+  // Read data from the dataset
+  read_dataset(obj_id, name, xarr);
+
+  // Copy into xtensor
+  arr = xarr;
 }
 
 // overload for Position
@@ -323,22 +358,31 @@ inline void read_dataset(
   r.z = x[2];
 }
 
-template<typename T>
+template<typename T, std::size_t N>
 inline void read_dataset_as_shape(
-  hid_t obj_id, const char* name, tensor::Tensor<T>& tensor, bool indep = false)
+  hid_t obj_id, const char* name, xt::xtensor<T, N>& arr, bool indep = false)
 {
   hid_t dset = open_dataset(obj_id, name);
 
-  // Read data directly into pre-shaped tensor
+  // Allocate new array to read data into
+  std::size_t size = 1;
+  for (const auto x : arr.shape())
+    size *= x;
+  vector<T> buffer(size);
+
+  // Read data from attribute
   read_dataset_lowlevel(
-    dset, nullptr, H5TypeMap<T>::type_id, H5S_ALL, indep, tensor.data());
+    dset, nullptr, H5TypeMap<T>::type_id, H5S_ALL, indep, buffer.data());
+
+  // Adapt into xarray
+  arr = xt::adapt(buffer, arr.shape());
 
   close_dataset(dset);
 }
 
-template<typename T>
-inline void read_nd_tensor(hid_t obj_id, const char* name,
-  tensor::Tensor<T>& result, bool must_have = false)
+template<typename T, std::size_t N>
+inline void read_nd_vector(hid_t obj_id, const char* name,
+  xt::xtensor<T, N>& result, bool must_have = false)
 {
   if (object_exists(obj_id, name)) {
     read_dataset_as_shape(obj_id, name, result, true);
@@ -452,16 +496,12 @@ inline void write_dataset(
     false, buffer.data());
 }
 
-// Template for Tensor and StaticTensor2D. A SFINAE guard is used here to
-// prevent this template from matching vector/string types that have their own
-// overloads above. A generic Container parameter avoids duplicating the body
-// for both Tensor<T> and StaticTensor2D<T,R,C>.
-template<typename Container,
-  typename =
-    std::enable_if_t<tensor::is_tensor<std::decay_t<Container>>::value>>
-inline void write_dataset(hid_t obj_id, const char* name, const Container& arr)
+// Template for xarray, xtensor, etc.
+template<typename D>
+inline void write_dataset(
+  hid_t obj_id, const char* name, const xt::xcontainer<D>& arr)
 {
-  using T = typename std::decay_t<Container>::value_type;
+  using T = typename D::value_type;
   auto s = arr.shape();
   vector<hsize_t> dims {s.cbegin(), s.cend()};
   write_dataset_lowlevel(obj_id, dims.size(), dims.data(), name,

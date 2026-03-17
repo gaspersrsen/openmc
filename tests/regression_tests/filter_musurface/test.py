@@ -1,3 +1,6 @@
+import numpy as np
+from math import pi
+
 import openmc
 import pytest
 
@@ -29,7 +32,7 @@ def model():
     mu_filter = openmc.MuSurfaceFilter([-1.0, -0.5, 0.0, 0.5, 1.0])
     tally = openmc.Tally()
     tally.filters = [surf_filter, mu_filter]
-    tally.scores = ['current', 'flux']
+    tally.scores = ['current']
     model.tallies.append(tally)
 
     return model
