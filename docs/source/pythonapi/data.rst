@@ -71,8 +71,6 @@ Core Functions
     isotopes
     kalbach_slope
     linearize
-    mass_attenuation_coefficient
-    mass_energy_absorption_coefficient
     thin
     water_density
     zam

@@ -33,8 +33,5 @@ from .resonance_covariance import *
 from .multipole import *
 from .grid import *
 from .function import *
-from .vectfit import *
 
-from .dose.dose import dose_coefficients
-from .dose.mass_attenuation import \
-    mass_energy_absorption_coefficient, mass_attenuation_coefficient
+from .effective_dose.dose import dose_coefficients

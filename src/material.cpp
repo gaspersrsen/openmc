@@ -8,7 +8,9 @@
 #include <string>
 #include <unordered_set>
 
-#include "openmc/tensor.h"
+#include "xtensor/xbuilder.hpp"
+#include "xtensor/xoperation.hpp"
+#include "xtensor/xview.hpp"
 
 #include "openmc/capi.h"
 #include "openmc/container_util.h"
@@ -214,7 +216,7 @@ Material::Material(pugi::xml_node node)
   // allocate arrays in Material object
   auto n = names.size();
   nuclide_.reserve(n);
-  atom_density_ = tensor::Tensor<double>({n});
+  atom_density_ = xt::empty<double>({n});
   if (settings::photon_transport)
     element_.reserve(n);
 
@@ -288,14 +290,14 @@ Material::Material(pugi::xml_node node)
 
   // Check to make sure either all atom percents or all weight percents are
   // given
-  if (!((atom_density_ >= 0.0).all() || (atom_density_ <= 0.0).all())) {
+  if (!(xt::all(atom_density_ >= 0.0) || xt::all(atom_density_ <= 0.0))) {
     fatal_error(
       "Cannot mix atom and weight percents in material " + std::to_string(id_));
   }
 
   // Determine density if it is a sum value
   if (sum_density)
-    density_ = atom_density_.sum();
+    density_ = xt::sum(atom_density_)();
 
   if (check_for_node(node, "temperature")) {
     temperature_ = std::stod(get_node_value(node, "temperature"));
@@ -433,7 +435,7 @@ void Material::normalize_density()
   // determine normalized atom percents. if given atom percents, this is
   // straightforward. if given weight percents, the value is w/awr and is
   // divided by sum(w/awr)
-  atom_density_ /= atom_density_.sum();
+  atom_density_ /= xt::sum(atom_density_)();
 
   // Change density in g/cm^3 to atom/b-cm. Since all values are now in
   // atom percent, the sum needs to be re-evaluated as 1/sum(x*awr)
@@ -639,14 +641,14 @@ void Material::init_bremsstrahlung()
     bool positron = (particle == 1);
 
     // Allocate arrays for TTB data
-    ttb->pdf = tensor::zeros<double>({n_e, n_e});
-    ttb->cdf = tensor::zeros<double>({n_e, n_e});
-    ttb->yield = tensor::zeros<double>({n_e});
+    ttb->pdf = xt::zeros<double>({n_e, n_e});
+    ttb->cdf = xt::zeros<double>({n_e, n_e});
+    ttb->yield = xt::zeros<double>({n_e});
 
     // Allocate temporary arrays
-    auto stopping_power_collision = tensor::zeros<double>({n_e});
-    auto stopping_power_radiative = tensor::zeros<double>({n_e});
-    auto dcs = tensor::zeros<double>({n_e, n_k});
+    xt::xtensor<double, 1> stopping_power_collision({n_e}, 0.0);
+    xt::xtensor<double, 1> stopping_power_radiative({n_e}, 0.0);
+    xt::xtensor<double, 2> dcs({n_e, n_k}, 0.0);
 
     double Z_eq_sq = 0.0;
     double sum_density = 0.0;
@@ -696,18 +698,18 @@ void Material::init_bremsstrahlung()
                    1.0595e-3 * std::pow(t, 5) + 7.0568e-5 * std::pow(t, 6) -
                    1.808e-6 * std::pow(t, 7));
         stopping_power_radiative(i) *= r;
-        tensor::View<double> dcs_i = dcs.slice(i);
+        auto dcs_i = xt::view(dcs, i, xt::all());
         dcs_i *= r;
       }
     }
 
     // Total material stopping power
-    tensor::Tensor<double> stopping_power =
+    xt::xtensor<double, 1> stopping_power =
       stopping_power_collision + stopping_power_radiative;
 
     // Loop over photon energies
-    auto f = tensor::zeros<double>({n_e});
-    auto z = tensor::zeros<double>({n_e});
+    xt::xtensor<double, 1> f({n_e}, 0.0);
+    xt::xtensor<double, 1> z({n_e}, 0.0);
     for (int i = 0; i < n_e - 1; ++i) {
       double w = data::ttb_e_grid(i);
 
@@ -795,8 +797,7 @@ void Material::init_bremsstrahlung()
     }
 
     // Use logarithm of number yield since it is log-log interpolated
-    ttb->yield =
-      tensor::where(ttb->yield > 0.0, tensor::log(ttb->yield), -500.0);
+    ttb->yield = xt::where(ttb->yield > 0.0, xt::log(ttb->yield), -500.0);
   }
 }
 
@@ -818,9 +819,9 @@ void Material::calculate_xs(Particle& p) const
   p.macro_xs().fission = 0.0;
   p.macro_xs().nu_fission = 0.0;
 
-  if (p.type().is_neutron()) {
+  if (p.type() == ParticleType::neutron) {
     this->calculate_neutron_xs(p);
-  } else if (p.type().is_photon()) {
+  } else if (p.type() == ParticleType::photon) {
     this->calculate_photon_xs(p);
   }
 }
@@ -828,7 +829,7 @@ void Material::calculate_xs(Particle& p) const
 void Material::calculate_neutron_xs(Particle& p) const
 {
   // Find energy index on energy grid
-  int neutron = ParticleType::neutron().transport_index();
+  int neutron = static_cast<int>(ParticleType::neutron);
   int i_grid =
     std::log(p.E() / data::energy_min[neutron]) / simulation::log_spacing;
 
@@ -978,7 +979,7 @@ void Material::set_density(double density, const std::string& units)
     density_ = density;
 
     // Determine normalized atom percents
-    double sum_percent = atom_density_.sum();
+    double sum_percent = xt::sum(atom_density_)();
     atom_density_ /= sum_percent;
 
     // Recalculate nuclide atom densities based on given density
@@ -1019,7 +1020,7 @@ void Material::set_densities(
 
   if (n != nuclide_.size()) {
     nuclide_.resize(n);
-    atom_density_ = tensor::zeros<double>({n});
+    atom_density_ = xt::zeros<double>({n});
     if (settings::photon_transport)
       element_.resize(n);
   }
@@ -1180,8 +1181,8 @@ void Material::add_nuclide(const std::string& name, double density)
   auto n = nuclide_.size();
 
   // Create copy of atom_density_ array with one extra entry
-  tensor::Tensor<double> atom_density = tensor::zeros<double>({n});
-  atom_density.slice(tensor::range(0, n - 1)) = atom_density_;
+  xt::xtensor<double, 1> atom_density = xt::zeros<double>({n});
+  xt::view(atom_density, xt::range(0, n - 1)) = atom_density_;
   atom_density(n - 1) = density;
   atom_density_ = atom_density;
 

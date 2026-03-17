@@ -1,6 +1,5 @@
 #include "openmc/tallies/filter_meshmaterial.h"
 
-#include <cassert>
 #include <utility> // for move
 
 #include <fmt/core.h>
@@ -11,7 +10,6 @@
 #include "openmc/error.h"
 #include "openmc/material.h"
 #include "openmc/mesh.h"
-#include "openmc/tensor.h"
 #include "openmc/xml_interface.h"
 
 namespace openmc {
@@ -163,7 +161,7 @@ void MeshMaterialFilter::to_statepoint(hid_t filter_group) const
   write_dataset(filter_group, "mesh", model::meshes[mesh_]->id_);
 
   size_t n = bins_.size();
-  tensor::Tensor<size_t> data({n, 2});
+  xt::xtensor<size_t, 2> data({n, 2});
   for (int64_t i = 0; i < n; ++i) {
     const auto& x = bins_[i];
     data(i, 0) = x.index_element;

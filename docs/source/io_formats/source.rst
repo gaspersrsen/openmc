@@ -15,8 +15,6 @@ following the same format.
 **/**
 
 :Attributes: - **filetype** (*char[]*) -- String indicating the type of file.
-             - **version** (*int[2]*) -- Major and minor version of the source
-               file format.
 
 :Datasets:
 
@@ -24,5 +22,5 @@ following the same format.
              particle. The compound type has fields ``r``, ``u``, ``E``,
              ``time``, ``wgt``, ``delayed_group``, ``surf_id`` and ``particle``,
              which represent the position, direction, energy, time, weight,
-             delayed group, surface ID, and particle type (PDG number),
-             respectively.
+             delayed group, surface ID, and particle type (0=neutron, 1=photon,
+             2=electron, 3=positron), respectively.

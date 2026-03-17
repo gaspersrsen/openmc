@@ -17,7 +17,7 @@
 #ifdef _OPENMP
 #include <omp.h>
 #endif
-#include "openmc/tensor.h"
+#include "xtensor/xview.hpp"
 
 #include "openmc/capi.h"
 #include "openmc/cell.h"
@@ -43,12 +43,6 @@
 #include "openmc/timer.h"
 
 namespace openmc {
-
-#ifdef OPENMC_ENABLE_STRICT_FP
-const bool STRICT_FP_ENABLED = true;
-#else
-const bool STRICT_FP_ENABLED = false;
-#endif
 
 //==============================================================================
 
@@ -81,7 +75,7 @@ void title()
   // Write version information
   fmt::print(
     "                 | The OpenMC Monte Carlo Code\n"
-    "       Copyright | 2011-2026 MIT, UChicago Argonne LLC, and contributors\n"
+    "       Copyright | 2011-2025 MIT, UChicago Argonne LLC, and contributors\n"
     "         License | https://docs.openmc.org/en/latest/license.html\n"
     "         Version | {}.{}.{}{}{}\n",
     VERSION_MAJOR, VERSION_MINOR, VERSION_RELEASE, VERSION_DEV ? "-dev" : "",
@@ -161,21 +155,21 @@ std::string time_stamp()
 void print_particle(Particle& p)
 {
   // Display particle type and ID.
-  switch (p.type().pdg_number()) {
-  case PDG_NEUTRON:
+  switch (p.type()) {
+  case ParticleType::neutron:
     fmt::print("Neutron ");
     break;
-  case PDG_PHOTON:
+  case ParticleType::photon:
     fmt::print("Photon ");
     break;
-  case PDG_ELECTRON:
+  case ParticleType::electron:
     fmt::print("Electron ");
     break;
-  case PDG_POSITRON:
+  case ParticleType::positron:
     fmt::print("Positron ");
     break;
   default:
-    fmt::print("Particle {} ", p.type().str());
+    fmt::print("Unknown Particle ");
   }
   fmt::print("{}\n", p.id());
 
@@ -301,7 +295,7 @@ void print_version()
     fmt::print("OpenMC version {}.{}.{}{}{}\n", VERSION_MAJOR, VERSION_MINOR,
       VERSION_RELEASE, VERSION_DEV ? "-dev" : "", VERSION_COMMIT_COUNT);
     fmt::print("Commit hash: {}\n", VERSION_COMMIT_HASH);
-    fmt::print("Copyright (c) 2011-2026 MIT, UChicago Argonne LLC, and "
+    fmt::print("Copyright (c) 2011-2025 MIT, UChicago Argonne LLC, and "
                "contributors\nMIT/X license at "
                "<https://docs.openmc.org/en/latest/license.html>\n");
   }
@@ -323,7 +317,6 @@ void print_build_info()
   std::string coverage(n);
   std::string mcpl(n);
   std::string uwuw(n);
-  std::string strict_fp(n);
 
 #ifdef PHDF5
   phdf5 = y;
@@ -352,9 +345,6 @@ void print_build_info()
 #ifdef OPENMC_UWUW_ENABLED
   uwuw = y;
 #endif
-#ifdef OPENMC_ENABLE_STRICT_FP
-  strict_fp = y;
-#endif
 
   // Wraps macro variables in quotes
 #define STRINGIFY(x) STRINGIFY2(x)
@@ -373,7 +363,6 @@ void print_build_info()
     fmt::print("Coverage testing:      {}\n", coverage);
     fmt::print("Profiling flags:       {}\n", profiling);
     fmt::print("UWUW support:          {}\n", uwuw);
-    fmt::print("Strict FP:             {}\n", strict_fp);
   }
 }
 
