@@ -218,10 +218,9 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                         max_step_change=4,debug=False):
     # TODO allow for change in number of neutrons and then return settings to previous values
     # TODO allow mixing for multiple materials
-    # TODO CDI for neutron producing nuclides, Be, U, Pu,... Probably a new function
     # TODO overwrite iso option in mix_materials
-    # TODO allow for only iso and no material (all materials)
     # TODO add checker max_step_change > 1
+    # TODO add dk/dC follower, can output extra unc due to dk/C
     """
     Runs a simulation where 'iso' nuclide values converge in such a way to obtain the desired k_eff.
     This option assumes that flagged 'iso' nuclides are absorbers and do not produce neutrons by either fission or (n, xn) reactions.
@@ -335,16 +334,10 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             tallyTest2.filters = [MaterialFilter(materials,filter_id=8888)]
         model.tallies += [tallyTest2]
     
-    if not perfer_all_xml:# TODO export to !model! xml
+    if perfer_all_xml:
         model.export_to_xml()
     else:
-        model.settings.export_to_xml()
-        model.materials.export_to_xml()
-        model.geometry.export_to_xml()
-        if model.plots:
-            model.plots.export_to_xml()
-        if model.tallies:
-            model.tallies.export_to_xml()
+        model.export_to_model_xml()
 
     if initial_value is None:
         initial_value = 1.0
@@ -356,6 +349,9 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
         for mat in materials:
             mat_ids += [mat.id]
 
+    guesses = []
+    guess_unc = []
+    guess_ks = []
     f = 1
     g = 1
     f_prev = 1
@@ -408,15 +404,6 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             L_abs = curr_res[0][0][1][1]                                # Total neutron absorption
             L_abs = L_abs if L_abs > 0 else 0
             # WARNING: L_abs - P_nxn + L_leak === 1; by OpenMC def
-            
-            # Total flagged nuclide absorption
-            # if materials is not None:
-            #     print("abs flagged nucs tally", curr_res[1],np.array(curr_res[1])[:,:,1])
-            #     print("flagged nucs fracs",np.array(nuc_fractions))
-            #     print("flagged nucs abs", np.array(curr_res[1])[:,:,1] * np.array(nuc_fractions))
-            #     L_abs_nucs = np.sum(np.array(curr_res[1][2])[:,1] * np.array(nuc_fractions))
-            # else:
-            #     L_abs_nucs = np.sum(np.array(curr_res[1][0]).T, axis=1)[1]
 
             P_fiss_nucs = 0
             P_nxn_nucs = 0
@@ -454,13 +441,18 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 prod = P_fiss + P_nxn
                 loss = L_abs + L_leak
                 ### g = (P_fiss/target - 1)/nucs + 1
-                ### Covariances between fission (or (n,xn) reactions) and absorption neglected
+                ### Covariances between fission (and (n,xn) reactions) to absorption neglected
+                ### Would need nu_bar for fiss/abs nucs and rho((n,xn):abs) is approx 2, as higher reactions are much less probable
+                ### Rho is covariance coefficient
+                ### If nuc is the only fissile nuc: rho(fiss_nucs, fiss)=1, ie. rho=np.sqrt(fiss_nucs/fiss)
+                ### Following the example rho(abs_nucs, fiss) = -np.sqrt(abs_nucs/(fiss/nu_bar)), minus because when a fission reaction replaces absorption
+                ### Following the example rho(nxn_nucs, fiss) = -np.sqrt((nxn_nucs/2)/(fiss/nu_bar)), minus!
                 sig_nucs = rel_err_MC * np.sqrt(prod*P_fiss_nucs/target
                                                + prod*P_nxn_nucs
                                                + loss*L_abs_nucs
                                                )
-                sig_fiss = rel_err_MC * np.sqrt(prod*P_fiss/target)
-                sig_res = (P_fiss/target-1)/bot *np.sqrt((sig_fiss/(P_fiss/target-1))**2 if (P_fiss/target-1) != 0 else 0
+                sig_fiss = rel_err_MC * np.sqrt(prod*P_fiss)
+                sig_res = (P_fiss/target-1)/bot *np.sqrt((sig_fiss/(P_fiss/target-1))**2 if (P_fiss/target-1) != 0 else rel_err_MC #Catch div by 0
                                                          + (sig_nucs/bot)**2
                                                          )
                 
@@ -478,6 +470,10 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 p_measure = 1e16
                 sig_g_est = p_measure**(1/2)
             
+            guesses += [f]
+            guess_unc += [p_n**(1/2)]
+            guess_ks += [(P_fiss-P_nxn)/(L_abs+L_leak-P_nxn)]
+            
             if p_n >= 1e16 and p_measure >= 1e16:
                 pass
             else:
@@ -485,7 +481,11 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 if debug is True: print(f"Propagating uncertainty: p_prev {p}, p_measure {p_measure}, p_next {p_n}")
             z = f_prev * g_est
             
-            if bracket is not None: #TODO using builder function
+            
+
+            if bracket is not None:
+                if initial_value is None:
+                    raise ValueError("initial_value argument must be provided when using bracket argument")
                 if z*initial_value > bracket[1]:
                     z = bracket[1]/initial_value
                 elif z*initial_value < bracket[0]:
@@ -496,10 +496,10 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             f = copy.copy(x)
             g = f/f_prev
             f_prev = copy.copy(f)
+            
+
 
             if debug is True:
-                k = (P_fiss) / (L_abs + (P_fiss + P_nxn)*L_leak - P_nxn)
-                print(f"k_absorption: {k}")
                 print(f"Batch uncertainty: p: {p_measure}, sig_g: {sig_g_est}")
                 print(f"top: {top}, bot: {bot}")
                 print(f"Batch estimated correction - 1: {g_est-1}")
@@ -508,7 +508,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                     print(f"Correction coefficients [P_fiss, P_nxn, L_leak, L_abs]: {P_fiss, P_nxn, L_leak, L_abs}")
                     print(f"Correction coefficients nucs [L_abs_nucs, P_fiss_nuc, P_nxn_nucs]: {L_abs_nucs, P_fiss_nucs, P_nxn_nucs}")
                     print(f"OpenMC def diff: L_abs+L_leak-P_nxn-1: {(L_abs+L_leak-P_nxn-1):.03e}")
-                    print("sig_fiss", sig_fiss, "sig_nxn", sig_nucs, "sig_nucs")
+                    print("sig_fiss", sig_fiss, "sig_nucs", sig_nucs)
                     print(f"Relative error g_est: {rel_err_g_est}")
                     if initial_value:
                         print(f" Batch estimated concentration: {f*initial_value} +/- {initial_value*(p**(1/2))}")
@@ -581,8 +581,20 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                     model.materials[i].remove_nuclide(nuc)
                     model.materials[i].add_nuclide(nuc,val)
                     
-    if initial_value: print(f"CDI: Solve converged to concentration: {f*initial_value} +/- {initial_value*(p**(1/2))}")
+    if initial_value:
+        print(f"CDI: Solve converged to concentration: {f*initial_value} +/- {initial_value*(p**(1/2))}")
+        cdi_Cs = np.array(guesses)[1:]*initial_value
+        cdi_ks = np.array(guess_ks)[1:]*1e5
+        # dC_wgt2 = 1/np.array(guess_unc)[1:]**2/np.sum(1/np.array(guess_unc)[1:]**2)
+        cdi_wgts = 1/np.array(guess_unc)[1:]/np.sum(1/np.array(guess_unc)[1:])
+        def linF(x,n,k):
+            return n+k*x
+        cdi_res,cdi_res_cov=sopt.curve_fit(linF,cdi_Cs,cdi_ks,sigma=np.array(guess_unc)[1:])#,absolute_sigma=True)
+        cdi_res_sig = np.diag(cdi_res_cov)
+        # poly_res=np.polyfit(cdi_Cs,cdi_ks, 1,w=cdi_wgts) #Wgts are UN-squared
+        print(f"CDI: Estimated concentration reactivity coefficient: {cdi_res[1]:.05e} +/- {cdi_res_sig[1]:.05e} pcm/unit of concentration")
     else:  print(f"CDI: Solve converged to concentration multiplier: {f} +/- {(p**(1/2))}")
+
     
     if not perfer_all_xml:
         model.export_to_xml()
