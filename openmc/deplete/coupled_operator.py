@@ -13,12 +13,15 @@ from warnings import warn
 
 import numpy as np
 from uncertainties import ufloat
+from numbers import Real, Integral
 
 import openmc
-from openmc.checkvalue import check_value
+from openmc.checkvalue import check_value, check_type
+import openmc.checkvalue as cv
 from openmc.data import DataLibrary
 from openmc.exceptions import DataError
 import openmc.lib
+from openmc.executor import _process_CLI_arguments
 from openmc.mpi import comm
 from .abc import OperatorResult
 from .openmc_operator import OpenMCOperator
@@ -28,6 +31,7 @@ from .helpers import (
     DirectReactionRateHelper, ChainFissionHelper, ConstantFissionYieldHelper,
     FissionYieldCutoffHelper, AveragedFissionYieldHelper, EnergyScoreHelper,
     SourceRateHelper, FluxCollapseHelper)
+import openmc.search
 
 
 __all__ = ["CoupledOperator", "Operator", "OperatorResult"]
@@ -196,6 +200,11 @@ class CoupledOperator(OpenMCOperator):
     cleanup_when_done : bool
         Whether to finalize and clear the shared library memory when the
         depletion operation is complete. Defaults to clearing the library.
+    _cdi : openmc.search.CDI or None
+        Critical density iteration (CDI) object to perform CDI within the depletion simulation.
+        If not None, the CDI object will be called at each depletion step to perform CDI and
+        update the model with the converged concentrations before running the transport simulation.
+        .. versionadded:: 0.15.4
     """
     _fission_helpers = {
         "average": AveragedFissionYieldHelper,
@@ -238,6 +247,7 @@ class CoupledOperator(OpenMCOperator):
                 model.geometry.get_all_materials().values()
             )
 
+        self._cdi = None
         self.cleanup_when_done = True
 
         if reaction_rate_opts is None:
@@ -398,7 +408,17 @@ class CoupledOperator(OpenMCOperator):
             mat._nuclides.sort(key=lambda x: nuclides.index(x[0]))
 
         self.materials.export_to_xml(nuclides_to_ignore=self._decay_nucs)
+    
+    @property
+    def cdi(self):
+        return self._cdi
 
+    @cdi.setter
+    def cdi(self, cdi):
+        check_type('cdi', cdi, openmc.search.CDI)
+        self._cdi = cdi
+        self.model = cdi.model
+        
     def __call__(self, vec, source_rate):
         """Runs a simulation.
 
@@ -441,8 +461,19 @@ class CoupledOperator(OpenMCOperator):
             rates.fill(0.0)
             return OperatorResult(ufloat(0.0, 0.0), rates)
 
+        self._n_calls += 1
+        
         # Run OpenMC
-        openmc.lib.run()
+        if self._cdi is not None:
+            self._cdi.model = self.model
+            self.model = self._cdi()
+            self.materials = self.model.materials
+            self.settings = self.model.settings
+            self.tallies = self.model.tallies
+            self._update_materials_python()
+            self._generate_materials_xml() # Sort nuclides
+        else:
+            openmc.lib.run()
 
         # Extract results
         rates = self._calculate_reaction_rates(source_rate)
@@ -452,7 +483,7 @@ class CoupledOperator(OpenMCOperator):
 
         op_result = OperatorResult(keff, rates)
 
-        self._n_calls += 1
+        # self._n_calls += 1
 
         return copy.deepcopy(op_result)
 
@@ -470,7 +501,7 @@ class CoupledOperator(OpenMCOperator):
                         val = 1.0e-24 * number_i.get_atom_density(mat, nuc)
 
                         # If nuclide is zero, do not add to the problem.
-                        if val > 0.0:
+                        if val > 0: # 1e9 atom/barn-cm
                             if self.round_number:
                                 val_magnitude = np.floor(np.log10(val))
                                 val_scaled = val / 10**val_magnitude
@@ -479,25 +510,22 @@ class CoupledOperator(OpenMCOperator):
                                 val = val_round * 10**val_magnitude
 
                             nuclides.append(nuc)
-                            densities.append(val)
+                            densities.append(float(val))
                         else:
                             # Only output warnings if values are significantly
                             # negative. CRAM does not guarantee positive
                             # values.
                             if val < -1.0e-21:
-                                print(f'WARNING: nuclide {nuc} in material'
-                                      f'{mat} is negative (density = {val}'
-
-                                      ' atom/b-cm)')
+                                # print(f'WARNING: nuclide {nuc} in material'
+                                #       f'{mat} is negative (density = {val}'
+                                #       ' atom/b-cm)')
 
                                 number_i[mat, nuc] = 0.0
-
+                
                 # Update densities on C API side
                 mat_internal = openmc.lib.materials[int(mat)]
                 mat_internal.set_densities(nuclides, densities)
-
-                # TODO Update densities on the Python side, otherwise the
-                # summary.h5 file contains densities at the first time step
+        self._update_materials_python()
 
     @staticmethod
     def write_bos_data(step):

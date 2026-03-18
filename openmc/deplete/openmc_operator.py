@@ -560,3 +560,26 @@ class OpenMCOperator(TransportOperator):
         volume = {k: v for d in volume_list for k, v in d.items()}
 
         return volume, nuc_list, burn_list, self.burnable_mats, self.name_list
+    
+    def _update_materials_python(self):
+        # Update material nuclide densities and operator nuclide numbers on Python API side:
+        if self._n_calls > 0:
+            for mat in openmc.lib.materials:
+                densities_array = np.array(openmc.lib.materials[int(mat)].densities).astype(float)
+                nuclide_array = np.array(openmc.lib.materials[int(mat)].nuclides)
+                
+                for (mat_index,matPY) in enumerate(self.materials):
+                    if matPY.id == int(mat):
+                        for nuc in nuclide_array:
+                            val = (densities_array[nuclide_array==str(nuc)])[0]
+                            self.materials[mat_index].remove_nuclide(nuc)
+                            if val > 0.0:
+                                self.materials[mat_index].add_nuclide(nuc,val)
+                            if matPY.depletable:
+                                if val > 0.0:
+                                    self.number.set_atom_density(matPY, nuc, val * 1.0e24)
+                                else:
+                                    self.number.set_atom_density(matPY, nuc, 0.0)
+                    break
+            self.materials = self.model.materials
+            self.materials.export_to_xml()
