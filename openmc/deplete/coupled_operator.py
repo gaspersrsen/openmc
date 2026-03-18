@@ -200,6 +200,11 @@ class CoupledOperator(OpenMCOperator):
     cleanup_when_done : bool
         Whether to finalize and clear the shared library memory when the
         depletion operation is complete. Defaults to clearing the library.
+    _cdi : openmc.search.CDI or None
+        Critical density iteration (CDI) object to perform CDI within the depletion simulation.
+        If not None, the CDI object will be called at each depletion step to perform CDI and
+        update the model with the converged concentrations before running the transport simulation.
+        .. versionadded:: 0.15.4
     """
     _fission_helpers = {
         "average": AveragedFissionYieldHelper,
@@ -465,8 +470,8 @@ class CoupledOperator(OpenMCOperator):
             self.materials = self.model.materials
             self.settings = self.model.settings
             self.tallies = self.model.tallies
-            print(np.shape(self.number.number))
             self._update_materials_python()
+            self._generate_materials_xml() # Sort nuclides
         else:
             openmc.lib.run()
 

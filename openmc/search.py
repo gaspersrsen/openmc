@@ -214,7 +214,7 @@ def search_for_keff(model_builder, initial_guess=None, target=1.0,
 
 def critical_density_iteration(model, iso=None, batches=None, bracket=None, 
                         materials=None, initial_value=1.0, target=1.,
-                        mat_builder=None, perfer_model_xml=False,
+                        mat_builder=None, prefer_model_xml=False,
                         max_step_change=4, debug=False):
     """
     A (without 'mat_builder') - Legacy option: Runs a simulation where 'iso' nuclide values converge in such a way to obtain the desired k_eff.
@@ -259,15 +259,20 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     target: float, optional
         Target k_eff, defaults to 1.0
     mat_builder: function, optional
-        Callable builder function, that returns materials and nuclide fractions of the iterated material
+        Callable builder function, that returns a dictionary with  'materials' and 'nuc_fractions' keys
         in the mixed material. Meant to be used with 'openmc.search.get_ao_mix_materials'
-        and 'openmc.search.update_material' functions.
-        
+        and 'openmc.material.update_material' functions.
         
         dictionary of isotope concentrations
         ('nuclide':value in atoms/b-cm) for each flagged material.
         It is called in each step of CDI.
-        When used 'initial_value' parameter is required.
+        When used use of 'initial_value' parameter is recommended.
+    prefer_model_xml: Bool, optional
+        Whether to prefer model XML files.
+        Defaults to False.
+    max_step_change: float > 1.0, optional
+        Maximum allowed change in concentration per iteration step.
+        Defaults to 4.0.
     debug: Bool, optional
         Wether to print out batch number, tally results of each batch,
         batch k_absorption and current concentration.
@@ -275,7 +280,10 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
 
     Returns
     -------
-    openmc.model.model, with updated critical density concentrations of flagged nuclides in flagged materials
+    openmc.model.model
+        Updated model with converged concentrations.
+    [float, float]
+        converged_value, one-sigma uncertainty
 
     """
     # Check input arguments
@@ -340,7 +348,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
         model.tallies += [tallyTest2]
     
     # Export modified model
-    if perfer_model_xml:
+    if prefer_model_xml:
         model.export_to_model_xml()
     else:
         model.export_to_xml()
@@ -547,7 +555,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                     all_nuc = np.array(C_API_mats[int(mat)].nuclides)
                     mat_internal = C_API_mats[int(mat)]
                     
-                    if mat_builder is None:
+                    if mat_builder is None: # Change all materials with the flagged nuclides, as in option A
                         all_dens = (np.array(C_API_mats[int(mat)].densities)).astype(float)
                         for nuc in all_nuc:
                             val = float((all_dens[all_nuc==str(nuc)])[0])
@@ -562,13 +570,15 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                                 nuclides.append(nuc)
                                 densities.append(val)
                     else:
-                        for matpy in materials:
+                        for matpy in materials: # Change only the flagged materials
                             matpy_nuc_dict = matpy.get_nuclide_atom_densities()
                             if matpy.id == int(mat):
                                 for nuc in all_nuc:
                                     val = matpy_nuc_dict.get(str(nuc),0)
                                     # If nuclide is zero, do not add to the problem.
-                                    if val > 0:
+                                    # 16 bit float limit, to avoid overflow in OpenMC C API
+                                    # May need to be changed to > 1e-38 or similar
+                                    if val > 0: 
                                         nuclides.append(nuc)
                                         densities.append(val)
                                 break
@@ -599,7 +609,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     print(f"CDI: Estimated concentration reactivity coefficient: {cdi_res[1]:.05e} +/- {cdi_res_sig[1]:.05e} pcm/unit of concentration")
 
     # Update the model with the final concentrations
-    if perfer_model_xml:
+    if prefer_model_xml:
         model.export_to_model_xml()
     else:
         model.export_to_xml()
@@ -626,9 +636,15 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao',
         Type of percentage, must be one of 'ao', 'wo', or 'vo', to signify atom
         percent (molar percent), weight percent, or volume percent,
         optional. Defaults to 'ao'
+    return_wgts : bool, optional
+        Whether to return the calculated weights of each material in the mixture. Defaults to False.
 
     Returns
     -------
+    dict
+        A dictionary of the nuclides in the mixture and their corresponding atom densities in atoms/b-cm
+    np.ndarray, optional
+        The calculated weights of each material in the mixture, if `return_wgts` is True
 
     """
 
@@ -734,12 +750,17 @@ class CDI:
     Class to perform critical density iteration (CDI) inside the OpenMC depletion. CDI is a method used to find the critical concentration of a nuclide in a material such that the effective multiplication factor (k_eff) of a nuclear system is equal to a target value (usually 1). The class provides a method to perform CDI by iteratively adjusting the concentration of the nuclide and running OpenMC simulations until convergence is achieved.
     
     CDI is a wrapper around the 'critical_density_iteration' function, which performs the actual iteration process. The class allows for more convenient usage of CDI within a depletion simulation, as it can be called as a function and maintains the state of the last concentration value for subsequent calls.
+    
+    Returns
+    -------
+    openmc.model.model
+        Updated model with converged concentrations.
 
     .. versionadded:: 0.15.4
     """
     def __init__(self, model, iso=None, batches=None, bracket=None, 
                         materials=None, initial_value=1.0, target=1.,
-                        mat_builder=None, perfer_model_xml=False,
+                        mat_builder=None, prefer_model_xml=False,
                         max_step_change=4, debug=False, force_initial_value=False):
 
             # Check input arguments and prepare the model for CDI
@@ -798,7 +819,7 @@ class CDI:
                 model.tallies += [tallyTest2]
             
             # Export modified model
-            if perfer_model_xml:
+            if prefer_model_xml:
                 model.export_to_model_xml()
             else:
                 model.export_to_xml()
@@ -811,7 +832,7 @@ class CDI:
             self.initial_value = initial_value
             self.target = target
             self.mat_builder = mat_builder
-            self.perfer_model_xml = perfer_model_xml
+            self.prefer_model_xml = prefer_model_xml
             self.max_step_change = max_step_change
             self.debug = debug
             self.last_result = None
@@ -824,6 +845,6 @@ class CDI:
         self.model, self.last_result = critical_density_iteration(model=self.model, iso=self.iso, batches=self.batches, bracket=self.bracket, 
                         materials=self.materials, target=self.target,
                         initial_value=(self.initial_value if (self.last_result is None or self.force_initial_value) else self.last_result[0]), 
-                        mat_builder=self.mat_builder, perfer_model_xml=self.perfer_model_xml,
+                        mat_builder=self.mat_builder, prefer_model_xml=self.prefer_model_xml,
                         max_step_change=self.max_step_change, debug=self.debug)
         return self.model
