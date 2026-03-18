@@ -288,7 +288,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     """
     # Check input arguments
     if mat_builder is not None:
-        mat_builder_res = mat_builder(1)
+        mat_builder_res = mat_builder(initial_value)
         keys = mat_builder_res.keys() if type(mat_builder_res) == dict else None
         if keys:
             if "materials" in keys:
@@ -296,7 +296,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             if "nuc_fractions" in keys:
                 nuc_fractions = mat_builder_res["nuc_fractions"]
         else:
-            materials = mat_builder(1)
+            materials = mat_builder(initial_value)
             nuc_fractions = np.array([[1 for i in iso] for m in materials])
         if iso is None:
             iso = []
@@ -373,6 +373,11 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     openmc.lib.reset()
     openmc.lib.simulation_init()
     
+    # Set required tallies to active
+    for t_id, _tally in openmc.lib.tallies.items():
+        if t_id == 8888 or t_id == 8889:
+            _tally.active = True
+    
     # Run simulation
     for _ in openmc.lib.iter_batches():
         M = openmc.lib.current_batch()
@@ -388,14 +393,14 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             for _tally in _tallies.values():
                 if _tally.id == 8888 or _tally.id == 8889:
                     prev_res += [_tally.results - _tally.results]
-        else: 
+        else:
             i=0
             for _tally in _tallies.values():
                 if _tally.id == 8888 or _tally.id == 8889:
                     curr_res += [_tally.results - prev_res[i]]
                     prev_res[i] = copy.copy(_tally.results)
                     i+=1
-        
+        # Leakage is a running average
         leak = global_tallies[3][0]*M - prev_leak
         prev_leak = global_tallies[3][0]*M
         
@@ -535,7 +540,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
 
             # Rebuild the material with the given function at provided concentration
             if mat_builder is not None:
-                mat_builder_res = mat_builder(f)
+                mat_builder_res = mat_builder(f*initial_value)
                 keys = mat_builder_res.keys() if type(mat_builder_res) == dict else None
                 if keys:
                     if "materials" in keys:
