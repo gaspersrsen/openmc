@@ -1,4 +1,4 @@
-from collections import defaultdict, namedtuple, Counter
+from collections import defaultdict
 from collections.abc import Callable, Iterable
 from numbers import Real, Integral
 

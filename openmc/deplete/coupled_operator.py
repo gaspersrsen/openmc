@@ -13,15 +13,12 @@ from warnings import warn
 
 import numpy as np
 from uncertainties import ufloat
-from numbers import Real, Integral
 
 import openmc
 from openmc.checkvalue import check_value, check_type
-import openmc.checkvalue as cv
 from openmc.data import DataLibrary
 from openmc.exceptions import DataError
 import openmc.lib
-from openmc.executor import _process_CLI_arguments
 from openmc.mpi import comm
 from .abc import OperatorResult
 from .openmc_operator import OpenMCOperator
@@ -501,7 +498,7 @@ class CoupledOperator(OpenMCOperator):
                         val = 1.0e-24 * number_i.get_atom_density(mat, nuc)
 
                         # If nuclide is zero, do not add to the problem.
-                        if val > 0: # 1e9 atom/barn-cm
+                        if val > 0.0:
                             if self.round_number:
                                 val_magnitude = np.floor(np.log10(val))
                                 val_scaled = val / 10**val_magnitude
@@ -516,10 +513,9 @@ class CoupledOperator(OpenMCOperator):
                             # negative. CRAM does not guarantee positive
                             # values.
                             if val < -1.0e-21:
-                                # print(f'WARNING: nuclide {nuc} in material'
-                                #       f'{mat} is negative (density = {val}'
-                                #       ' atom/b-cm)')
-
+                                print(f'WARNING: nuclide {nuc} in material'
+                                      f'{mat} is negative (density = {val}'
+                                      ' atom/b-cm)')
                                 number_i[mat, nuc] = 0.0
                 
                 # Update densities on C API side
