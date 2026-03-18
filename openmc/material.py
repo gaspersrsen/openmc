@@ -1870,6 +1870,58 @@ class Material(IDManagerMixin):
         interpolated_cexs = float(np.interp(energy, energy_grid, total_cexs))
 
         return 1.0 / interpolated_cexs
+    
+    def get_ao_fraction(self):
+        """
+        Helper function that returns a dictionary of nuclide atomic number fractions in a material.
+        """
+        
+        nuc_dict = self.get_nuclide_atom_densities()
+        mat_ao = np.sum(list(nuc_dict.values()))
+        new_dict2 = {}
+        for key, value in nuc_dict.items():
+            # print(type(value))
+            # print(key, value)
+            new_dict2[key] = value/mat_ao
+        return new_dict2
+
+
+    def get_wo_fraction(self):
+        """
+        Helper function that returns a dictionary of nuclide mass fractions in a material.
+        """
+        nuc_dict = {}
+        for nuc in self.nuclides:
+            nuc_dict[nuc.name] = self.get_mass_density(nuc.name)
+        mat_dens = self.get_mass_density()
+        new_dict2 = {}
+        for key, value in nuc_dict.items():
+            # print(type(value))
+            # print(key, value)
+            new_dict2[key] = value/mat_dens
+        return new_dict2
+
+
+    def update_material(self, nuc_dict, rho=0, rho_units='atom/b-cm'):
+        """
+        Helper function that updates the material in the Python-API.
+        For update to happen on the C-API side, OpenMC needs to be initialized.
+        CDI handles material updating through on the C-API side, when provided
+        with the mat_builder function.
+        """
+        nuc_remove = []
+        for nuc in self.nuclides: # Do not remove from dict while iterating
+            nuc_remove += [nuc.name]
+        for nuc in nuc_remove:
+            self.remove_nuclide(nuc)
+        for nuc, val in nuc_dict.items():
+            self.add_nuclide(nuc, val)
+        nuc_dict = self.get_nuclide_atom_densities()
+        mat_ao = np.sum(list(nuc_dict.values()))
+        if rho != 0:
+            self.set_density(rho_units, rho)
+        else:
+            self.set_density('atom/b-cm', mat_ao)
 
 
 class Materials(cv.CheckedList):

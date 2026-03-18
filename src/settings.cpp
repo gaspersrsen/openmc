@@ -137,7 +137,7 @@ int64_t ssw_max_files;
 int64_t ssw_cell_id {C_NONE};
 SSWCellType ssw_cell_type {SSWCellType::None};
 TemperatureMethod temperature_method {TemperatureMethod::NEAREST};
-double temperature_tolerance {10.0};
+double temperature_tolerance {100.0};
 double temperature_default {293.6};
 array<double, 2> temperature_range {0.0, 0.0};
 int trace_batch;

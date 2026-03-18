@@ -135,7 +135,7 @@ int openmc_finalize()
   settings::temperature_method = TemperatureMethod::NEAREST;
   settings::temperature_multipole = false;
   settings::temperature_range = {0.0, 0.0};
-  settings::temperature_tolerance = 10.0;
+  settings::temperature_tolerance = 100.0;
   settings::trigger_on = false;
   settings::trigger_predict = false;
   settings::trigger_batch_interval = 1;
