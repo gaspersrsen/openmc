@@ -429,15 +429,17 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             P_fiss_nucs = 0
             P_nxn_nucs = 0
             L_abs_nucs = 0
+            if debug: print(f"Nuclides: {iso}")
             for index, mat in enumerate(materials):
                 if debug: print(f"Tally partial fractions for mat with id={mat.id}:",np.array(nuc_fractions[index]))
                 Res_nucs_mat = np.array(curr_res[1][index])
                 P_fiss_nucs += np.sum((Res_nucs_mat[0::4,1]) * np.array(nuc_fractions[index]))
                 P_nxn_nucs += np.sum((Res_nucs_mat[2::4,1] - Res_nucs_mat[3::4,1]) * np.array(nuc_fractions[index]))
                 L_abs_nucs += np.sum((Res_nucs_mat[1::4,1]) * np.array(nuc_fractions[index]))
-            P_fiss_nucs = P_fiss_nucs if P_fiss_nucs > 0 else 0
-            P_nxn_nucs = P_nxn_nucs if P_nxn_nucs > 0 else 0
-            L_abs_nucs = L_abs_nucs if L_abs_nucs > 0 else 0
+            # Nuclide tallies can be negative, if nuc_fractions are negative, ie. when replacing boron with uranium
+            # P_fiss_nucs = P_fiss_nucs if P_fiss_nucs > 0 else 0
+            # P_nxn_nucs = P_nxn_nucs if P_nxn_nucs > 0 else 0
+            # L_abs_nucs = L_abs_nucs if L_abs_nucs > 0 else 0
             if L_abs_nucs == 0:
                 print(f"CDI: No nuclide absorption tallied, skipping from step {M} onwards")
                 skip_steps = True
@@ -445,7 +447,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             
             # Predict concentration change
             bot = L_abs_nucs - P_fiss_nucs/target - P_nxn_nucs
-            top = P_fiss - 1 + bot 
+            top = P_fiss/target - 1 + bot 
             if bot == 0:
                 print(f"CDI: Combined effect of absorption, fission and (n,xn) reaction of flagged is 0, skipping step {M}")
                 continue
@@ -495,6 +497,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                     g_est = max_step_change
                 p_measure = 1e16
                 sig_g_est = p_measure**(1/2)
+                rel_err_g_est = sig_g_est / g_est
             
             # Store values for analysis and CDI coefficient estimation at the end of the simulation
             guesses += [f]
@@ -609,7 +612,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     def linF(x,n,k):
         return n+k*x
     cdi_res, cdi_res_cov = sopt.curve_fit(linF,cdi_Cs,cdi_ks,sigma=np.array(guess_unc)[1:])#,absolute_sigma=True)
-    cdi_res_sig = np.diag(cdi_res_cov)
+    cdi_res_sig = np.sqrt(np.diag(cdi_res_cov))
     # poly_res=np.polyfit(cdi_Cs,cdi_ks, 1,w=cdi_wgts) #Wgts are UN-squared
     print(f"CDI: Estimated concentration reactivity coefficient: {cdi_res[1]:.05e} +/- {cdi_res_sig[1]:.05e} pcm/unit of concentration")
 
@@ -668,11 +671,11 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao',
     # material are found in 1cc of the composite material
     
     # Read material properties and target nuclides for fraction application
-    ao_mats = {}
+    # ao_mats = {}
     ao_fr_mats = {}
     wo_fr_mats = {}
     for mat in materials:
-        ao_mats[mat] = mat.get_mass_density()
+        # ao_mats[mat] = mat.get_mass_density()
         ao_fr_mats[mat] = mat.get_ao_fraction()
         wo_fr_mats[mat] = mat.get_wo_fraction()
     target_nucs = {}
@@ -696,17 +699,21 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao',
     def process_new_frac_target(mat, p_t):
         if not target_nucs[mat]:
             return 1
-        if p_t == 'ao':
-            return 1 / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
+        if p_t == 'ao' or p_t == 'vo':
+            sum_ao_fracs = np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
+            return 1 / sum_ao_fracs if sum_ao_fracs > 0 else 1
+            # return 1 / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
         elif p_t == 'wo':
-            return 1 / np.sum([wo_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
-        elif p_t == 'vo':
-            return 1 / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
+            sum_wo_fracs = np.sum([wo_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
+            return 1 / sum_wo_fracs if sum_wo_fracs > 0 else 1
+            # return 1 / np.sum([wo_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
+        # elif p_t == 'vo':
+        #     return 1 / np.sum([ao_fr_mats[mat].get(nuc,0) for nuc in target_nucs[mat]])
     
     # Process weights based on ao
     for mat in materials:
         norm_wgt += [process_new_frac_target(mat, percent_type)]
-        
+    
     fracs = np.array([frac * wgt if frac is not None else None for (frac,wgt) in zip(fracs,norm_wgt)])
     
     # If one of the fractions is None, calculate it to ensure the fractions sum to 1
