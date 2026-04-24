@@ -295,6 +295,8 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 materials = [mat for mat in mat_builder_res["materials"]]
             if "nuc_fractions" in keys:
                 nuc_fractions = mat_builder_res["nuc_fractions"]
+            else:
+                nuc_fractions = np.array([[1 for i in m.nuclides] for m in materials])
         else:
             materials = mat_builder(initial_value)
             nuc_fractions = np.array([[1 for i in iso] for m in materials])
@@ -333,11 +335,11 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
         model.settings.inactive += batches + 10
         model.settings.batches += batches + 10
     tally_ids = [tally.id for tally in model.tallies]
-    if 8888 not in tally_ids or 8889 not in tally_ids:
+    if 8888 not in tally_ids: 
         tallyTest = Tally(tally_id=8888, name="CDI_tally1")
         tallyTest.scores = ["nu-fission", "absorption", "nu-scatter", "scatter"]
         model.tallies += [tallyTest]
-
+    if 8889 not in tally_ids:
         tallyTest2 = Tally(tally_id=8889, name="CDI_tally2")
         if iso is None:
             raise ValueError("'iso' is empty")
@@ -360,7 +362,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     f = 1
     g = 1
     f_prev = 1
-    prev_res = []
+    prev_res = [[],[]]
     prev_leak = 0
     skip_steps = False
     starting_batch = model.settings.inactive - batches
@@ -388,18 +390,18 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
         # Tally results are added (summed) in each batch, batch result is the difference
         _tallies = copy.copy(openmc.lib.tallies)
         global_tallies = copy.copy(openmc.lib.global_tallies())
-        curr_res = []
+        curr_res = [[],[]]
         if M == 1:
             for _tally in _tallies.values():
                 if _tally.id == 8888 or _tally.id == 8889:
-                    prev_res += [_tally.results - _tally.results]
+                    # prev_res += [_tally.results - _tally.results]
+                    # curr_res[0 if _tally.id == 8888 else 1] = copy.copy(_tally.results)
+                    prev_res[0 if _tally.id == 8888 else 1] = copy.copy(_tally.results)
         else:
-            i=0
             for _tally in _tallies.values():
                 if _tally.id == 8888 or _tally.id == 8889:
-                    curr_res += [_tally.results - prev_res[i]]
-                    prev_res[i] = copy.copy(_tally.results)
-                    i+=1
+                    curr_res[0 if _tally.id == 8888 else 1] = copy.copy(_tally.results) - prev_res[0 if _tally.id == 8888 else 1]
+                    prev_res[0 if _tally.id == 8888 else 1] = copy.copy(_tally.results)
         # Leakage is a running average
         leak = global_tallies[3][0]*M - prev_leak
         prev_leak = global_tallies[3][0]*M
@@ -430,12 +432,18 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             P_nxn_nucs = 0
             L_abs_nucs = 0
             if debug: print(f"Nuclides: {iso}")
-            for index, mat in enumerate(materials):
-                if debug: print(f"Tally partial fractions for mat with id={mat.id}:",np.array(nuc_fractions[index]))
-                Res_nucs_mat = np.array(curr_res[1][index])
-                P_fiss_nucs += np.sum((Res_nucs_mat[0::4,1]) * np.array(nuc_fractions[index]))
-                P_nxn_nucs += np.sum((Res_nucs_mat[2::4,1] - Res_nucs_mat[3::4,1]) * np.array(nuc_fractions[index]))
-                L_abs_nucs += np.sum((Res_nucs_mat[1::4,1]) * np.array(nuc_fractions[index]))
+            if materials:
+                for index, mat in enumerate(materials):
+                    if debug: print(f"Tally partial fractions for mat with id={mat.id}:",np.array(nuc_fractions[index]))
+                    Res_nucs_mat = np.array(curr_res[1][index])
+                    P_fiss_nucs += np.sum((Res_nucs_mat[0::4,1]) * np.array(nuc_fractions[index]))
+                    P_nxn_nucs += np.sum((Res_nucs_mat[2::4,1] - Res_nucs_mat[3::4,1]) * np.array(nuc_fractions[index]))
+                    L_abs_nucs += np.sum((Res_nucs_mat[1::4,1]) * np.array(nuc_fractions[index]))
+            else:
+                Res_nucs_mat = np.squeeze(np.array(curr_res[1][0]))
+                P_fiss_nucs += np.sum((Res_nucs_mat[0::4,1]))
+                P_nxn_nucs += np.sum((Res_nucs_mat[2::4,1] - Res_nucs_mat[3::4,1]))
+                L_abs_nucs += np.sum((Res_nucs_mat[1::4,1]))
             # Nuclide tallies can be negative, if nuc_fractions are negative, ie. when replacing boron with uranium
             # P_fiss_nucs = P_fiss_nucs if P_fiss_nucs > 0 else 0
             # P_nxn_nucs = P_nxn_nucs if P_nxn_nucs > 0 else 0
@@ -475,7 +483,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                                                + loss*L_abs_nucs
                                                )
                 sig_fiss = rel_err_MC * np.sqrt(prod*P_fiss)
-                sig_res = (P_fiss/target-1)/bot *np.sqrt((sig_fiss/(P_fiss/target-1))**2 if (P_fiss/target-1) != 0 else rel_err_MC #Catch div by 0
+                sig_res = (P_fiss/target-1)/bot * np.sqrt((sig_fiss/(P_fiss/target-1))**2 if (P_fiss/target-1) != 0 else rel_err_MC #Catch div by 0
                                                          + (sig_nucs/bot)**2
                                                          )
                 
@@ -518,7 +526,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                     z = bracket[1]/initial_value
                 elif z*initial_value < bracket[0]:
                     z = bracket[0]/initial_value
-            if debug is True: print(f"Changing concentration mult from {x} to {x + p_n/p_measure * (z - x)}, by {p_n/p_measure * (z - x)}, innovation factor: {p_n/p_measure}")
+            if debug is True: print(f"Changing value mult from {x} to {x + p_n/p_measure * (z - x)}, by {p_n/p_measure * (z - x)}, innovation factor: {p_n/p_measure}")
             
             # Finally update the concentration multiplier and uncertainty for the next step
             x = x + p_n/p_measure * (z - x)
@@ -539,7 +547,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                 # print(f"OpenMC def diff: L_abs+L_leak-P_nxn-1: {(L_abs+L_leak-P_nxn-1):.03e}")
                 # print("sig_fiss", sig_fiss, "sig_nucs", sig_nucs)
                 print(f"Relative error g_est: {rel_err_g_est}")
-                print(f"Batch estimated concentration: {f*initial_value} +/- {initial_value*(p**(1/2))}")
+                print(f"Batch estimated value: {f*initial_value} +/- {initial_value*(p**(1/2))}")
 
             # Rebuild the material with the given function at provided concentration
             if mat_builder is not None:
@@ -606,7 +614,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                     model.materials[i].add_nuclide(nuc,val)
     
     # Output results and estimated CDI coefficient
-    print(f"CDI: Solve converged to concentration: {f*initial_value} +/- {initial_value*(p**(1/2))}")
+    print(f"CDI: Solve converged to value: {f*initial_value} +/- {initial_value*(p**(1/2))}")
     cdi_Cs = np.array(guesses)[1:]*initial_value
     cdi_ks = np.array(guess_ks)[1:]*1e5
     def linF(x,n,k):
@@ -614,7 +622,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
     cdi_res, cdi_res_cov = sopt.curve_fit(linF,cdi_Cs,cdi_ks,sigma=np.array(guess_unc)[1:])#,absolute_sigma=True)
     cdi_res_sig = np.sqrt(np.diag(cdi_res_cov))
     # poly_res=np.polyfit(cdi_Cs,cdi_ks, 1,w=cdi_wgts) #Wgts are UN-squared
-    print(f"CDI: Estimated concentration reactivity coefficient: {cdi_res[1]:.05e} +/- {cdi_res_sig[1]:.05e} pcm/unit of concentration")
+    print(f"CDI: Estimated reactivity coefficient: {cdi_res[1]:.05e} +/- {cdi_res_sig[1]:.05e} pcm/unit")
 
     # Update the model with the final concentrations
     if prefer_model_xml:
@@ -816,11 +824,11 @@ class CDI:
                 model.settings.inactive += batches + 10
                 model.settings.batches += batches + 10
             tally_ids = [tally.id for tally in model.tallies]
-            if 8888 not in tally_ids or 8889 not in tally_ids:
+            if 8888 not in tally_ids: 
                 tallyTest = Tally(tally_id=8888, name="CDI_tally1")
                 tallyTest.scores = ["nu-fission", "absorption", "nu-scatter", "scatter"]
                 model.tallies += [tallyTest]
-
+            if 8889 not in tally_ids:
                 tallyTest2 = Tally(tally_id=8889, name="CDI_tally2")
                 if iso is None:
                     raise ValueError("'iso' is empty")

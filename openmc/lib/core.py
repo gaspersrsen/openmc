@@ -1,7 +1,7 @@
 from contextlib import contextmanager
 from ctypes import (c_bool, c_int, c_int32, c_int64, c_double, c_char_p,
                     c_char, POINTER, Structure, c_void_p, create_string_buffer,
-                    c_uint64, c_size_t)
+                    c_uint64, c_size_t, byref)
 import sys
 import os
 from pathlib import Path
@@ -112,6 +112,45 @@ _dll.openmc_global_bounding_box.errcheck = _error_handler
 _dll.openmc_sample_external_source.argtypes = [c_size_t, POINTER(c_uint64), POINTER(_SourceSite)]
 _dll.openmc_sample_external_source.restype = c_int
 _dll.openmc_sample_external_source.errcheck = _error_handler
+
+_dll.openmc_surface_zplane_get_z0.argtypes = [c_int32, POINTER(c_double)]
+_dll.openmc_surface_zplane_get_z0.restype = c_int
+_dll.openmc_surface_zplane_get_z0.errcheck = _error_handler
+_dll.openmc_surface_zplane_set_z0.argtypes = [c_int32, c_double]
+_dll.openmc_surface_zplane_set_z0.restype = c_int
+_dll.openmc_surface_zplane_set_z0.errcheck = _error_handler
+_dll.openmc_get_surface_index.argtypes = [c_int32, POINTER(c_int32)]
+_dll.openmc_get_surface_index.restype = c_int
+_dll.openmc_get_surface_index.errcheck = _error_handler
+
+def get_surface_z0(index):
+    """Get the z0 coordinate for a SurfaceZPlane."""
+    z0 = c_double()
+    _dll.openmc_surface_zplane_get_z0(index, byref(z0))
+    return z0.value
+
+def set_surface_z0(index, z0):
+    """Set the z0 coordinate for a SurfaceZPlane.
+
+    Parameters
+    ----------
+    index : int
+        0-indexed internal index of the surface.
+    z0 : float
+        New z-coordinate for the plane.
+    """
+    _dll.openmc_surface_zplane_set_z0(index, z0)
+    
+def get_surface_index(surface_id):
+    """Helper to convert a Surface ID to an internal Index"""
+    index = c_int32()
+    _dll.openmc_get_surface_index(surface_id, byref(index))
+    return index.value
+
+def set_surface_z0_by_id(surface_id, z0):
+    """Set z0 using the user-defined Surface ID instead of internal index"""
+    index = get_surface_index(surface_id)
+    set_surface_z0(index, z0)
 
 def global_bounding_box():
     """Calculate a global bounding box for the model"""

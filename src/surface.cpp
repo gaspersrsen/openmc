@@ -338,6 +338,56 @@ BoundingBox SurfaceZPlane::bounding_box(bool pos_side) const
   }
 }
 
+extern "C" int
+openmc_get_surface_index(int32_t id, int32_t* index)
+{
+  auto it = openmc::model::surface_map.find(id);
+  
+  if (it == openmc::model::surface_map.end()) {
+    openmc::set_errmsg("No surface exists with ID=" + std::to_string(id));
+    return OPENMC_E_INVALID_ID; 
+  }
+  
+  *index = it->second;
+  return 0;
+}
+
+extern "C" int
+openmc_surface_zplane_get_z0(int32_t index, double* z0)
+{
+  if (index < 0 || index >= openmc::model::surfaces.size()) {
+    openmc::set_errmsg("Index out of bounds for surface.");
+    return -1;
+  }
+
+  auto* surf = dynamic_cast<openmc::SurfaceZPlane*>(openmc::model::surfaces[index].get());
+  if (!surf) {
+    openmc::set_errmsg("Surface index does not refer to a Z-plane.");
+    return -1;
+  }
+
+  *z0 = surf->z0_;
+  return 0;
+}
+
+extern "C" int
+openmc_surface_zplane_set_z0(int32_t index, double z0)
+{
+  if (index < 0 || index >= openmc::model::surfaces.size()) {
+    openmc::set_errmsg("Index out of bounds for surface.");
+    return -1;
+  }
+
+  auto* surf = dynamic_cast<openmc::SurfaceZPlane*>(openmc::model::surfaces[index].get());
+  if (!surf) {
+    openmc::set_errmsg("Surface index does not refer to a Z-plane.");
+    return -1;
+  }
+
+  surf->z0_ = z0;
+  return 0;
+}
+
 //==============================================================================
 // SurfacePlane implementation
 //==============================================================================

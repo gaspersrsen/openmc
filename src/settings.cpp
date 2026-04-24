@@ -141,7 +141,7 @@ SSWCellType ssw_cell_type {SSWCellType::None};
 double surface_grazing_cutoff {0.001};
 double surface_grazing_ratio {0.5};
 TemperatureMethod temperature_method {TemperatureMethod::NEAREST};
-double temperature_tolerance {10.0};
+double temperature_tolerance {100.0};
 double temperature_default {293.6};
 array<double, 2> temperature_range {0.0, 0.0};
 int trace_batch;
