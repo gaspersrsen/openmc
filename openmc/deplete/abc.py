@@ -844,7 +844,8 @@ class Integrator(ABC):
             final_step: bool = True,
             output: bool = True,
             path: PathLike = 'depletion_results.h5',
-            write_rates: bool = False
+            write_rates: bool = False,
+            end_TOL: float = 0.0
         ):
         """Perform the entire depletion process across all steps
 
@@ -876,6 +877,9 @@ class Integrator(ABC):
             for i, (dt, source_rate) in enumerate(self):
                 if output and comm.rank == 0:
                     print(f"[openmc.deplete] t={t} s, dt={dt} s, source={source_rate}")
+                    # if self.timestep_units == 'MWd/kg' and self.power is not None:
+                    #     power = self.power if isinstance(self.power, (int, float)) else self.power[i]
+                    #     print(f" [openmc.deplete] burnup={t/_SECONDS_PER_DAY/1e6*power/(self.operator.heavy_metal/1000)}MWd/kg")
 
                 # Solve transport equation (or obtain result from restart)
                 if i > 0 or self.operator.prev_res is None:
@@ -901,6 +905,9 @@ class Integrator(ABC):
                 # Update for next step
                 n = n_end
                 t += dt
+                if res.k.n < end_TOL:
+                    warn(f"Step {i} has k={res.k.n} < {end_TOL}. Stopping simulation.")
+                    break
 
             # Final simulation -- in the case that final_step is False, a zero
             # source rate is passed to the transport operator (which knows to
