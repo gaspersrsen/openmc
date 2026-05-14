@@ -389,7 +389,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
         # Get tallies
         # Tally results are added (summed) in each batch, batch result is the difference
         _tallies = copy.copy(openmc.lib.tallies)
-        global_tallies = copy.copy(openmc.lib.global_tallies())
+        # global_tallies = copy.copy(openmc.lib.global_tallies())
         curr_res = [[],[]]
         if M == 1:
             for _tally in _tallies.values():
@@ -403,8 +403,8 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                     curr_res[0 if _tally.id == 8888 else 1] = copy.copy(_tally.results) - prev_res[0 if _tally.id == 8888 else 1]
                     prev_res[0 if _tally.id == 8888 else 1] = copy.copy(_tally.results)
         # Leakage is a running average
-        leak = global_tallies[3][0]*M - prev_leak
-        prev_leak = global_tallies[3][0]*M
+        # leak = global_tallies[3][0]*M - prev_leak
+        # prev_leak = global_tallies[3][0]*M
         
         # Only change concentrations during the inactive CDI batches
         if M < starting_batch + batches:
@@ -419,13 +419,17 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
             # Additional neutrons produced by (n,xn) reactions
             P_nxn = curr_res[0][0][2][1] - curr_res[0][0][3][1]
             P_nxn = P_nxn if P_nxn > 0 else 0
-            # Neutron leakage fraction
-            L_leak = leak if leak > 0 else 0
+            
             # Total neutron absorption             
             L_abs = curr_res[0][0][1][1]                                
             L_abs = L_abs if L_abs > 0 else 0
             # WARNING: L_abs - P_nxn + L_leak === 1; by OpenMC def
             # >0, for when floating point errors cause negative values
+            
+                        # Neutron leakage fraction
+            # It is calculated implicitly by OpenMC as 1 = P_nxn + L_abs + L_leak
+            # L_leak = leak if leak > 0 else 0
+            L_leak = 1 - (L_abs - P_nxn)
 
             # Same as above but summed for all flagged nuclides, weighted by weights if provided by 'mat_builder'
             P_fiss_nucs = 0
@@ -439,6 +443,7 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                     P_fiss_nucs += np.sum((Res_nucs_mat[0::4,1]) * np.array(nuc_fractions[index]))
                     P_nxn_nucs += np.sum((Res_nucs_mat[2::4,1] - Res_nucs_mat[3::4,1]) * np.array(nuc_fractions[index]))
                     L_abs_nucs += np.sum((Res_nucs_mat[1::4,1]) * np.array(nuc_fractions[index]))
+                    if debug: print(f"Mat id {mat.id} - P_fiss_nucs: {np.sum((Res_nucs_mat[0::4,1]) * np.array(nuc_fractions[index]))}, P_nxn_nucs: {np.sum((Res_nucs_mat[2::4,1] - Res_nucs_mat[3::4,1]) * np.array(nuc_fractions[index]))}, L_abs_nucs: {np.sum((Res_nucs_mat[1::4,1]) * np.array(nuc_fractions[index]))}")
             else:
                 Res_nucs_mat = np.squeeze(np.array(curr_res[1][0]))
                 P_fiss_nucs += np.sum((Res_nucs_mat[0::4,1]))

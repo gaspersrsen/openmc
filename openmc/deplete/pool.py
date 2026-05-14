@@ -10,6 +10,7 @@ from scipy.sparse import hstack
 
 from openmc.mpi import comm
 from .._sparse_compat import block_array
+import time
 
 # Configurable switch that enables / disables the use of
 # multiprocessing routines during depletion
@@ -84,7 +85,8 @@ def deplete(func, chain, n, rates, dt, current_timestep=None, matrix_func=None,
         list contains the number of [atom] of each nuclide.
 
     """
-
+    t_start = time.time()
+    
     fission_yields = chain.fission_yields
     if len(fission_yields) == 1:
         fission_yields = repeat(fission_yields[0])
@@ -211,5 +213,9 @@ def deplete(func, chain, n, rates, dt, current_timestep=None, matrix_func=None,
         current_timestep in external_source_rates.external_timesteps):
         external_source_rates.reformat_nuclide_vectors(n)
         external_source_rates.reformat_nuclide_vectors(n_result)
+    
+    t_end = time.time()
+    if comm.rank == 0:
+        print(f"Depletion step took {t_end - t_start:.5f} seconds")
 
     return n_result

@@ -1922,6 +1922,11 @@ class Material(IDManagerMixin):
             self.set_density(rho_units, rho)
         else:
             self.set_density('atom/b-cm', mat_ao)
+        # if openmc.lib.is_initialized:
+        #     _m_nuc_dict = self.get_nuclide_atom_densities()
+        #     _nucs, _dens = zip(*_m_nuc_dict.items())
+        #     print(_nucs, _dens)
+        #     openmc.lib.materials[self.id].set_density(np.array(_nucs), np.array(_dens))
 
 
 class Materials(cv.CheckedList):
