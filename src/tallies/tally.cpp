@@ -1556,6 +1556,7 @@ extern "C" int openmc_tally_reset(int32_t index)
   }
 
   model::tallies[index]->reset();
+  model::tallies[index]->n_realizations_ = 0;
   return 0;
 }
 

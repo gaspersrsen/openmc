@@ -538,13 +538,16 @@ class Results(list):
 
         if math.isclose(time, times[ix], rel_tol=rtol, abs_tol=atol):
             return ix
-
-        closest = min(times, key=lambda t: abs(time - t))
-        raise ValueError(
-            f"A value of {time} {time_units} was not found given absolute and "
-            f"relative tolerances {atol} and {rtol}. Closest time is {closest} "
-            f"{time_units}."
-        )
+        try:
+            # closest = min(times, key=lambda t: abs(time - t))
+            return np.argmin(np.abs(times - time))
+        except:
+            closest = min(times, key=lambda t: abs(time - t))
+            raise ValueError(
+                f"A value of {time} {time_units} was not found given absolute and "
+                f"relative tolerances {atol} and {rtol}. Closest time is {closest} "
+                f"{time_units}."
+            )
 
     def export_to_materials(
         self,
@@ -552,7 +555,7 @@ class Results(list):
         nuc_with_data: Iterable[str] | None = None,
         path: PathLike = 'materials.xml'
     ) -> Materials:
-        """Return openmc.Materials object based on results at a given step
+        """Return openmc.Materials object based on results at a given step. Only updates burnable materials, and only nuclides with cross sections will be included in the resulting materials. The resulting materials can be written to an XML file and used in subsequent transport calculations.
 
         .. versionadded:: 0.12.1
 

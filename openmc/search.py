@@ -605,7 +605,9 @@ def critical_density_iteration(model, iso=None, batches=None, bracket=None,
                                 break
                     mat_internal.set_density(np.sum(densities))
                     mat_internal.set_densities(nuclides, densities)
-                    
+
+        if M == model.settings.inactive:
+            openmc.lib.reset()
     openmc.lib.simulation_finalize()
     # Finaly update densities on Python API side
     for mat in openmc.lib.materials:
