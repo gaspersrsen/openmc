@@ -1909,6 +1909,12 @@ class Material(IDManagerMixin):
         CDI handles material updating through on the C-API side, when provided
         with the mat_builder function.
         """
+        mat_ao = np.sum(list(nuc_dict.values()))
+        if rho != 0:
+            self.set_density(rho_units, rho)
+        else:
+            self.set_density('atom/b-cm', mat_ao)
+        
         nuc_remove = []
         for nuc in self.nuclides: # Do not remove from dict while iterating
             nuc_remove += [nuc.name]
@@ -1917,11 +1923,7 @@ class Material(IDManagerMixin):
         for nuc, val in nuc_dict.items():
             self.add_nuclide(nuc, val)
         nuc_dict = self.get_nuclide_atom_densities()
-        mat_ao = np.sum(list(nuc_dict.values()))
-        if rho != 0:
-            self.set_density(rho_units, rho)
-        else:
-            self.set_density('atom/b-cm', mat_ao)
+
         # if openmc.lib.is_initialized:
         #     _m_nuc_dict = self.get_nuclide_atom_densities()
         #     _nucs, _dens = zip(*_m_nuc_dict.items())
