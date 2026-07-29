@@ -788,27 +788,36 @@ class CDI:
     def __init__(self, model, iso=None, batches=None, bracket=None, 
                         materials=None, initial_value=1.0, target=1.,
                         mat_builder=None, prefer_model_xml=False,
-                        max_step_change=4, debug=False, force_initial_value=False):
+                        max_step_change=4, debug=False, force_initial_value=False,
+                        other_execution_functions=None, activate_all_tallies=False):
 
+            self.nuc_fractions = None
+            self.nuc_fractions_replace = None
+            self.activate_all_tallies = activate_all_tallies
+            
             # Check input arguments and prepare the model for CDI
             if mat_builder is not None:
                 mat_builder_res = mat_builder(initial_value)
                 if type(mat_builder_res) == dict:
                     keys = mat_builder_res.keys()
                 else:
-                    raise ValueError("mat_builder function must return a dictionary with 'materials' key")
+                    raise ValueError("mat_builder function must return a dictionary")
                 if "materials" in keys:
                     materials = [mat for mat in mat_builder_res["materials"]]
-                else:
-                    raise ValueError("'materials' not found in mat_builder return dictionary")
-                if iso is None:
-                    iso = []
-                    for mat in materials:
-                        for nuc in mat.nuclides:
-                            if nuc.name not in iso:
-                                iso += [nuc.name]
-            if iso is None:
-                raise ValueError("'iso' argument is empty")
+                # else:
+                #     raise ValueError("'materials' not found in mat_builder return dictionary")
+                    if iso is None:
+                        iso = []
+                        for mat in materials:
+                            for nuc in mat.nuclides:
+                                if nuc.name not in iso:
+                                    iso += [nuc.name]
+                if "nuc_fractions" in keys:
+                    self.nuc_fractions = mat_builder_res["nuc_fractions"]
+                if "nuc_fractions_replace" in keys:
+                    self.nuc_fractions_replace = mat_builder_res["nuc_fractions_replace"]
+            # if iso is None:
+            #     raise ValueError("'iso' argument is empty")
             if batches is not None:
                 cv.check_type('batches', batches, Integral)
             else:
@@ -819,10 +828,13 @@ class CDI:
                 cv.check_less_than('bracket values', bracket[0], bracket[1])
             cv.check_greater_than("max_step_change", max_step_change, 1.0)
             cv.check_type('initial_value', initial_value, Real)
+            
+            
+            self.mat_ids = None
             if materials is not None:
-                mat_ids=[]
+                self.mat_ids=[]
                 for mat in materials:
-                    mat_ids += [mat.id]
+                    self.mat_ids += [mat.id]
                 
             #Create tallies if not already created
             if model.settings.inactive is None:
@@ -850,10 +862,36 @@ class CDI:
                 model.export_to_model_xml()
             else:
                 model.export_to_xml()
+            
+            self.batches = batches
+            self.starting_batch = model.settings.inactive - self.batches
                 
+            self.other_exec = []
+            if other_execution_functions is not None:
+                for exec_func_properties in other_execution_functions:
+                    exec_func, position, exec_strategy = exec_func_properties
+                    exec_start, exec_end = position
+                    if exec_start == "CDI":
+                        exec_start = self.starting_batch
+                    elif type(exec_start) == int:
+                        exec_start = exec_start
+                    else:
+                        exec_start = 0
+                    
+                    if type(exec_end) == int:
+                        exec_end = exec_end
+                    else:
+                        exec_end = model.settings.inactive
+                        
+                    if exec_strategy not in [0,1,2]:
+                        raise ValueError(f"Provided execution strategy {exec_strategy} is not valid, must be 0, 1, or 2")
+                    if not callable(exec_func):
+                        raise ValueError(f"Provided execution function {exec_func} is not callable")
+                    self.other_exec.append([exec_func, [exec_start, exec_end], exec_strategy])
+                    
+
             self.model = model
             self.iso = iso
-            self.batches = batches
             self.bracket = bracket
             self.materials = materials
             self.initial_value = initial_value
@@ -865,13 +903,370 @@ class CDI:
             self.last_result = None
             self.force_initial_value = force_initial_value
             
+            self.guesses = []
+            self.guess_unc = []
+            self.guess_ks = []
+            self.f = 1
+            self.g = 1
+            self.f_prev = 1
+            self.prev_res = [[],[],[]]
+            self.prev_leak = 0
+            self.skip_steps = False
+            
+            
     def _get_model(self):
         return self.model
     
     def __call__(self):
-        self.model, self.last_result = critical_density_iteration(model=self.model, iso=self.iso, batches=self.batches, bracket=self.bracket, 
-                        materials=self.materials, target=self.target,
-                        initial_value=(self.initial_value if (self.last_result is None or self.force_initial_value) else self.last_result[0]), 
-                        mat_builder=self.mat_builder, prefer_model_xml=self.prefer_model_xml,
-                        max_step_change=self.max_step_change, debug=self.debug)
+        # self.model, self.last_result = critical_density_iteration(model=self.model, iso=self.iso, batches=self.batches, bracket=self.bracket, 
+        #                 materials=self.materials, target=self.target,
+        #                 initial_value=(self.initial_value if (self.last_result is None or self.force_initial_value) else self.last_result[0]), 
+        #                 mat_builder=self.mat_builder, prefer_model_xml=self.prefer_model_xml,
+        #                 max_step_change=self.max_step_change, debug=self.debug)
+        # return self.model
+        # Initialize OpenMC library
+        comm.barrier()
+        if not openmc.lib.is_initialized:
+            if self.debug is True: print("Initializing OpenMC library for CDI...")
+            openmc.lib.init(intracomm=comm)
+        openmc.lib.reset()
+        openmc.lib.simulation_init()
+        
+        # Set required tallies to active
+        for t_id, _tally in openmc.lib.tallies.items():
+            if t_id == 8888 or t_id == 8889:
+                _tally.active = True
+        if self.activate_all_tallies:
+            for t_id, _tally in openmc.lib.tallies.items():
+                _tally.active = True
+        
+        # Run simulation
+        for _ in openmc.lib.iter_batches():
+            next(self)
+        openmc.lib.simulation_finalize()
+        
         return self.model
+    
+    
+    def __next__(self):
+        M = openmc.lib.current_batch()
+        for exec_func, exec_range, exec_strategy in self.other_exec:
+            if exec_strategy not in [0,2]:
+                continue
+            exec_start, exec_end = exec_range
+            if M >= exec_start and M < exec_end:
+                exec_func()
+        if M > self.model.settings.inactive: return 0
+        if self.skip_steps: return 0
+        
+        # Get tallies
+        # Tally results are added (summed) in each batch, batch result is the difference
+        _tallies = copy.copy(openmc.lib.tallies)
+        # global_tallies = copy.copy(openmc.lib.global_tallies())
+        self.curr_res = [[],[],[]]
+        
+        CDI_tally_ids = {8888: 0, 8889: 1, 8890: 2}
+        if M == 1:
+            for _tally in _tallies.values():
+                if _tally.id in CDI_tally_ids:
+                    # prev_res += [_tally.results - _tally.results]
+                    # curr_res[0 if _tally.id == 8888 else 1] = copy.copy(_tally.results)
+                    self.prev_res[CDI_tally_ids[_tally.id]] = copy.copy(_tally.results)
+        else:
+            for _tally in _tallies.values():
+                if _tally.id in CDI_tally_ids:
+                    self.curr_res[CDI_tally_ids[_tally.id]] = copy.copy(_tally.results) - self.prev_res[CDI_tally_ids[_tally.id]]
+                    self.prev_res[CDI_tally_ids[_tally.id]] = copy.copy(_tally.results)
+        # Leakage is a running average
+        # leak = global_tallies[3][0]*M - prev_leak
+        # prev_leak = global_tallies[3][0]*M
+        
+        # Only change concentrations during the inactive CDI batches
+        if M < self.starting_batch + self.batches:
+            # Skip initial steps for flux convergence
+            if M < self.starting_batch: return 0
+            if self.debug is True: print(f"\n Batch: {M}")
+            
+            if M == self.starting_batch: #Kalman filter initialization
+                self.x = 1
+                self.p = 1e16
+                self.p_n = 1e16
+                p_measure = 1e16
+            
+            ### P = production of neutrons, L = loss of neutrons
+            # Neutrons produced by fission (prompt and delayed)
+            P_fiss = self.curr_res[0][0][0][1]
+            P_fiss = P_fiss if P_fiss > 0 else 0
+            # Additional neutrons produced by (n,xn) reactions
+            P_nxn = self.curr_res[0][0][2][1] - self.curr_res[0][0][3][1]
+            P_nxn = P_nxn if P_nxn > 0 else 0
+            
+            # Total neutron absorption             
+            L_abs = self.curr_res[0][0][1][1]                                
+            L_abs = L_abs if L_abs > 0 else 0
+            # WARNING: L_abs - P_nxn + L_leak === 1; by OpenMC def
+            # >0, for when floating point errors cause negative values
+            
+                        # Neutron leakage fraction
+            # It is calculated implicitly by OpenMC as 1 = P_nxn + L_abs + L_leak
+            # L_leak = leak if leak > 0 else 0
+            L_leak = 1 - (L_abs - P_nxn)
+
+            def parse_flagged_nuclide_tally(tally_results, nuc_fractions):
+                P_fiss_nucs = np.sum((tally_results[...,0::4,1]) * np.array(nuc_fractions))
+                P_nxn_nucs = np.sum((tally_results[...,2::4,1] - tally_results[...,3::4,1]) * np.array(nuc_fractions))
+                L_abs_nucs = np.sum((tally_results[...,1::4,1]) * np.array(nuc_fractions))
+                return P_fiss_nucs, P_nxn_nucs, L_abs_nucs
+            
+            # Same as above but summed for all flagged nuclides, weighted by weights if provided by 'mat_builder'
+
+            P_fiss_nucs = 0
+            P_fiss_nucs_absolute = 0
+            P_nxn_nucs = 0
+            P_nxn_nucs_absolute = 0
+            L_abs_nucs = 0
+            L_abs_nucs_absolute = 0
+            if self.materials:
+                for index, mat in enumerate(self.materials):
+                    if self.debug: print(f"Tally partial fractions for mat with id={mat.id}:",np.array(self.nuc_fractions[index]))
+                    _P_fiss_nucs, _P_nxn_nucs, _L_abs_nucs = parse_flagged_nuclide_tally(np.array(self.curr_res[1][index]),
+                                                               self.nuc_fractions[index])
+                    P_fiss_nucs += _P_fiss_nucs
+                    P_nxn_nucs += _P_nxn_nucs
+                    L_abs_nucs += _L_abs_nucs
+                    P_fiss_nucs_absolute += _P_fiss_nucs
+                    P_nxn_nucs_absolute += _P_nxn_nucs
+                    L_abs_nucs_absolute += _L_abs_nucs
+                    if len(self.curr_res[2]) != 0:
+                        _P_fiss_nucs, _P_nxn_nucs, _L_abs_nucs = parse_flagged_nuclide_tally(np.array(self.curr_res[2][index]),
+                                                                   self.nuc_fractions_replace[index])
+                        P_fiss_nucs -= _P_fiss_nucs
+                        P_nxn_nucs -= _P_nxn_nucs
+                        L_abs_nucs -= _L_abs_nucs
+                        P_fiss_nucs_absolute += _P_fiss_nucs
+                        P_nxn_nucs_absolute += _P_nxn_nucs
+                        L_abs_nucs_absolute += _L_abs_nucs
+            else:
+                _P_fiss_nucs, _P_nxn_nucs, _L_abs_nucs = parse_flagged_nuclide_tally(np.array(self.curr_res[1]),
+                                                           (self.nuc_fractions if self.nuc_fractions is not None else 1) )
+                P_fiss_nucs += _P_fiss_nucs
+                P_nxn_nucs += _P_nxn_nucs
+                L_abs_nucs += _L_abs_nucs
+                P_fiss_nucs_absolute += _P_fiss_nucs
+                P_nxn_nucs_absolute += _P_nxn_nucs
+                L_abs_nucs_absolute += _L_abs_nucs
+                if len(self.curr_res[2]) != 0:
+                        _P_fiss_nucs, _P_nxn_nucs, _L_abs_nucs = parse_flagged_nuclide_tally(np.array(self.curr_res[2]),
+                                                                   self.nuc_fractions_replace)
+                        P_fiss_nucs -= _P_fiss_nucs
+                        P_nxn_nucs -= _P_nxn_nucs
+                        L_abs_nucs -= _L_abs_nucs
+                        P_fiss_nucs_absolute += _P_fiss_nucs
+                        P_nxn_nucs_absolute += _P_nxn_nucs
+                        L_abs_nucs_absolute += _L_abs_nucs
+            
+            # P_fiss_nucs = 0
+            # P_nxn_nucs = 0
+            # L_abs_nucs = 0
+            # if self.debug: print(f"Nuclides: {self.iso}")
+            # if self.materials:
+            #     for index, mat in enumerate(self.materials):
+            #         if self.debug: print(f"Tally partial fractions for mat with id={mat.id}:",np.array(self.nuc_fractions[index]))
+            #         Res_nucs_mat = np.array(self.curr_res[1][index])
+            #         P_fiss_nucs += np.sum((Res_nucs_mat[0::4,1]) * np.array(self.nuc_fractions[index]))
+            #         P_nxn_nucs += np.sum((Res_nucs_mat[2::4,1] - Res_nucs_mat[3::4,1]) * np.array(self.nuc_fractions[index]))
+            #         L_abs_nucs += np.sum((Res_nucs_mat[1::4,1]) * np.array(self.nuc_fractions[index]))
+            #         if self.debug: print(f"Mat id {mat.id} - P_fiss_nucs: {np.sum((Res_nucs_mat[0::4,1]) * np.array(self.nuc_fractions[index]))}, P_nxn_nucs: {np.sum((Res_nucs_mat[2::4,1] - Res_nucs_mat[3::4,1]) * np.array(self.nuc_fractions[index]))}, L_abs_nucs: {np.sum((Res_nucs_mat[1::4,1]) * np.array(self.nuc_fractions[index]))}")
+            # else:
+            #     Res_nucs_mat = np.squeeze(np.array(self.curr_res[1][0]))
+            #     P_fiss_nucs += np.sum((Res_nucs_mat[0::4,1]))
+            #     P_nxn_nucs += np.sum((Res_nucs_mat[2::4,1] - Res_nucs_mat[3::4,1]))
+            #     L_abs_nucs += np.sum((Res_nucs_mat[1::4,1]))
+            # # Nuclide tallies can be negative, if self.nuc_fractions are negative, ie. when replacing boron with uranium
+            
+            # # Handle tally 8890, which is a tally of "replacement" nuclides
+            # if len(self.curr_res[2]) != 0:
+            #     if self.materials:
+            #         for index, mat in enumerate(self.materials):
+            #             if self.debug: print(f"Tally partial fractions for mat with id={mat.id}:",np.array(self.nuc_fractions[index]))
+            #             Res_nucs_mat = np.array(self.curr_res[2][index])
+            #             P_fiss_nucs -= np.sum((Res_nucs_mat[0::4,1]) * np.array(self.nuc_fractions[index]))
+            #             P_nxn_nucs -= np.sum((Res_nucs_mat[2::4,1] - Res_nucs_mat[3::4,1]) * np.array(self.nuc_fractions[index]))
+            #             L_abs_nucs -= np.sum((Res_nucs_mat[1::4,1]) * np.array(self.nuc_fractions[index]))
+            #             if self.debug: print(f"CDI replacement: Mat id {mat.id} - P_fiss_nucs: {np.sum((Res_nucs_mat[0::4,1]) * np.array(self.nuc_fractions[index]))}, P_nxn_nucs: {np.sum((Res_nucs_mat[2::4,1] - Res_nucs_mat[3::4,1]) * np.array(self.nuc_fractions[index]))}, L_abs_nucs: {np.sum((Res_nucs_mat[1::4,1]) * np.array(self.nuc_fractions[index]))}")
+            #     else:
+            #         Res_nucs_mat = np.squeeze(np.array(self.curr_res[2][0]))
+            #         P_fiss_nucs -= np.sum((Res_nucs_mat[0::4,1]))
+            #         P_nxn_nucs -= np.sum((Res_nucs_mat[2::4,1] - Res_nucs_mat[3::4,1]))
+            #         L_abs_nucs -= np.sum((Res_nucs_mat[1::4,1]))
+            
+            # if L_abs_nucs == 0:
+            #     print(f"CDI: No nuclide absorption tallied, skipping from step {M} onwards")
+            #     self.skip_steps = True
+            #     return 0
+            
+            # Predict concentration change
+            bot = L_abs_nucs - P_fiss_nucs/self.target - P_nxn_nucs
+            top = P_fiss/self.target - 1 + bot 
+            if bot == 0:
+                print(f"CDI: Combined effect of absorption, fission and (n,xn) reaction of flagged is 0, skipping step {M}")
+                return 0
+            g_est = top / bot
+            # Optimal following (Kalman filter for scalar value)
+
+            # Calculate uncertainty based on MC statistics
+            # if (g_est >= 1/(self.max_step_change-0.5) and g_est <= self.max_step_change):
+            rel_err_MC = 1/np.sqrt(self.model.settings.particles * (self.model.settings.generations_per_batch if self.model.settings.generations_per_batch is not None else 1))
+            prod = P_fiss + P_nxn
+            loss = L_abs + L_leak
+            ### g_est = (P_fiss/target - 1)/nucs + 1
+            ### Covariances between fission (also (n,xn) reactions) and absorption neglected
+            ### Would need nu_bar for fiss/abs nucs and rho((n,xn):abs) (=approx 2, as higher reactions are much less probable)
+            ### Rho is covariance coefficient
+            ### If nuc is the only fissile nuc: rho(fiss_nucs, fiss)=1, ie. rho=np.sqrt(fiss_nucs/fiss)
+            ### Following the example rho(abs_nucs, fiss) = -np.sqrt(abs_nucs/(fiss/nu_bar)), minus because when a fission reaction replaces absorption
+            ### Following the example rho(nxn_nucs, fiss) = -np.sqrt((nxn_nucs/2)/(fiss/nu_bar)), minus!
+            sig_nucs = rel_err_MC * np.sqrt(prod * (P_fiss_nucs**2 / P_fiss_nucs_absolute if P_fiss_nucs_absolute != 0 else 0) /self.target
+                                            + prod * (P_nxn_nucs**2 / P_nxn_nucs_absolute if P_nxn_nucs_absolute != 0 else 0)
+                                            + loss * (L_abs_nucs**2 / L_abs_nucs_absolute if L_abs_nucs_absolute != 0 else 0)
+                                            )
+            sig_fiss = rel_err_MC * np.sqrt(prod*P_fiss)
+            sig_res = (P_fiss/self.target-1)/bot * np.sqrt((sig_fiss/(P_fiss/self.target-1))**2 if (P_fiss/self.target-1) != 0 else rel_err_MC #Catch div by 0
+                                                        + (sig_nucs/bot)**2
+                                                        )
+            
+            sig_g_est = np.abs(sig_res * (1 + (100*np.exp(-(M - self.starting_batch) / self.batches * 3 * np.log(100)) - 1
+                                                if (M - self.starting_batch) < (self.batches / 3) else 0)))
+            ### Slowly relax uncertainty, as first batches are inaccurate, 2/3 of batches do not recieve extra uncertainty,
+            ### this improves convergence when initial guess is bad, but increases final uncertainty
+            rel_err_g_est = sig_g_est / g_est
+            
+            sig_g_est = self.f_prev * sig_g_est
+            p_measure = sig_g_est**2
+            if (g_est >= 1/(self.max_step_change-0.5) and g_est <= self.max_step_change):
+                pass
+            else:
+                old_g_est = g_est
+                if g_est <= 1/(self.max_step_change-0.5):
+                    if self.debug: print(f"estimated change out of bounds, g_est: {g_est} scaled to {1/(self.max_step_change-0.5)}")
+                    g_est = 1/(self.max_step_change-0.5)
+                    
+                elif g_est >= self.max_step_change:
+                    if self.debug: print(f"estimated change out of bounds, g_est: {g_est} scaled to {self.max_step_change}")
+                    g_est = self.max_step_change
+                # p_measure = self.p*100 # 1e16 
+                # sig_g_est = p_measure**(1/2)
+                # rel_err_g_est = sig_g_est / g_est
+                rel_err_g_est = sig_g_est / min(g_est, old_g_est) # Take higher uncertainty if g_est is scaled, as the estimate is less reliable
+                sig_g_est = self.f_prev * sig_g_est
+                p_measure = sig_g_est**2
+            
+            # Store values for analysis and CDI coefficient estimation at the end of the simulation
+            self.guesses += [self.f]
+            self.guess_unc += [self.p_n**(1/2)]
+            self.guess_ks += [(P_fiss-P_nxn)/(L_abs+L_leak-P_nxn)]
+            
+            # Continue Kalman filter
+            # if self.p_n >= 1e16 and p_measure >= 1e16:
+            #     pass
+            # else:
+            self.p_n = 1/(1/self.p + 1/p_measure)
+            if self.debug is True: print(f"Propagating uncertainty: p_prev {self.p}, p_measure {p_measure}, p_next {self.p_n}")
+            z = self.f_prev * g_est
+            
+            # Handle bracket
+            if self.bracket is not None:
+                if z*self.initial_value > self.bracket[1]:
+                    z = self.bracket[1]/self.initial_value
+                elif z*self.initial_value < self.bracket[0]:
+                    z = self.bracket[0]/self.initial_value
+            if self.debug is True: print(f"Changing value mult from {self.x} to {self.x + self.p_n/p_measure * (z - self.x)}, by {self.p_n/p_measure * (z - self.x)}, innovation factor: {self.p_n/p_measure}")
+            # Finally update the concentration multiplier and uncertainty for the next step
+            self.x = self.x + self.p_n/p_measure * (z - self.x)
+            self.p = copy.copy(self.p_n)
+            self.f = copy.copy(self.x)
+            self.g = self.f/self.f_prev
+            self.f_prev = copy.copy(self.f)
+            
+            # Print debug information
+            if self.debug is True:
+                print(f"Batch uncertainty: p: {p_measure}, sig_g: {sig_g_est}")
+                print(f"Batch values top: {top}, bot: {bot}")
+                print(f"Batch estimated correction - 1: {g_est-1}")
+                print(f"Batch filtered correction - 1: {self.g-1}")
+                # if g_est > 1/(self.max_step_change-0.5) and g_est < self.max_step_change:
+                print(f"Correction coefficients [P_fiss, P_nxn, L_leak, L_abs]: {P_fiss, P_nxn, L_leak, L_abs}")
+                print(f"Correction coefficients nucs [L_abs_nucs, P_fiss_nuc, P_nxn_nucs]: {L_abs_nucs, P_fiss_nucs, P_nxn_nucs}")
+                # print(f"OpenMC def diff: L_abs+L_leak-P_nxn-1: {(L_abs+L_leak-P_nxn-1):.03e}")
+                # print("sig_fiss", sig_fiss, "sig_nucs", sig_nucs)
+                print(f"Relative error g_est: {rel_err_g_est}")
+                print(f"Batch estimated value: {self.f*self.initial_value} +/- {self.initial_value*(self.p**(1/2))}")
+
+            # Rebuild the material with the given function at provided concentration
+            if self.mat_builder is not None:
+                mat_builder_res = self.mat_builder(self.f*self.initial_value)
+                keys = mat_builder_res.keys() if type(mat_builder_res) == dict else None
+                if keys:
+                    if "materials" in keys:
+                        materials = [mat for mat in mat_builder_res["materials"]]
+                    if "nuc_fractions" in keys:
+                        self.nuc_fractions = mat_builder_res["nuc_fractions"]
+                    if "nuc_fractions_replace" in keys:
+                        self.nuc_fractions_replace = mat_builder_res["nuc_fractions_replace"]
+            
+            # Update densities on C API side
+            for rank in range(comm.size):
+                C_API_mats = comm.bcast(openmc.lib.materials, root=rank)
+                for mat in C_API_mats:
+                    if self.materials is not None:
+                        if int(mat) not in self.mat_ids:
+                            continue
+                    nuclides=[]
+                    densities=[]
+                    all_nuc = np.array(C_API_mats[int(mat)].nuclides)
+                    mat_internal = C_API_mats[int(mat)]
+                    
+                    if self.mat_builder is None: # Change all materials with the flagged nuclides, as in option A
+                        all_dens = (np.array(C_API_mats[int(mat)].densities)).astype(float)
+                        for nuc in all_nuc:
+                            val = float((all_dens[all_nuc==str(nuc)])[0])
+                            # If nuclide is zero, do not add to the problem.
+                            if val > 0:
+                                if str(nuc) in self.iso:
+                                    val *= self.g
+                                nuclides.append(nuc)
+                                densities.append(val)
+                            elif str(nuc) in self.iso:
+                                val *= self.g
+                                nuclides.append(nuc)
+                                densities.append(val)
+                    else:
+                        for matpy in materials: # Change only the flagged materials
+                            matpy_nuc_dict = matpy.get_nuclide_atom_densities()
+                            if matpy.id == int(mat):
+                                for nuc in all_nuc:
+                                    val = matpy_nuc_dict.get(str(nuc),0)
+                                    # If nuclide is zero, do not add to the problem.
+                                    # 16 bit float limit, to avoid overflow in OpenMC C API
+                                    # May need to be changed to > 1e-38 or similar
+                                    if val > 0: 
+                                        nuclides.append(nuc)
+                                        densities.append(val)
+                                break
+                    mat_internal.set_density(np.sum(densities))
+                    mat_internal.set_densities(nuclides, densities)
+
+        for exec_func, exec_range, exec_strategy in self.other_exec:
+            if exec_strategy not in [1,2]:
+                continue
+            exec_start, exec_end = exec_range
+            if M >= exec_start and M < exec_end:
+                exec_func()
+        
+        if M == self.model.settings.inactive:
+            openmc.lib.reset()
+        
+        return 0
+    
+    def run(self):
+        return self()
