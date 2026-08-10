@@ -18,7 +18,7 @@ USE_MULTIPROCESSING = True
 
 # Allow user to override the number of worker processes to use for depletion
 # calculations
-NUM_PROCESSES = None
+NUM_PROCESSES = 32#None
 
 def _distribute(items):
     """Distribute items across MPI communicator

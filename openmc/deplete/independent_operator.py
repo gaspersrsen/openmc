@@ -116,7 +116,8 @@ class IndependentOperator(OpenMCOperator):
                  fission_q=None,
                  prev_results=None,
                  reduce_chain_level=None,
-                 fission_yield_opts=None):
+                 fission_yield_opts=None,
+                 model=None):
         # Validate micro-xs parameters
         check_type('materials', materials, Iterable, openmc.Material)
         check_type('micros', micros, Iterable, MicroXS)
@@ -133,6 +134,8 @@ class IndependentOperator(OpenMCOperator):
             keff = ufloat(*keff)
 
         self._keff = keff
+        self._n_calls = 0
+        self.model = model
 
         if fission_yield_opts is None:
             fission_yield_opts = {}
@@ -402,6 +405,9 @@ class IndependentOperator(OpenMCOperator):
         """
 
         self._update_materials_and_nuclides(vec)
+        self._n_calls += 1
+        if self.model is not None:
+            self._update_materials_python()
 
         # If the source rate is zero, return zero reaction rates
         if source_rate == 0.0:

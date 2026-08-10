@@ -845,7 +845,8 @@ class Integrator(ABC):
             output: bool = True,
             path: PathLike = 'depletion_results.h5',
             write_rates: bool = False,
-            end_TOL: float = 0.0
+            end_TOL: float = 0.0,
+            skip_hdf5: bool = False
         ):
         """Perform the entire depletion process across all steps
 
@@ -890,24 +891,28 @@ class Integrator(ABC):
                 # Solve Bateman equations over time interval
                 proc_time, n_end = self(n, res.rates, dt, source_rate, i)
 
-                StepResult.save(
-                    self.operator,
-                    n,
-                    res,
-                    [t, t + dt],
-                    source_rate,
-                    self._i_res + i,
-                    proc_time,
-                    write_rates=write_rates,
-                    path=path
-                )
+                if not skip_hdf5:
+                    StepResult.save(
+                        self.operator,
+                        n,
+                        res,
+                        [t, t + dt],
+                        source_rate,
+                        self._i_res + i,
+                        proc_time,
+                        write_rates=write_rates,
+                        path=path
+                    )
 
                 # Update for next step
                 n = n_end
                 t += dt
-                if res.k.n < end_TOL:
-                    warn(f"Step {i} has k={res.k.n} < {end_TOL}. Stopping simulation.")
-                    break
+                try:
+                    if res.k.n < end_TOL:
+                        warn(f"Step {i} has k={res.k.n} < {end_TOL}. Stopping simulation.")
+                        break
+                except:
+                    pass
 
             # Final simulation -- in the case that final_step is False, a zero
             # source rate is passed to the transport operator (which knows to
@@ -916,18 +921,20 @@ class Integrator(ABC):
             if output and final_step and comm.rank == 0:
                 print(f"[openmc.deplete] t={t} (final operator evaluation)")
             res_final = self.operator(n, source_rate if final_step else 0.0)
-            StepResult.save(
-                self.operator,
-                n,
-                res_final,
-                [t, t],
-                source_rate,
-                self._i_res + len(self),
-                proc_time,
-                write_rates=write_rates,
-                path=path
-            )
-            self.operator.write_bos_data(len(self) + self._i_res)
+            
+            if not skip_hdf5:
+                StepResult.save(
+                    self.operator,
+                    n,
+                    res_final,
+                    [t, t],
+                    source_rate,
+                    self._i_res + len(self),
+                    proc_time,
+                    write_rates=write_rates,
+                    path=path
+                )
+                self.operator.write_bos_data(len(self) + self._i_res)
 
         self.operator.finalize()
     
