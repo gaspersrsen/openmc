@@ -772,6 +772,136 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao',
         return nuclides_per_barncm, nuclide_ao_fr_per_submat
  
 
+import numpy as np
+
+class GeneralizedKalmanFilter:
+    def __init__(self, n_states=1, n_measurements=1, transform_type='identity', 
+                 custom_transform=None, custom_inverse=None):
+        """
+        Generalized Kalman Filter. 
+        Defaults to a 1D (0-th order) noise-free running average filter.
+        """
+        self.n_states = n_states
+        self.n_measurements = n_measurements
+        
+        # State estimates
+        self.x = np.zeros((n_states, 1))          
+        self.x_pred = np.zeros((n_states, 1))     
+        
+        # Covariance matrices
+        self.P = np.eye(n_states)                 
+        self.M = np.eye(n_states)                 
+        self.K = np.zeros((n_states, n_measurements)) 
+        
+        self.initialized = False
+        self.n_iterations = 0
+        
+        # Set up measurement space transforms
+        self._setup_transforms(transform_type, custom_transform, custom_inverse)
+        
+    def _setup_transforms(self, transform_type, custom_transform, custom_inverse):
+        if transform_type == 'custom':
+            if not custom_transform or not custom_inverse:
+                raise ValueError("Both custom_transform and custom_inverse are required for 'custom' type.")
+            self.transform = custom_transform
+            self.inverse_transform = custom_inverse
+        elif transform_type == 'anscombe_3_8':
+            self.transform = lambda z: 2 * np.sqrt(z + 3/8)
+            self.inverse_transform = lambda z: (np.maximum(z, 0) / 2)**2 - 3/8
+        elif transform_type == 'anscombe_1_8':
+            self.transform = lambda z: 2 * np.sqrt(z + 3/8)
+            self.inverse_transform = lambda z: (np.maximum(z, 0) / 2)**2 - 1/8
+        elif transform_type == 'identity':
+            # Default tracking space: linear identity (z -> z)
+            self.transform = lambda z: z
+            self.inverse_transform = lambda z: z
+        else:
+            raise ValueError(f"Unknown transform_type: {transform_type}")
+
+    def set_initial_state(self, x_initial, P_initial):
+        self.x = np.array(x_initial).reshape(self.n_states, 1)
+        self.P = np.array(P_initial).reshape(self.n_states, self.n_states)
+        self.initialized = True
+        self.n_iterations = 0
+
+    def predict(self, Phi=None, C=None, Gamma=None, Q=None):
+        """
+        0-th order noise-free projection step by default.
+        Phi defaults to Identity matrix (constant state).
+        Q defaults to Zero matrix (noise-free).
+        """
+        if not self.initialized:
+            raise RuntimeError("Filter must be initialized via set_initial_state or first measurement update.")
+            
+        # Default to 0-th order identity transitions (constant parameter)
+        if Phi is None:
+            Phi = np.eye(self.n_states)
+        else:
+            Phi = np.array(Phi).reshape(self.n_states, self.n_states)
+        
+        # Project state forward
+        if C is not None:
+            C = np.array(C).reshape(self.n_states, 1)
+            self.x_pred = (Phi @ self.x) + C
+        else:
+            self.x_pred = Phi @ self.x
+            
+        # Project state covariance forward (Noise-free Q=0 by default)
+        if Q is not None:
+            Q = np.array(Q).reshape(-1, -1)
+            if Gamma is not None:
+                Gamma = np.array(Gamma).reshape(self.n_states, -1)
+                process_noise_cov = Gamma @ Q @ Gamma.T
+            else:
+                process_noise_cov = Q
+            self.M = (Phi @ self.P @ Phi.T) + process_noise_cov
+        else:
+            self.M = Phi @ self.P @ Phi.T
+
+    def update(self, z, H=None, R=None):
+        """
+        Measurement update step. 
+        H and R default to Identity/Scalar 1 for clean scalar averaging.
+        """
+        # Set up default matrices for direct 1D sensing if omitted
+        if H is None:
+            H = np.eye(self.n_measurements, self.n_states)
+        else:
+            H = np.array(H).reshape(self.n_measurements, self.n_states)
+            
+        if R is None:
+            R = np.eye(self.n_measurements)
+        else:
+            R = np.array(R).reshape(self.n_measurements, self.n_measurements)
+            
+        z = np.array(z).reshape(self.n_measurements, 1)
+        z_transformed = self.transform(z)
+        
+        if not self.initialized:
+            # First sample initializes sample mean directly
+            self.x = np.linalg.pinv(H) @ z_transformed
+            self.P = np.linalg.pinv(H) @ R @ np.linalg.pinv(H).T
+            self.initialized = True
+            self.n_iterations = 1
+            return
+
+        self.n_iterations += 1
+        
+        # Standard matrix update tracking
+        S = (H @ self.M @ H.T) + R
+        self.K = self.M @ H.T @ np.linalg.inv(S)
+        
+        innovation = z_transformed - (H @ self.x_pred)
+        self.x = self.x_pred + (self.K @ innovation)
+        
+        I = np.eye(self.n_states)
+        self.P = (I - (self.K @ H)) @ self.M
+        
+    @property
+    def optimal_value(self):
+        return self.inverse_transform(self.x)
+
+
 class CDI:
     """
     Class to perform critical density iteration (CDI) inside the OpenMC depletion. CDI is a method used to find the critical concentration of a nuclide in a material such that the effective multiplication factor (k_eff) of a nuclear system is equal to a target value (usually 1). The class provides a method to perform CDI by iteratively adjusting the concentration of the nuclide and running OpenMC simulations until convergence is achieved.
@@ -891,7 +1021,8 @@ class CDI:
                         raise ValueError(f"Provided execution function {exec_func} is not callable")
                     self.other_exec.append([exec_func, [exec_start, exec_end], exec_strategy])
                     
-
+            self.kf = GeneralizedKalmanFilter(n_states=1, n_measurements=1, transform_type='identity')
+            
             self.model = model
             self.iso = iso
             self.bracket = bracket
@@ -986,7 +1117,7 @@ class CDI:
         # Leakage is a running average
         # leak = global_tallies[3][0]*M - prev_leak
         # prev_leak = global_tallies[3][0]*M
-        
+                
         # Only change concentrations during the inactive CDI batches
         if ((M < self.starting_batch + self.batches)
             and (M >= self.starting_batch)
@@ -994,11 +1125,19 @@ class CDI:
             # Skip initial steps for flux convergence
             if self.debug is True: print(f"\n Batch: {M}")
             
-            if M == self.starting_batch: #Kalman filter initialization
-                self.x = 1
-                self.p = 1e16
-                self.p_n = 1e16
-                p_measure = 1e16
+            if M == self.starting_batch: 
+                # Pure state engine initialization loop
+                self.kf.set_initial_state(x_initial=[1.0], P_initial=[[1e16]])
+            else:
+                # Calculate process noise directly from the Monte Carlo statistical precision limits
+                # rel_err_MC captures the structural baseline noise per batch
+                rel_err_MC = 1 / np.sqrt(self.model.settings.particles * (self.model.settings.generations_per_batch if self.model.settings.generations_per_batch is not None else 1))
+                
+                # Transform the relative error to absolute variance relative to your current baseline multiplier
+                q_mc_noise = (self.f_prev * rel_err_MC) ** 2
+                
+                # Pass the dynamically estimated MC process noise matrix directly into the prediction step
+                self.kf.predict(Q=[[q_mc_noise]])
             
             ### P = production of neutrons, L = loss of neutrons
             # Neutrons produced by fission (prompt and delayed)
@@ -1014,7 +1153,7 @@ class CDI:
             # WARNING: L_abs - P_nxn + L_leak === 1; by OpenMC def
             # >0, for when floating point errors cause negative values
             
-                        # Neutron leakage fraction
+            ### Neutron leakage fraction
             # It is calculated implicitly by OpenMC as 1 = P_nxn + L_abs + L_leak
             # L_leak = leak if leak > 0 else 0
             L_leak = 1 - (L_abs - P_nxn)
@@ -1130,51 +1269,47 @@ class CDI:
                     sig_g_est = self.f_prev * sig_g_est
                     p_measure = sig_g_est**2
                 
-                # Store values for analysis and CDI coefficient estimation at the end of the simulation
-                self.guesses += [self.f]
-                self.guess_unc += [self.p_n**(1/2)]
+                # Store structural state parameters using state vectors directly 
+                self.guesses += [float(self.kf.x[0, 0])]
+                self.guess_unc += [float(np.sqrt(self.kf.P[0, 0]))]
                 self.guess_ks += [(P_fiss-P_nxn)/(L_abs+L_leak-P_nxn)]
                 
-                # Continue Kalman filter
-                # if self.p_n >= 1e16 and p_measure >= 1e16:
-                #     pass
-                # else:
-                self.p_n = 1/(1/self.p + 1/p_measure)
-                if self.debug is True: print(f"Propagating uncertainty: p_prev {self.p}, p_measure {p_measure}, p_next {self.p_n}")
-                z = self.f_prev * g_est
+                # Establish our incoming raw scalar verification target
+                z_measurement = self.f_prev * g_est
                 
-                # Handle bracket
+                # Handle bracket boundaries constraints
                 if self.bracket is not None:
-                    if z*self.initial_value > self.bracket[1]:
-                        z = self.bracket[1]/self.initial_value
-                    elif z*self.initial_value < self.bracket[0]:
-                        z = self.bracket[0]/self.initial_value
-                if self.debug is True: print(f"Changing value mult from {self.x} to {self.x + self.p_n/p_measure * (z - self.x)}, by {self.p_n/p_measure * (z - self.x)}, innovation factor: {self.p_n/p_measure}")
-                # Finally update the concentration multiplier and uncertainty for the next step
-                innovation = z - self.x
-                innovation_factor = self.p_n/p_measure
+                    if z_measurement * self.initial_value > self.bracket[1]:
+                        z_measurement = self.bracket[1]/self.initial_value
+                    elif z_measurement * self.initial_value < self.bracket[0]:
+                        z_measurement = self.bracket[0]/self.initial_value
+                
+                if self.debug is True: 
+                    print(f"Propagating uncertainty through engine matrix space: R_measure={p_measure}")
+
+                # Execute Measurement Convergence step inside your class layout
+                self.kf.update(z=[z_measurement], H=[[1.0]], R=[[p_measure]])
+                
+                # Apply custom low-bound dynamic floor clamping limits if passed down 
                 if self.dynamic_sigma_min is not None:
-                    innovation_factor = max(innovation_factor, self.dynamic_sigma_min)
-                self.x += innovation_factor * innovation
-                # self.x = self.x + self.p_n/p_measure * (z - self.x)
-                self.p = copy.copy(self.p_n)
-                self.f = copy.copy(self.x)
-                self.g = self.f/self.f_prev
+                    # K gain scaling coefficient matrix inspection
+                    if self.kf.K[0, 0] < self.dynamic_sigma_min:
+                        innovation = z_measurement - self.kf.x_pred[0, 0]
+                        self.kf.x[0, 0] = self.kf.x_pred[0, 0] + (self.dynamic_sigma_min * innovation)
+                
+                # Synchronize updates strictly through clean scalar conversions of self.kf properties
+                self.f = float(self.kf.x[0, 0])
+                self.g = self.f / self.f_prev
                 self.f_prev = copy.copy(self.f)
                 
                 # Print debug information
                 if self.debug is True:
-                    print(f"Batch uncertainty: p: {p_measure}, sig_g: {sig_g_est}")
+                    print(f"Batch uncertainty: P_matrix_state: {self.kf.P[0,0]}, sig_g: {sig_g_est}")
                     print(f"Batch values top: {top}, bot: {bot}")
                     print(f"Batch estimated correction - 1: {g_est-1}")
                     print(f"Batch filtered correction - 1: {self.g-1}")
-                    # if g_est > 1/(self.max_step_change-0.5) and g_est < self.max_step_change:
-                    print(f"Correction coefficients [P_fiss, P_nxn, L_leak, L_abs]: {P_fiss, P_nxn, L_leak, L_abs}")
-                    print(f"Correction coefficients nucs [L_abs_nucs, P_fiss_nuc, P_nxn_nucs]: {L_abs_nucs, P_fiss_nucs, P_nxn_nucs}")
-                    # print(f"OpenMC def diff: L_abs+L_leak-P_nxn-1: {(L_abs+L_leak-P_nxn-1):.03e}")
-                    # print("sig_fiss", sig_fiss, "sig_nucs", sig_nucs)
                     print(f"Relative error g_est: {rel_err_g_est}")
-                    print(f"Batch estimated value: {self.f*self.initial_value} +/- {self.initial_value*(self.p**(1/2))}")
+                    print(f"Batch estimated value: {self.f*self.initial_value} +/- {self.initial_value*(np.sqrt(self.kf.P[0,0]))}")
 
                 # Rebuild the material with the given function at provided concentration
                 if self.mat_builder is not None:
@@ -1227,7 +1362,6 @@ class CDI:
                                             nuclides.append(nuc)
                                             densities.append(val)
                                     break
-                        mat_internal.set_density(np.sum(densities))
                         mat_internal.set_densities(nuclides, densities)
 
         for exec_func, exec_range, exec_strategy in self.other_exec:
