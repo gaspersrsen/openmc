@@ -98,7 +98,8 @@ extern bool uniform_source_sampling; //!< sample sources uniformly?
 extern bool ufs_on;                  //!< uniform fission site method on?
 extern bool urr_ptables_on;          //!< use unresolved resonance prob. tables?
 extern bool use_decay_photons;       //!< use decay photons for D1S
-extern "C" bool weight_windows_on;   //!< are weight windows are enabled?
+extern bool use_shared_secondary_bank; //!< Use shared bank for secondaries
+extern "C" bool weight_windows_on;     //!< are weight windows are enabled?
 extern bool weight_window_checkpoint_surface;   //!< enable weight window check
                                                 //!< upon surface crossing?
 extern bool weight_window_checkpoint_collision; //!< enable weight window check
@@ -125,7 +126,7 @@ extern "C" const char* path_statepoint_c; //!< C pointer to statepoint file name
 
 extern "C" int32_t n_inactive;         //!< number of inactive batches
 extern "C" int32_t max_lost_particles; //!< maximum number of lost particles
-extern double
+extern "C" double
   rel_max_lost_particles; //!< maximum number of lost particles, relative to the
                           //!< total number of particles
 extern "C" int32_t
@@ -159,7 +160,7 @@ extern double res_scat_energy_min; //!< Min energy in [eV] for res. upscattering
 extern double res_scat_energy_max; //!< Max energy in [eV] for res. upscattering
 extern vector<std::string>
   res_scat_nuclides;           //!< Nuclides using res. upscattering treatment
-extern RunMode run_mode;       //!< Run mode (eigenvalue, fixed src, etc.)
+extern "C" RunMode run_mode;   //!< Run mode (eigenvalue, fixed src, etc.)
 extern SolverType solver_type; //!< Solver Type (Monte Carlo or Random Ray)
 extern std::unordered_set<int>
   sourcepoint_batch; //!< Batches when source should be written

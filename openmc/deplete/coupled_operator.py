@@ -410,6 +410,7 @@ class CoupledOperator(OpenMCOperator):
     def cdi(self):
         return self._cdi
 
+<<<<<<< HEAD
     @cdi.setter
     def cdi(self, cdi):
         check_type('cdi', cdi, openmc.search.CDI)
@@ -417,6 +418,9 @@ class CoupledOperator(OpenMCOperator):
         self.model = cdi.model
         
     def __call__(self, vec, source_rate):
+=======
+    def __call__(self, vec, source_rate) -> OperatorResult:
+>>>>>>> v16_0_CDI
         """Runs a simulation.
 
         Simulation will abort under the following circumstances:
