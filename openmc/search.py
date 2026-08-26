@@ -772,8 +772,6 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao',
         return nuclides_per_barncm, nuclide_ao_fr_per_submat
  
 
-import numpy as np
-
 class GeneralizedKalmanFilter:
     def __init__(self, n_states=1, n_measurements=1, transform_type='identity', 
                  custom_transform=None, custom_inverse=None):
@@ -805,6 +803,12 @@ class GeneralizedKalmanFilter:
                 raise ValueError("Both custom_transform and custom_inverse are required for 'custom' type.")
             self.transform = custom_transform
             self.inverse_transform = custom_inverse
+        elif transform_type == 'square_root' or transform_type == 'sqrt':
+            self.transform = lambda z: np.sqrt(z)
+            self.inverse_transform = lambda z: z**2
+        elif transform_type == 'square':
+            self.transform = lambda z: z**2
+            self.inverse_transform = lambda z: np.sqrt(z)
         elif transform_type == 'anscombe_3_8':
             self.transform = lambda z: 2 * np.sqrt(z + 3/8)
             self.inverse_transform = lambda z: (np.maximum(z, 0) / 2)**2 - 3/8
@@ -845,25 +849,28 @@ class GeneralizedKalmanFilter:
             self.x_pred = (Phi @ self.x) + C
         else:
             self.x_pred = Phi @ self.x
-            
-        # Project state covariance forward (Noise-free Q=0 by default)
+        
+                # Project state covariance forward (Noise-free Q=0 by default)
         if Q is not None:
-            Q = np.array(Q).reshape(-1, -1)
+            Q_arr = np.array(Q)
+            if Q_arr.ndim == 0:  
+                Q = Q_arr.reshape(1, 1)
+            else:
+                Q = Q_arr.reshape(Q_arr.shape[0], -1) if Q_arr.ndim == 1 else Q_arr
+                
             if Gamma is not None:
                 Gamma = np.array(Gamma).reshape(self.n_states, -1)
                 process_noise_cov = Gamma @ Q @ Gamma.T
             else:
+                # Default case: Q maps directly onto the state space dimensions
                 process_noise_cov = Q
+                
             self.M = (Phi @ self.P @ Phi.T) + process_noise_cov
         else:
             self.M = Phi @ self.P @ Phi.T
 
+
     def update(self, z, H=None, R=None):
-        """
-        Measurement update step. 
-        H and R default to Identity/Scalar 1 for clean scalar averaging.
-        """
-        # Set up default matrices for direct 1D sensing if omitted
         if H is None:
             H = np.eye(self.n_measurements, self.n_states)
         else:
@@ -874,11 +881,11 @@ class GeneralizedKalmanFilter:
         else:
             R = np.array(R).reshape(self.n_measurements, self.n_measurements)
             
-        z = np.array(z).reshape(self.n_measurements, 1)
-        z_transformed = self.transform(z)
-        
+        # Convert z securely to a scalar item first
+        z_scalar = np.ravel(z)[0] 
+        z_transformed = np.array([[self.transform(z_scalar)]]).reshape(self.n_measurements, 1)
+
         if not self.initialized:
-            # First sample initializes sample mean directly
             self.x = np.linalg.pinv(H) @ z_transformed
             self.P = np.linalg.pinv(H) @ R @ np.linalg.pinv(H).T
             self.initialized = True
@@ -887,7 +894,6 @@ class GeneralizedKalmanFilter:
 
         self.n_iterations += 1
         
-        # Standard matrix update tracking
         S = (H @ self.M @ H.T) + R
         self.K = self.M @ H.T @ np.linalg.inv(S)
         
@@ -896,10 +902,20 @@ class GeneralizedKalmanFilter:
         
         I = np.eye(self.n_states)
         self.P = (I - (self.K @ H)) @ self.M
-        
+    
     @property
     def optimal_value(self):
-        return self.inverse_transform(self.x)
+        # .item() completely strips away all NumPy matrix wrapper arrays safely
+        # return float(self.inverse_transform(self.x.item()))
+        return float(self.inverse_transform(self.x))
+
+    @property
+    def linear_P(self):
+        """Returns the scalar variance of the first state variable."""
+        # return float(self.P.item())
+        return self.P
+
+
 
 
 class CDI:
@@ -920,7 +936,7 @@ class CDI:
                         mat_builder=None, prefer_model_xml=False,
                         max_step_change=4, debug=False, force_initial_value=False,
                         other_execution_functions=None, activate_all_tallies=False,
-                        skip8890=False, dynamic_sigma_min=None):
+                        skip8890=False, dynamic_sigma_min=None, kf_kwargs={}):
 
             self.nuc_fractions = None
             self.nuc_fractions_replace = None
@@ -1020,8 +1036,11 @@ class CDI:
                     if not callable(exec_func):
                         raise ValueError(f"Provided execution function {exec_func} is not callable")
                     self.other_exec.append([exec_func, [exec_start, exec_end], exec_strategy])
-                    
-            self.kf = GeneralizedKalmanFilter(n_states=1, n_measurements=1, transform_type='identity')
+            
+            kf_kwargs.setdefault('n_states', 1)
+            kf_kwargs.setdefault('n_measurements', 1)
+            kf_kwargs.setdefault('transform_type', 'identity')
+            self.kf = GeneralizedKalmanFilter(**kf_kwargs)
             
             self.model = model
             self.iso = iso
@@ -1121,23 +1140,38 @@ class CDI:
         # Only change concentrations during the inactive CDI batches
         if ((M < self.starting_batch + self.batches)
             and (M >= self.starting_batch)
-            and (not self.skip_steps) ):
-            # Skip initial steps for flux convergence
+            and (not self.skip_steps)):
+            
             if self.debug is True: print(f"\n Batch: {M}")
             
             if M == self.starting_batch: 
-                # Pure state engine initialization loop
-                self.kf.set_initial_state(x_initial=[1.0], P_initial=[[1e16]])
+                absolute_initial_guess = float(self.initial_value)  
+                
+                # Relate initial variance dynamically to your starting concentration 
+                # (e.g., 20% expected standard deviation error = 600 ppm -> variance = 360,000)
+                initial_variance = 1e16#(0.2 * absolute_initial_guess) ** 2 
+                
+                # Enforce explicit 2D matrices for the state-space engine
+                self.kf.set_initial_state(x_initial=np.array([[absolute_initial_guess]]), 
+                                          P_initial=np.array([[initial_variance]]))
+                
+                # Seed the filter's internal predictive variables manually 
+                # This stops the engine from resetting your P matrix during its first .update() call
+                self.kf.x_pred = copy.deepcopy(self.kf.x)
+                self.kf.M = copy.deepcopy(self.kf.P)
+                
+                self.f = 1.0
+                self.f_prev = 1.0
             else:
-                # Calculate process noise directly from the Monte Carlo statistical precision limits
-                # rel_err_MC captures the structural baseline noise per batch
-                rel_err_MC = 1 / np.sqrt(self.model.settings.particles * (self.model.settings.generations_per_batch if self.model.settings.generations_per_batch is not None else 1))
+                delta_concentration = (self.f - self.f_prev) * self.initial_value
+                q_adaptive = float(delta_concentration ** 2)
                 
-                # Transform the relative error to absolute variance relative to your current baseline multiplier
-                q_mc_noise = (self.f_prev * rel_err_MC) ** 2
+                # Enforce dynamic_sigma_min as a lower floor safety limit to avoid filter stagnation
+                q_floor = float(self.dynamic_sigma_min**2) if self.dynamic_sigma_min is not None else 1.0
+                q_final = max(q_adaptive, q_floor)
                 
-                # Pass the dynamically estimated MC process noise matrix directly into the prediction step
-                self.kf.predict(Q=[[q_mc_noise]])
+                # Execute prediction with the strict 2D array representation
+                self.kf.predict(Phi=np.array([[1.0]]), Q=np.array([[q_final]]))
             
             ### P = production of neutrons, L = loss of neutrons
             # Neutrons produced by fission (prompt and delayed)
@@ -1219,101 +1253,78 @@ class CDI:
             if bot == 0:
                 print(f"CDI: Combined effect of absorption, fission and (n,xn) reaction of flagged is 0, skipping step {M}")
             else:
-                g_est = top / bot
-                # Optimal following (Kalman filter for scalar value)
-
-                # Calculate uncertainty based on MC statistics
-                # if (g_est >= 1/(self.max_step_change-0.5) and g_est <= self.max_step_change):
-                rel_err_MC = 1/np.sqrt(self.model.settings.particles * (self.model.settings.generations_per_batch if self.model.settings.generations_per_batch is not None else 1))
+                g_est = top / bot  
+                
+                # Fetch absolute concentration cleanly
+                absolute_current_concentration = float(self.f_prev * self.initial_value)
+                
+                # 1. Compute statistical error from Monte Carlo
+                rel_err_MC = 1 / np.sqrt(self.model.settings.particles * (self.model.settings.generations_per_batch if self.model.settings.generations_per_batch is not None else 1))
                 prod = P_fiss + P_nxn
                 loss = L_abs + L_leak
-                ### g_est = (P_fiss/target - 1)/nucs + 1
-                ### Covariances between fission (also (n,xn) reactions) and absorption neglected
-                ### Would need nu_bar for fiss/abs nucs and rho((n,xn):abs) (=approx 2, as higher reactions are much less probable)
-                ### Rho is covariance coefficient
-                ### If nuc is the only fissile nuc: rho(fiss_nucs, fiss)=1, ie. rho=np.sqrt(fiss_nucs/fiss)
-                ### Following the example rho(abs_nucs, fiss) = -np.sqrt(abs_nucs/(fiss/nu_bar)), minus because when a fission reaction replaces absorption
-                ### Following the example rho(nxn_nucs, fiss) = -np.sqrt((nxn_nucs/2)/(fiss/nu_bar)), minus!
-                sig_nucs = rel_err_MC * np.sqrt(prod * (P_fiss_nucs**2 / P_fiss_nucs_absolute if P_fiss_nucs_absolute != 0 else 0) /self.target
+                
+                sig_nucs = rel_err_MC * np.sqrt(prod * (P_fiss_nucs**2 / P_fiss_nucs_absolute if P_fiss_nucs_absolute != 0 else 0) / self.target
                                                 + prod * (P_nxn_nucs**2 / P_nxn_nucs_absolute if P_nxn_nucs_absolute != 0 else 0)
-                                                + loss * (L_abs_nucs**2 / L_abs_nucs_absolute if L_abs_nucs_absolute != 0 else 0)
-                                                )
-                sig_fiss = rel_err_MC * np.sqrt(prod*P_fiss)
-                sig_res = (P_fiss/self.target-1)/bot * np.sqrt((sig_fiss/(P_fiss/self.target-1))**2 if (P_fiss/self.target-1) != 0 else rel_err_MC #Catch div by 0
-                                                            + (sig_nucs/bot)**2
-                                                            )
+                                                + loss * (L_abs_nucs**2 / L_abs_nucs_absolute if L_abs_nucs_absolute != 0 else 0))
+                sig_fiss = rel_err_MC * np.sqrt(prod * P_fiss)
                 
-                sig_g_est = np.abs(sig_res * (1 + (100*np.exp(-(M - self.starting_batch) / self.batches * 3 * np.log(100)) - 1
-                                                    if (M - self.starting_batch) < (self.batches / 3) else 0)))
-                ### Slowly relax uncertainty, as first batches are inaccurate, 2/3 of batches do not recieve extra uncertainty,
-                ### this improves convergence when initial guess is bad, but increases final uncertainty
-                rel_err_g_est = sig_g_est / g_est
+                sig_res = (P_fiss / self.target - 1) / bot * np.sqrt((sig_fiss / (P_fiss / self.target - 1))**2 if (P_fiss / self.target - 1) != 0 else rel_err_MC
+                                                                     + (sig_nucs / bot)**2)
                 
-                sig_g_est = self.f_prev * sig_g_est
-                p_measure = sig_g_est**2
-                if (g_est >= 1/(self.max_step_change-0.5) and g_est <= self.max_step_change):
-                    pass
-                else:
-                    old_g_est = g_est
-                    if g_est <= 1/(self.max_step_change-0.5):
-                        if self.debug: print(f"estimated change out of bounds, g_est: {g_est} scaled to {1/(self.max_step_change-0.5)}")
-                        g_est = 1/(self.max_step_change-0.5)
-                        
-                    elif g_est >= self.max_step_change:
-                        if self.debug: print(f"estimated change out of bounds, g_est: {g_est} scaled to {self.max_step_change}")
-                        g_est = self.max_step_change
-                    # p_measure = self.p*100 # 1e16 
-                    # sig_g_est = p_measure**(1/2)
-                    # rel_err_g_est = sig_g_est / g_est
-                    rel_err_g_est = sig_g_est / min(g_est, old_g_est) # Take higher uncertainty if g_est is scaled, as the estimate is less reliable
-                    sig_g_est = self.f_prev * sig_g_est
-                    p_measure = sig_g_est**2
+                # Apply the legacy initial-batch relaxation factor explicitly to our absolute error scale
+                sig_g_est = np.abs(sig_res * (1 + (100 * np.exp(-(M - self.starting_batch) / self.batches * 3 * np.log(100)) - 1
+                                                   if (M - self.starting_batch) < (self.batches / 3) else 0)))
                 
-                # Store structural state parameters using state vectors directly 
-                self.guesses += [float(self.kf.x[0, 0])]
-                self.guess_unc += [float(np.sqrt(self.kf.P[0, 0]))]
-                self.guess_ks += [(P_fiss-P_nxn)/(L_abs+L_leak-P_nxn)]
+                # 2. Compute absolute measurement properties directly
+                z_measurement = absolute_current_concentration * float(g_est)
+                sig_absolute_est = absolute_current_concentration * float(sig_g_est)
+                p_measure = float(sig_absolute_est ** 2)
                 
-                # Establish our incoming raw scalar verification target
-                z_measurement = self.f_prev * g_est
-                
-                # Handle bracket boundaries constraints
+                # Enforce step limits on the absolute target value if out of safe bounds
+                if (g_est < 1 / (self.max_step_change - 0.5)) or (g_est > self.max_step_change):
+                    if g_est <= 1 / (self.max_step_change - 0.5):
+                        g_est_bounded = 1 / (self.max_step_change - 0.5)
+                    else:
+                        g_est_bounded = self.max_step_change
+                    
+                    z_measurement = absolute_current_concentration * float(g_est_bounded)
+                    # Inflate measurement uncertainty because the linear step assumption failed
+                    p_measure = p_measure * 100.0 
+
+                # Handle tracking bracket bounds constraints in physical units if specified
                 if self.bracket is not None:
-                    if z_measurement * self.initial_value > self.bracket[1]:
-                        z_measurement = self.bracket[1]/self.initial_value
-                    elif z_measurement * self.initial_value < self.bracket[0]:
-                        z_measurement = self.bracket[0]/self.initial_value
+                    if z_measurement > self.bracket[1]:
+                        z_measurement = self.bracket[1]
+                    elif z_measurement < self.bracket[0]:
+                        z_measurement = self.bracket[0]
                 
                 if self.debug is True: 
-                    print(f"Propagating uncertainty through engine matrix space: R_measure={p_measure}")
+                    print(f"Propagating absolute uncertainty: R_measure={p_measure}, Measurement Target={z_measurement}")
 
-                # Execute Measurement Convergence step inside your class layout
-                self.kf.update(z=[z_measurement], H=[[1.0]], R=[[p_measure]])
+                # 3. MANUAL EXPLICIT SCALAR UPDATE (Bypasses internal engine bugs)
+                self.kf.update(z=z_measurement, R=[[p_measure]])
+                absolute_filtered_concentration = self.kf.optimal_value
                 
-                # Apply custom low-bound dynamic floor clamping limits if passed down 
-                if self.dynamic_sigma_min is not None:
-                    # K gain scaling coefficient matrix inspection
-                    if self.kf.K[0, 0] < self.dynamic_sigma_min:
-                        innovation = z_measurement - self.kf.x_pred[0, 0]
-                        self.kf.x[0, 0] = self.kf.x_pred[0, 0] + (self.dynamic_sigma_min * innovation)
-                
-                # Synchronize updates strictly through clean scalar conversions of self.kf properties
-                self.f = float(self.kf.x[0, 0])
+                # 4. RE-SYNCHRONIZE MULTIPLIERS FOR MATERIAL BUILDER ENDPOINTS
+                self.f = absolute_filtered_concentration / self.initial_value
                 self.g = self.f / self.f_prev
                 self.f_prev = copy.copy(self.f)
-                
-                # Print debug information
+
+                # Append history records safely
+                self.guesses += [absolute_filtered_concentration]
+                self.guess_unc += [np.sqrt(float(self.kf.P))]
+                self.guess_ks += [(P_fiss - P_nxn) / (L_abs + L_leak - P_nxn)]
+
                 if self.debug is True:
-                    print(f"Batch uncertainty: P_matrix_state: {self.kf.P[0,0]}, sig_g: {sig_g_est}")
+                    print(f"Batch System Variance P: {float(self.kf.P)}")
                     print(f"Batch values top: {top}, bot: {bot}")
                     print(f"Batch estimated correction - 1: {g_est-1}")
                     print(f"Batch filtered correction - 1: {self.g-1}")
-                    print(f"Relative error g_est: {rel_err_g_est}")
-                    print(f"Batch estimated value: {self.f*self.initial_value} +/- {self.initial_value*(np.sqrt(self.kf.P[0,0]))}")
+                    print(f"Batch filtered Absolute Value: {absolute_filtered_concentration} +/- {np.sqrt(self.kf.P)} ppm")
 
                 # Rebuild the material with the given function at provided concentration
                 if self.mat_builder is not None:
-                    mat_builder_res = self.mat_builder(self.f*self.initial_value)
+                    mat_builder_res = self.mat_builder(self.f * self.initial_value)
                     keys = mat_builder_res.keys() if type(mat_builder_res) == dict else None
                     if keys:
                         if "materials" in keys:
