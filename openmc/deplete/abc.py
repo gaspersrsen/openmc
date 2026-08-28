@@ -948,7 +948,6 @@ class Integrator(ABC):
                 # Solve Bateman equations over time interval
                 proc_time, n_end = self(n, res.rates, dt, source_rate, i)
 
-<<<<<<< HEAD
                 if not skip_hdf5:
                     StepResult.save(
                         self.operator,
@@ -959,22 +958,9 @@ class Integrator(ABC):
                         self._i_res + i,
                         proc_time,
                         write_rates=write_rates,
+                        keff_search_root=keff_search_root,
                         path=path
                     )
-=======
-                StepResult.save(
-                    self.operator,
-                    n,
-                    res,
-                    [t, t + dt],
-                    source_rate,
-                    self._i_res + i,
-                    proc_time,
-                    write_rates=write_rates,
-                    keff_search_root=keff_search_root,
-                    path=path
-                )
->>>>>>> v16_0_CDI
 
                 # Update for next step
                 n = n_end
@@ -997,7 +983,6 @@ class Integrator(ABC):
             else:
                 keff_search_root = None
             res_final = self.operator(n, source_rate if final_step else 0.0)
-<<<<<<< HEAD
             
             if not skip_hdf5:
                 StepResult.save(
@@ -1009,24 +994,10 @@ class Integrator(ABC):
                     self._i_res + len(self),
                     proc_time,
                     write_rates=write_rates,
+                    keff_search_root=keff_search_root,
                     path=path
                 )
-                self.operator.write_bos_data(len(self) + self._i_res)
-=======
-            StepResult.save(
-                self.operator,
-                n,
-                res_final,
-                [t, t],
-                source_rate,
-                self._i_res + len(self),
-                proc_time,
-                write_rates=write_rates,
-                keff_search_root=keff_search_root,
-                path=path
-            )
             self.operator.write_bos_data(len(self) + self._i_res)
->>>>>>> v16_0_CDI
 
         self.operator.finalize()
     

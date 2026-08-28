@@ -212,434 +212,6 @@ def search_for_keff(model_builder, initial_guess=None, target=1.0,
     return zero_value, guesses, results
 
 
-def critical_density_iteration(model, iso=None, batches=None, bracket=None, 
-                        materials=None, initial_value=1.0, target=1.,
-                        mat_builder=None, prefer_model_xml=False,
-                        max_step_change=4, debug=False):
-    """
-    A (without 'mat_builder') - Legacy option: Runs a simulation where 'iso' nuclide values converge in such a way to obtain the desired k_eff.
-        Material density remains untouched, therefore additional 'iso' nuclides 'compete' with all other nuclides.
-        If materials are not provided all known instances of 'iso' nuclides are multiplied by the same scaling factor.
-        Works reasonably well for nuclides with small relative densities (<1/1000 of the total material density).
-    B (with 'mat_builder'): Runs a simulation where materials are varied using 'mat_builder' function to obtain the desired k_eff.
-        This option is more flexible but relies on the user provided 'mat_builder' function.
-    
-    Model materials are updated in the process.
-    Optional initial value is the value given in your material building process, must be strictly bigger than 0.
-   
-    Higher (>10 000) particle numbers per batch in 'openmc.settings' are recommended.
-    50 or higher batches are recommended for proper convergance.
-    CDI batches are added to inactive batches of the simulation, if the number of inactive batches does not exceed, CDI batches + 10.
-    These 10 or more inactive batches are used for neutron source convergance before active CDI starts.
-
-    .. versionadded:: 0.15.4
-    
-    Parameters
-    ----------
-    model: openmc.model, required
-    iso: array of str, required or mat_builder is provided
-        Nuclide name, ex. ["B10", "B11"]
-        'mat_builder' overwrites isotopes provided by this option.
-    batches: int, optional
-        Number of inactive batches added to the begining of simulation where
-        'iso' concentration converges.
-        Defaults to 50 extra inactive cycles.
-    bracket: array of 2 floats > 0, optional
-        Lower and upper bounds for concentrations.
-        Inteded to be used in tandem with initial_value.
-        Otherwise just a multiple of initial concentration at step 0.
-    materials: materials in which nuclide concentrations are changed, optional
-        'mat_builder' overwrites materials provided by this option.
-        Defaults to all materials.
-    initial_value: float > 0, optional
-        Used for additional critical concentration message output.
-        Used in first call of 'mat_builder' function
-        Required when mat_builder option is used
-        Defaults to 1.0.
-    target: float, optional
-        Target k_eff, defaults to 1.0
-    mat_builder: function, optional
-        Callable builder function, that returns a dictionary with  'materials' and 'nuc_fractions' keys
-        in the mixed material. Meant to be used with 'openmc.search.get_ao_mix_materials'
-        and 'openmc.material.update_material' functions.
-        
-        dictionary of isotope concentrations
-        ('nuclide':value in atoms/b-cm) for each flagged material.
-        It is called in each step of CDI.
-        When used use of 'initial_value' parameter is recommended.
-    prefer_model_xml: Bool, optional
-        Whether to prefer model XML files.
-        Defaults to False.
-    max_step_change: float > 1.0, optional
-        Maximum allowed change in concentration per iteration step.
-        Defaults to 4.0.
-    debug: Bool, optional
-        Wether to print out batch number, tally results of each batch,
-        batch k_absorption and current concentration.
-        Defaults to False.
-
-    Returns
-    -------
-    openmc.model.model
-        Updated model with converged concentrations.
-    [float, float]
-        converged_value, one-sigma uncertainty
-
-    """
-    # Check input arguments
-    if mat_builder is not None:
-        mat_builder_res = mat_builder(initial_value)
-        keys = mat_builder_res.keys() if type(mat_builder_res) == dict else None
-        if keys:
-            if "materials" in keys:
-                materials = [mat for mat in mat_builder_res["materials"]]
-            if "nuc_fractions" in keys:
-                nuc_fractions = mat_builder_res["nuc_fractions"]
-            else:
-                nuc_fractions = np.array([[1 for i in m.nuclides] for m in materials])
-        else:
-            materials = mat_builder(initial_value)
-            nuc_fractions = np.array([[1 for i in iso] for m in materials])
-        if iso is None:
-            iso = []
-            for mat in materials:
-                for nuc in mat.nuclides:
-                    if nuc.name not in iso:
-                        iso += [nuc.name]
-    else:
-        if materials is not None:
-            nuc_fractions = np.array([[1 for i in iso] for m in materials])
-        else:
-            nuc_fractions = np.array([[1 for i in iso] for m in model.materials])
-    if iso is None:
-        raise ValueError("'iso' argument is empty")
-    if batches is not None:
-        cv.check_type('batches', batches, Integral)
-    else:
-        raise ValueError("'batches' argument is empty")
-    if bracket is not None:
-        cv.check_iterable_type('bracket', bracket, Real)
-        cv.check_length('bracket', bracket, 2)
-        cv.check_less_than('bracket values', bracket[0], bracket[1])
-    cv.check_greater_than("max_step_change", max_step_change, 1.0)
-    cv.check_type('initial_value', initial_value, Real)
-    if materials is not None:
-        mat_ids=[]
-        for mat in materials:
-            mat_ids += [mat.id]
-        
-    #Create tallies if not already created
-    if model.settings.inactive is None:
-        model.settings.inactive = 0
-    if model.settings.inactive < batches + 10:
-        model.settings.inactive += batches + 10
-        model.settings.batches += batches + 10
-    tally_ids = [tally.id for tally in model.tallies]
-    if 8888 not in tally_ids: 
-        tallyTest = Tally(tally_id=8888, name="CDI_tally1")
-        tallyTest.scores = ["nu-fission", "absorption", "nu-scatter", "scatter"]
-        model.tallies += [tallyTest]
-    if 8889 not in tally_ids:
-        tallyTest2 = Tally(tally_id=8889, name="CDI_tally2")
-        if iso is None:
-            raise ValueError("'iso' is empty")
-        tallyTest2.nuclides = iso
-        tallyTest2.scores = ["nu-fission", "absorption", "nu-scatter", "scatter"]
-        if materials is not None:
-            tallyTest2.filters = [MaterialFilter(materials,filter_id=8888)]
-        model.tallies += [tallyTest2]
-    
-    # Export modified model
-    if prefer_model_xml:
-        model.export_to_model_xml()
-    else:
-        model.export_to_xml()
-
-    # Initialize variables for iteration
-    guesses = []
-    guess_unc = []
-    guess_ks = []
-    f = 1
-    g = 1
-    f_prev = 1
-    prev_res = [[],[]]
-    prev_leak = 0
-    skip_steps = False
-    starting_batch = model.settings.inactive - batches
-
-    # Initialize OpenMC library
-    comm.barrier()
-    if not openmc.lib.is_initialized:
-        if debug is True: print("Initializing OpenMC library for CDI...")
-        openmc.lib.init(intracomm=comm)
-    openmc.lib.reset()
-    openmc.lib.simulation_init()
-    
-    # Set required tallies to active
-    for t_id, _tally in openmc.lib.tallies.items():
-        if t_id == 8888 or t_id == 8889:
-            _tally.active = True
-    
-    # Run simulation
-    for _ in openmc.lib.iter_batches():
-        M = openmc.lib.current_batch()
-        if M > model.settings.inactive: continue
-        if skip_steps: continue
-        
-        # Get tallies
-        # Tally results are added (summed) in each batch, batch result is the difference
-        _tallies = copy.copy(openmc.lib.tallies)
-        # global_tallies = copy.copy(openmc.lib.global_tallies())
-        curr_res = [[],[]]
-        if M == 1:
-            for _tally in _tallies.values():
-                if _tally.id == 8888 or _tally.id == 8889:
-                    # prev_res += [_tally.results - _tally.results]
-                    # curr_res[0 if _tally.id == 8888 else 1] = copy.copy(_tally.results)
-                    prev_res[0 if _tally.id == 8888 else 1] = copy.copy(_tally.results)
-        else:
-            for _tally in _tallies.values():
-                if _tally.id == 8888 or _tally.id == 8889:
-                    curr_res[0 if _tally.id == 8888 else 1] = copy.copy(_tally.results) - prev_res[0 if _tally.id == 8888 else 1]
-                    prev_res[0 if _tally.id == 8888 else 1] = copy.copy(_tally.results)
-        # Leakage is a running average
-        # leak = global_tallies[3][0]*M - prev_leak
-        # prev_leak = global_tallies[3][0]*M
-        
-        # Only change concentrations during the inactive CDI batches
-        if M < starting_batch + batches:
-            # Skip initial steps for flux convergence
-            if M < starting_batch: continue
-            if debug is True: print(f"\n Batch: {M}")
-            
-            ### P = production of neutrons, L = loss of neutrons
-            # Neutrons produced by fission (prompt and delayed)
-            P_fiss = curr_res[0][0][0][1]
-            P_fiss = P_fiss if P_fiss > 0 else 0
-            # Additional neutrons produced by (n,xn) reactions
-            P_nxn = curr_res[0][0][2][1] - curr_res[0][0][3][1]
-            P_nxn = P_nxn if P_nxn > 0 else 0
-            
-            # Total neutron absorption             
-            L_abs = curr_res[0][0][1][1]                                
-            L_abs = L_abs if L_abs > 0 else 0
-            # WARNING: L_abs - P_nxn + L_leak === 1; by OpenMC def
-            # >0, for when floating point errors cause negative values
-            
-                        # Neutron leakage fraction
-            # It is calculated implicitly by OpenMC as 1 = P_nxn + L_abs + L_leak
-            # L_leak = leak if leak > 0 else 0
-            L_leak = 1 - (L_abs - P_nxn)
-
-            # Same as above but summed for all flagged nuclides, weighted by weights if provided by 'mat_builder'
-            P_fiss_nucs = 0
-            P_nxn_nucs = 0
-            L_abs_nucs = 0
-            if debug: print(f"Nuclides: {iso}")
-            if materials:
-                for index, mat in enumerate(materials):
-                    if debug: print(f"Tally partial fractions for mat with id={mat.id}:",np.array(nuc_fractions[index]))
-                    Res_nucs_mat = np.array(curr_res[1][index])
-                    P_fiss_nucs += np.sum((Res_nucs_mat[0::4,1]) * np.array(nuc_fractions[index]))
-                    P_nxn_nucs += np.sum((Res_nucs_mat[2::4,1] - Res_nucs_mat[3::4,1]) * np.array(nuc_fractions[index]))
-                    L_abs_nucs += np.sum((Res_nucs_mat[1::4,1]) * np.array(nuc_fractions[index]))
-                    if debug: print(f"Mat id {mat.id} - P_fiss_nucs: {np.sum((Res_nucs_mat[0::4,1]) * np.array(nuc_fractions[index]))}, P_nxn_nucs: {np.sum((Res_nucs_mat[2::4,1] - Res_nucs_mat[3::4,1]) * np.array(nuc_fractions[index]))}, L_abs_nucs: {np.sum((Res_nucs_mat[1::4,1]) * np.array(nuc_fractions[index]))}")
-            else:
-                Res_nucs_mat = np.squeeze(np.array(curr_res[1][0]))
-                P_fiss_nucs += np.sum((Res_nucs_mat[0::4,1]))
-                P_nxn_nucs += np.sum((Res_nucs_mat[2::4,1] - Res_nucs_mat[3::4,1]))
-                L_abs_nucs += np.sum((Res_nucs_mat[1::4,1]))
-            # Nuclide tallies can be negative, if nuc_fractions are negative, ie. when replacing boron with uranium
-            # P_fiss_nucs = P_fiss_nucs if P_fiss_nucs > 0 else 0
-            # P_nxn_nucs = P_nxn_nucs if P_nxn_nucs > 0 else 0
-            # L_abs_nucs = L_abs_nucs if L_abs_nucs > 0 else 0
-            if L_abs_nucs == 0:
-                print(f"CDI: No nuclide absorption tallied, skipping from step {M} onwards")
-                skip_steps = True
-                continue
-            
-            # Predict concentration change
-            bot = L_abs_nucs - P_fiss_nucs/target - P_nxn_nucs
-            top = P_fiss/target - 1 + bot 
-            if bot == 0:
-                print(f"CDI: Combined effect of absorption, fission and (n,xn) reaction of flagged is 0, skipping step {M}")
-                continue
-            g_est = top / bot
-            # Optimal following (Kalman filter for scalar value)
-            if M == starting_batch: #Kalman filter initialization, at step 10
-                x = 1
-                p = 1e16
-                p_n = 1e16
-                p_measure = 1e16
-            # Limit the step change and calculate uncertainty based on MC statistics
-            if (g_est >= 1/(max_step_change-0.5) and g_est <= max_step_change):
-                rel_err_MC = 1/np.sqrt(model.settings.particles * (model.settings.generations_per_batch if model.settings.generations_per_batch is not None else 1))
-                prod = P_fiss + P_nxn
-                loss = L_abs + L_leak
-                ### g_est = (P_fiss/target - 1)/nucs + 1
-                ### Covariances between fission (also (n,xn) reactions) and absorption neglected
-                ### Would need nu_bar for fiss/abs nucs and rho((n,xn):abs) (=approx 2, as higher reactions are much less probable)
-                ### Rho is covariance coefficient
-                ### If nuc is the only fissile nuc: rho(fiss_nucs, fiss)=1, ie. rho=np.sqrt(fiss_nucs/fiss)
-                ### Following the example rho(abs_nucs, fiss) = -np.sqrt(abs_nucs/(fiss/nu_bar)), minus because when a fission reaction replaces absorption
-                ### Following the example rho(nxn_nucs, fiss) = -np.sqrt((nxn_nucs/2)/(fiss/nu_bar)), minus!
-                sig_nucs = rel_err_MC * np.sqrt(prod*P_fiss_nucs/target
-                                               + prod*P_nxn_nucs
-                                               + loss*L_abs_nucs
-                                               )
-                sig_fiss = rel_err_MC * np.sqrt(prod*P_fiss)
-                sig_res = (P_fiss/target-1)/bot * np.sqrt((sig_fiss/(P_fiss/target-1))**2 if (P_fiss/target-1) != 0 else rel_err_MC #Catch div by 0
-                                                         + (sig_nucs/bot)**2
-                                                         )
-                
-                sig_g_est = np.abs(sig_res * (1 + (100*np.exp(-(M - starting_batch) / batches * 3 * np.log(100)) - 1
-                                                   if (M - starting_batch) < (batches / 3) else 0)))
-                ### Slowly relax uncertainty, as first batches are inaccurate, 2/3 of batches do not recieve extra uncertainty,
-                ### this improves convergence when initial guess is bad, but increases final uncertainty
-                rel_err_g_est = sig_g_est / g_est
-                
-                sig_g_est = f_prev * sig_g_est
-                p_measure = sig_g_est**2
-            else:
-                if g_est <= 1/(max_step_change-0.5):
-                    if debug: print(f"estimated change out of bounds, g_est: {g_est} scaled to {1/(max_step_change-0.5)}")
-                    g_est = 1/(max_step_change-0.5)
-                    
-                elif g_est >= max_step_change:
-                    if debug: print(f"estimated change out of bounds, g_est: {g_est} scaled to {max_step_change}")
-                    g_est = max_step_change
-                p_measure = 1e16
-                sig_g_est = p_measure**(1/2)
-                rel_err_g_est = sig_g_est / g_est
-            
-            # Store values for analysis and CDI coefficient estimation at the end of the simulation
-            guesses += [f]
-            guess_unc += [p_n**(1/2)]
-            guess_ks += [(P_fiss-P_nxn)/(L_abs+L_leak-P_nxn)]
-            
-            # Continue Kalman filter
-            if p_n >= 1e16 and p_measure >= 1e16:
-                pass
-            else:
-                p_n = 1/(1/p + 1/p_measure)
-                if debug is True: print(f"Propagating uncertainty: p_prev {p}, p_measure {p_measure}, p_next {p_n}")
-            z = f_prev * g_est
-            
-            # Handle bracket
-            if bracket is not None:
-                if z*initial_value > bracket[1]:
-                    z = bracket[1]/initial_value
-                elif z*initial_value < bracket[0]:
-                    z = bracket[0]/initial_value
-            if debug is True: print(f"Changing value mult from {x} to {x + p_n/p_measure * (z - x)}, by {p_n/p_measure * (z - x)}, innovation factor: {p_n/p_measure}")
-            
-            # Finally update the concentration multiplier and uncertainty for the next step
-            x = x + p_n/p_measure * (z - x)
-            p = copy.copy(p_n)
-            f = copy.copy(x)
-            g = f/f_prev
-            f_prev = copy.copy(f)
-            
-            # Print debug information
-            if debug is True:
-                print(f"Batch uncertainty: p: {p_measure}, sig_g: {sig_g_est}")
-                print(f"Batch values top: {top}, bot: {bot}")
-                print(f"Batch estimated correction - 1: {g_est-1}")
-                print(f"Batch filtered correction - 1: {g-1}")
-                # if g_est > 1/(max_step_change-0.5) and g_est < max_step_change:
-                print(f"Correction coefficients [P_fiss, P_nxn, L_leak, L_abs]: {P_fiss, P_nxn, L_leak, L_abs}")
-                print(f"Correction coefficients nucs [L_abs_nucs, P_fiss_nuc, P_nxn_nucs]: {L_abs_nucs, P_fiss_nucs, P_nxn_nucs}")
-                # print(f"OpenMC def diff: L_abs+L_leak-P_nxn-1: {(L_abs+L_leak-P_nxn-1):.03e}")
-                # print("sig_fiss", sig_fiss, "sig_nucs", sig_nucs)
-                print(f"Relative error g_est: {rel_err_g_est}")
-                print(f"Batch estimated value: {f*initial_value} +/- {initial_value*(p**(1/2))}")
-
-            # Rebuild the material with the given function at provided concentration
-            if mat_builder is not None:
-                mat_builder_res = mat_builder(f*initial_value)
-                keys = mat_builder_res.keys() if type(mat_builder_res) == dict else None
-                if keys:
-                    if "materials" in keys:
-                        materials = [mat for mat in mat_builder_res["materials"]]
-                    if "nuc_fractions" in keys:
-                        nuc_fractions = mat_builder_res["nuc_fractions"]
-            
-            # Update densities on C API side
-            for rank in range(comm.size):
-                C_API_mats = comm.bcast(openmc.lib.materials, root=rank)
-                for mat in C_API_mats:
-                    if materials is not None:
-                        if int(mat) not in mat_ids:
-                            continue
-                    nuclides=[]
-                    densities=[]
-                    all_nuc = np.array(C_API_mats[int(mat)].nuclides)
-                    mat_internal = C_API_mats[int(mat)]
-                    
-                    if mat_builder is None: # Change all materials with the flagged nuclides, as in option A
-                        all_dens = (np.array(C_API_mats[int(mat)].densities)).astype(float)
-                        for nuc in all_nuc:
-                            val = float((all_dens[all_nuc==str(nuc)])[0])
-                            # If nuclide is zero, do not add to the problem.
-                            if val > 0:
-                                if str(nuc) in iso:
-                                    val *= g
-                                nuclides.append(nuc)
-                                densities.append(val)
-                            elif str(nuc) in iso:
-                                val *= g
-                                nuclides.append(nuc)
-                                densities.append(val)
-                    else:
-                        for matpy in materials: # Change only the flagged materials
-                            matpy_nuc_dict = matpy.get_nuclide_atom_densities()
-                            if matpy.id == int(mat):
-                                for nuc in all_nuc:
-                                    val = matpy_nuc_dict.get(str(nuc),0)
-                                    # If nuclide is zero, do not add to the problem.
-                                    # 16 bit float limit, to avoid overflow in OpenMC C API
-                                    # May need to be changed to > 1e-38 or similar
-                                    if val > 0: 
-                                        nuclides.append(nuc)
-                                        densities.append(val)
-                                break
-                    mat_internal.set_density(np.sum(densities))
-                    mat_internal.set_densities(nuclides, densities)
-
-        if M == model.settings.inactive:
-            openmc.lib.reset()
-    openmc.lib.simulation_finalize()
-    # Finaly update densities on Python API side
-    for mat in openmc.lib.materials:
-        all_dens = (np.array(openmc.lib.materials[int(mat)].densities)).astype(float)
-        all_nuc = np.array(openmc.lib.materials[int(mat)].nuclides)
-        for i, matPY in enumerate(model.materials):
-            if matPY.id == int(mat):
-                for nuc in all_nuc:
-                    val = (all_dens[all_nuc==str(nuc)])[0]
-                    model.materials[i].remove_nuclide(nuc)
-                    model.materials[i].add_nuclide(nuc,val)
-    
-    # Output results and estimated CDI coefficient
-    print(f"CDI: Solve converged to value: {f*initial_value} +/- {initial_value*(p**(1/2))}")
-    cdi_Cs = np.array(guesses)[1:]*initial_value
-    cdi_ks = np.array(guess_ks)[1:]*1e5
-    def linF(x,n,k):
-        return n+k*x
-    cdi_res, cdi_res_cov = sopt.curve_fit(linF,cdi_Cs,cdi_ks,sigma=np.array(guess_unc)[1:])#,absolute_sigma=True)
-    cdi_res_sig = np.sqrt(np.diag(cdi_res_cov))
-    # poly_res=np.polyfit(cdi_Cs,cdi_ks, 1,w=cdi_wgts) #Wgts are UN-squared
-    print(f"CDI: Estimated reactivity coefficient: {cdi_res[1]:.05e} +/- {cdi_res_sig[1]:.05e} pcm/unit")
-
-    # Update the model with the final concentrations
-    if prefer_model_xml:
-        model.export_to_model_xml()
-    else:
-        model.export_to_xml()
-    
-    return model, [f*initial_value, initial_value*(p**(1/2))]
-
-
 def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao', return_wgts=False):
     """
     Mix materials together based on atom, weight, or volume fractions. Any fractions can be applied on a subset of nuclides for each material, by setting the 'fracs_target' argument to a list of nuclides or elements for each material. If 'fracs_target' is not set, the fractions are applied to the whole material. The 'percent_type' argument specifies whether the provided fractions are atom percent (molar percent), weight percent, or volume percent. One of the fractions can be set to None, and it will be automatically calculated to ensure the fractions sum to 1.
@@ -774,13 +346,15 @@ def get_ao_mix_materials(materials, fracs, fracs_target=None, percent_type='ao',
 
 class GeneralizedKalmanFilter:
     def __init__(self, n_states=1, n_measurements=1, transform_type='identity', 
-                 custom_transform=None, custom_inverse=None):
+                 custom_transform=None, custom_inverse=None, custom_jacobian=None):
         """
         Generalized Kalman Filter. 
         Defaults to a 1D (0-th order) noise-free running average filter.
         """
         self.n_states = n_states
         self.n_measurements = n_measurements
+        self.transform_type = transform_type  # Ensure transform type is saved
+        self.custom_jacobian = custom_jacobian
         
         # State estimates
         self.x = np.zeros((n_states, 1))          
@@ -803,7 +377,7 @@ class GeneralizedKalmanFilter:
                 raise ValueError("Both custom_transform and custom_inverse are required for 'custom' type.")
             self.transform = custom_transform
             self.inverse_transform = custom_inverse
-        elif transform_type == 'square_root' or transform_type == 'sqrt':
+        elif transform_type in ['square_root', 'sqrt']:
             self.transform = lambda z: np.sqrt(z)
             self.inverse_transform = lambda z: z**2
         elif transform_type == 'square':
@@ -816,7 +390,6 @@ class GeneralizedKalmanFilter:
             self.transform = lambda z: 2 * np.sqrt(z + 3/8)
             self.inverse_transform = lambda z: (np.maximum(z, 0) / 2)**2 - 1/8
         elif transform_type == 'identity':
-            # Default tracking space: linear identity (z -> z)
             self.transform = lambda z: z
             self.inverse_transform = lambda z: z
         else:
@@ -829,28 +402,20 @@ class GeneralizedKalmanFilter:
         self.n_iterations = 0
 
     def predict(self, Phi=None, C=None, Gamma=None, Q=None):
-        """
-        0-th order noise-free projection step by default.
-        Phi defaults to Identity matrix (constant state).
-        Q defaults to Zero matrix (noise-free).
-        """
         if not self.initialized:
             raise RuntimeError("Filter must be initialized via set_initial_state or first measurement update.")
             
-        # Default to 0-th order identity transitions (constant parameter)
         if Phi is None:
             Phi = np.eye(self.n_states)
         else:
             Phi = np.array(Phi).reshape(self.n_states, self.n_states)
         
-        # Project state forward
         if C is not None:
             C = np.array(C).reshape(self.n_states, 1)
             self.x_pred = (Phi @ self.x) + C
         else:
             self.x_pred = Phi @ self.x
         
-                # Project state covariance forward (Noise-free Q=0 by default)
         if Q is not None:
             Q_arr = np.array(Q)
             if Q_arr.ndim == 0:  
@@ -862,15 +427,33 @@ class GeneralizedKalmanFilter:
                 Gamma = np.array(Gamma).reshape(self.n_states, -1)
                 process_noise_cov = Gamma @ Q @ Gamma.T
             else:
-                # Default case: Q maps directly onto the state space dimensions
                 process_noise_cov = Q
                 
             self.M = (Phi @ self.P @ Phi.T) + process_noise_cov
         else:
             self.M = Phi @ self.P @ Phi.T
-
-
+    
     def update(self, z, H=None, R=None):
+        # 1. Standardize the input as a numpy array without stripping away extra states/vectors
+        z_arr = np.atleast_1d(z)
+        
+        # 2. Apply your element-wise non-linear transformations across the vector
+        # This keeps the full array length intact for tracking multi-state vectors
+        z_transformed = self.transform(z_arr).reshape(self.n_measurements, 1)
+
+        if not self.initialized:
+            if H is None:
+                H = np.eye(self.n_measurements, self.n_states)
+            else:
+                H = np.array(H).reshape(self.n_measurements, self.n_states)
+            self.x = np.linalg.pinv(H) @ z_transformed
+            self.P = np.linalg.pinv(H) @ R @ np.linalg.pinv(H).T
+            self.initialized = True
+            self.n_iterations = 1
+            return
+
+        self.n_iterations += 1
+
         if H is None:
             H = np.eye(self.n_measurements, self.n_states)
         else:
@@ -881,19 +464,34 @@ class GeneralizedKalmanFilter:
         else:
             R = np.array(R).reshape(self.n_measurements, self.n_measurements)
             
-        # Convert z securely to a scalar item first
-        z_scalar = np.ravel(z)[0] 
-        z_transformed = np.array([[self.transform(z_scalar)]]).reshape(self.n_measurements, 1)
+        # 3. MULTI-DIMENSIONAL ERROR VARIANCE TRANSFORM (Element-wise scaling)
+        # Instead of picking up z_scalar, evaluate across the entire active vector array
+        if self.transform_type in ['square_root', 'sqrt']:
+            # Correct derivative: 1 / (2 * sqrt(z))
+            scaling_vector = 1.0 / (2.0 * np.sqrt(np.maximum(z_arr, 1e-5)))
+            R_scaled = R * np.outer(scaling_vector, scaling_vector)
+            
+        elif self.transform_type == 'square':
+            scaling_vector = 2.0 * z_arr
+            R_scaled = R * np.outer(scaling_vector, scaling_vector)
+            
+        elif self.transform_type in ['anscombe_3_8', 'anscombe_1_8']:
+            c_const = 3/8 if self.transform_type == 'anscombe_3_8' else 1/8
+            # Correct derivative: 1.0 / sqrt(z + c)
+            scaling_vector = 1.0 / np.sqrt(np.maximum(z_arr + c_const, 1e-5))
+            R_scaled = R * np.outer(scaling_vector, scaling_vector)
 
-        if not self.initialized:
-            self.x = np.linalg.pinv(H) @ z_transformed
-            self.P = np.linalg.pinv(H) @ R @ np.linalg.pinv(H).T
-            self.initialized = True
-            self.n_iterations = 1
-            return
-
-        self.n_iterations += 1
+        elif self.transform_type == 'custom':
+            h = 1e-20
+            # Broadcast the complex step approximation securely across the entire state vector input
+            df_dz = np.imag(self.transform(z_arr + h*1j)) / h
+            R_scaled = R * np.outer(df_dz, df_dz)
+        else:
+            R_scaled = R
+            
+        R = R_scaled.reshape(self.n_measurements, self.n_measurements)
         
+        # 4. Standard linear multi-dimensional Kalman updating loop
         S = (H @ self.M @ H.T) + R
         self.K = self.M @ H.T @ np.linalg.inv(S)
         
@@ -905,24 +503,41 @@ class GeneralizedKalmanFilter:
     
     @property
     def optimal_value(self):
-        # .item() completely strips away all NumPy matrix wrapper arrays safely
-        # return float(self.inverse_transform(self.x.item()))
-        return float(self.inverse_transform(self.x))
+        x_scalar = float(self.x)
+        physical_value = float(self.inverse_transform(self.x))
+        
+        if self.transform_type in ['square_root', 'sqrt']:
+            dh_dx = 2.0 * x_scalar
+        elif self.transform_type == 'square':
+            dh_dx = 1.0 / (2.0 * np.sqrt(x_scalar)) if x_scalar > 0 else 1e-5
+        elif self.transform_type in ['anscombe_3_8', 'anscombe_1_8']:
+            dh_dx = x_scalar / 2.0
+        elif self.transform_type == 'custom':
+            if self.custom_jacobian is not None:
+                dh_dx = self.custom_jacobian(x_scalar)
+            else:
+                h_step = 1e-20
+                dh_dx = np.imag(self.inverse_transform(x_scalar + h_step * 1j)) / h_step
+        else:
+            dh_dx = 1.0
+            
+        transformed_variance = float(np.ravel(self.P))
+        physical_variance = (dh_dx ** 2) * transformed_variance
+        physical_uncertainty = np.sqrt(max(physical_variance, 0.0))
+        
+        return physical_value, physical_uncertainty
+
 
     @property
     def linear_P(self):
-        """Returns the scalar variance of the first state variable."""
-        # return float(self.P.item())
         return self.P
-
-
 
 
 class CDI:
     """
-    Class to perform critical density iteration (CDI) inside the OpenMC depletion. CDI is a method used to find the critical concentration of a nuclide in a material such that the effective multiplication factor (k_eff) of a nuclear system is equal to a target value (usually 1). The class provides a method to perform CDI by iteratively adjusting the concentration of the nuclide and running OpenMC simulations until convergence is achieved.
+    Class to perform critical density iteration (CDI) inside the OpenMC. CDI is a method used to find the critical concentration of a nuclide in a material such that the effective multiplication factor (k_eff) of a nuclear system is equal to a target value (usually 1). The class provides a method to perform CDI by iteratively adjusting the concentration of the nuclide and running the number of prescribed batches.
     
-    CDI is a wrapper around the 'critical_density_iteration' function, which performs the actual iteration process. The class allows for more convenient usage of CDI within a depletion simulation, as it can be called as a function and maintains the state of the last concentration value for subsequent calls.
+    The class allows for more convenient usage of CDI within a depletion simulation, as it can be called as a function and maintains the state of the last concentration value for subsequent calls.
     
     Returns
     -------
@@ -936,7 +551,7 @@ class CDI:
                         mat_builder=None, prefer_model_xml=False,
                         max_step_change=4, debug=False, force_initial_value=False,
                         other_execution_functions=None, activate_all_tallies=False,
-                        skip8890=False, dynamic_sigma_min=None, kf_kwargs={}):
+                        skip8890=True, dynamic_sigma_min=None, kf_kwargs={}):
 
             self.nuc_fractions = None
             self.nuc_fractions_replace = None
@@ -1002,7 +617,7 @@ class CDI:
                 tallyTest2.nuclides = iso
                 tallyTest2.scores = ["nu-fission", "absorption", "nu-scatter", "scatter"]
                 if materials is not None:
-                    tallyTest2.filters = [MaterialFilter(materials,filter_id=8888)]
+                    tallyTest2.filters = [MaterialFilter(materials,filter_id=8889)]
                 model.tallies += [tallyTest2]
             
             # Export modified model
@@ -1071,13 +686,6 @@ class CDI:
         return self.model
     
     def __call__(self):
-        # self.model, self.last_result = critical_density_iteration(model=self.model, iso=self.iso, batches=self.batches, bracket=self.bracket, 
-        #                 materials=self.materials, target=self.target,
-        #                 initial_value=(self.initial_value if (self.last_result is None or self.force_initial_value) else self.last_result[0]), 
-        #                 mat_builder=self.mat_builder, prefer_model_xml=self.prefer_model_xml,
-        #                 max_step_change=self.max_step_change, debug=self.debug)
-        # return self.model
-        # Initialize OpenMC library
         comm.barrier()
         if not openmc.lib.is_initialized:
             if self.debug is True: print("Initializing OpenMC library for CDI...")
@@ -1087,7 +695,7 @@ class CDI:
         
         # Set required tallies to active
         for t_id, _tally in openmc.lib.tallies.items():
-            if t_id == 8888 or t_id == 8889:
+            if t_id == 8888 or t_id == 8889 or t_id == 8890:
                 _tally.active = True
         if self.activate_all_tallies:
             for t_id, _tally in openmc.lib.tallies.items():
@@ -1097,6 +705,23 @@ class CDI:
         for _ in openmc.lib.iter_batches():
             next(self)
         openmc.lib.simulation_finalize()
+        
+        # Final output extraction using class properties
+        final_val, final_unc = self.kf.optimal_value
+        print(f"CDI: Solve converged to value: {final_val} +/- {final_unc}")
+        
+        if len(self.guesses) > 1:
+            cdi_Cs = np.array(self.guesses)[1:]
+            cdi_ks = np.array(self.guess_ks)[1:] * 1e5
+            
+            def linF(x, n, k):
+                return n + k * x
+                
+            cdi_res, cdi_res_cov = sopt.curve_fit(linF, cdi_Cs, cdi_ks, sigma=np.array(self.guess_unc)[1:])
+            cdi_res_sig = np.sqrt(np.diag(cdi_res_cov))
+            print(f"CDI: Estimated reactivity coefficient: {cdi_res[1]:.05e} +/- {cdi_res_sig[1]:.05e} pcm/unit")
+        else:
+            print("CDI: Not enough tracking history captured for reactivity coefficient fitting.")
         
         return self.model
     
@@ -1147,31 +772,68 @@ class CDI:
             if M == self.starting_batch: 
                 absolute_initial_guess = float(self.initial_value)  
                 
-                # Relate initial variance dynamically to your starting concentration 
-                # (e.g., 20% expected standard deviation error = 600 ppm -> variance = 360,000)
-                initial_variance = 1e16#(0.2 * absolute_initial_guess) ** 2 
+                # 1. Transform the initial physical guess into the filter's tracking domain
+                if self.kf.transform_type in ['square_root', 'sqrt']:
+                    transformed_initial_state = np.sqrt(absolute_initial_guess)
+                    dh_dx = 2.0 * transformed_initial_state
+                elif self.kf.transform_type == 'square':
+                    transformed_initial_state = absolute_initial_guess ** 2
+                    dh_dx = 1.0 / (2.0 * np.sqrt(transformed_initial_state)) if transformed_initial_state > 0 else 1e-5
+                elif self.kf.transform_type in ['anscombe_3_8', 'anscombe_1_8']:
+                    c_const = 3/8 if self.kf.transform_type == 'anscombe_3_8' else 1/8
+                    transformed_initial_state = 2.0 * np.sqrt(absolute_initial_guess + c_const)
+                    dh_dx = transformed_initial_state / 2.0
+                elif self.kf.transform_type == 'custom':
+                    transformed_initial_state = float(self.kf.transform(absolute_initial_guess))
+                    if self.kf.custom_jacobian is not None:
+                        dh_dx = self.kf.custom_jacobian(transformed_initial_state)
+                    else:
+                        h_step = 1e-20
+                        dh_dx = np.imag(self.kf.inverse_transform(transformed_initial_state + h_step * 1j)) / h_step
+                else:
+                    transformed_initial_state = absolute_initial_guess
+                    dh_dx = 1.0
+
+                # 2. COMPUTE THE EXACT SCALE VARIANCE REQUIRED FOR PERFECT HANDOVER
+                # To clear the initial guess entirely without causing non-linear squashing,
+                # the initial variance must scale with the physical measurement variance target.
                 
-                # Enforce explicit 2D matrices for the state-space engine
-                self.kf.set_initial_state(x_initial=np.array([[absolute_initial_guess]]), 
+                # Define a safe, uninformative physical variance baseline relative to the guess size
+                physical_variance_baseline = 100.0 * (absolute_initial_guess ** 2)
+
+                if self.kf.transform_type in ['identity', 'custom']:
+                    initial_variance = physical_variance_baseline
+                else:
+                    # Scale the physical baseline cleanly relative to the Jacobian coordinate distortion
+                    # This protects against numerical underflow bugs when R_measure is small
+                    initial_variance = physical_variance_baseline / (dh_dx ** 2)
+                
+                # Seed the filter states safely
+                self.kf.set_initial_state(x_initial=np.array([[transformed_initial_state]]), 
                                           P_initial=np.array([[initial_variance]]))
                 
-                # Seed the filter's internal predictive variables manually 
-                # This stops the engine from resetting your P matrix during its first .update() call
+                # Seed predictive arrays manually matching the transformed tracking space
                 self.kf.x_pred = copy.deepcopy(self.kf.x)
                 self.kf.M = copy.deepcopy(self.kf.P)
                 
+                self.kf.initialized = True
                 self.f = 1.0
                 self.f_prev = 1.0
             else:
-                delta_concentration = (self.f - self.f_prev) * self.initial_value
-                q_adaptive = float(delta_concentration ** 2)
+                # --- PAPER-ACCURATE CONSTANT PARAMETER ESTIMATION (Q=0) ---
+                # According to Equation (5), the filter tracks a constant scalar value.
+                # Process noise is 0.0 unless an explicit floor is requested by the user.
+                if self.dynamic_sigma_min is not None:
+                    q_physical = float(self.dynamic_sigma_min ** 2)
+                else:
+                    q_physical = 0.0
                 
-                # Enforce dynamic_sigma_min as a lower floor safety limit to avoid filter stagnation
-                q_floor = float(self.dynamic_sigma_min**2) if self.dynamic_sigma_min is not None else 1.0
-                q_final = max(q_adaptive, q_floor)
+                if self.debug is True and q_physical > 0:
+                    print(f"Predictive step: Propagating user physical process noise Q = {q_physical:.02f} ppm^2")
                 
-                # Execute prediction with the strict 2D array representation
-                self.kf.predict(Phi=np.array([[1.0]]), Q=np.array([[q_final]]))
+                # Pass directly to the engine. With Q=0, P_next = P_old, allowing 
+                # successive measurement updates to smoothly drive P down toward zero.
+                self.kf.predict(Phi=np.array([[1.0]]), Q=q_physical)
             
             ### P = production of neutrons, L = loss of neutrons
             # Neutrons produced by fission (prompt and delayed)
@@ -1214,9 +876,9 @@ class CDI:
                     P_fiss_nucs += _P_fiss_nucs
                     P_nxn_nucs += _P_nxn_nucs
                     L_abs_nucs += _L_abs_nucs
-                    P_fiss_nucs_absolute += _P_fiss_nucs
-                    P_nxn_nucs_absolute += _P_nxn_nucs
-                    L_abs_nucs_absolute += _L_abs_nucs
+                    P_fiss_nucs_absolute += np.abs(_P_fiss_nucs)
+                    P_nxn_nucs_absolute += np.abs(_P_nxn_nucs)
+                    L_abs_nucs_absolute += np.abs(_L_abs_nucs)
                     if len(self.curr_res) == 3:
                         if len(self.curr_res[2]) != 0:
                             _P_fiss_nucs, _P_nxn_nucs, _L_abs_nucs = parse_flagged_nuclide_tally(np.array(self.curr_res[2][index]),
@@ -1224,18 +886,18 @@ class CDI:
                             P_fiss_nucs -= _P_fiss_nucs
                             P_nxn_nucs -= _P_nxn_nucs
                             L_abs_nucs -= _L_abs_nucs
-                            P_fiss_nucs_absolute += _P_fiss_nucs
-                            P_nxn_nucs_absolute += _P_nxn_nucs
-                            L_abs_nucs_absolute += _L_abs_nucs
+                            P_fiss_nucs_absolute += np.abs(_P_fiss_nucs)
+                            P_nxn_nucs_absolute += np.abs(_P_nxn_nucs)
+                            L_abs_nucs_absolute += np.abs(_L_abs_nucs)
             else:
                 _P_fiss_nucs, _P_nxn_nucs, _L_abs_nucs = parse_flagged_nuclide_tally(np.array(self.curr_res[1]),
                                                            (self.nuc_fractions if self.nuc_fractions is not None else 1) )
                 P_fiss_nucs += _P_fiss_nucs
                 P_nxn_nucs += _P_nxn_nucs
                 L_abs_nucs += _L_abs_nucs
-                P_fiss_nucs_absolute += _P_fiss_nucs
-                P_nxn_nucs_absolute += _P_nxn_nucs
-                L_abs_nucs_absolute += _L_abs_nucs
+                P_fiss_nucs_absolute += np.abs(_P_fiss_nucs)
+                P_nxn_nucs_absolute += np.abs(_P_nxn_nucs)
+                L_abs_nucs_absolute += np.abs(_L_abs_nucs)
                 if len(self.curr_res) == 3:
                     if len(self.curr_res[2]) != 0:
                             _P_fiss_nucs, _P_nxn_nucs, _L_abs_nucs = parse_flagged_nuclide_tally(np.array(self.curr_res[2]),
@@ -1243,9 +905,9 @@ class CDI:
                             P_fiss_nucs -= _P_fiss_nucs
                             P_nxn_nucs -= _P_nxn_nucs
                             L_abs_nucs -= _L_abs_nucs
-                            P_fiss_nucs_absolute += _P_fiss_nucs
-                            P_nxn_nucs_absolute += _P_nxn_nucs
-                            L_abs_nucs_absolute += _L_abs_nucs
+                            P_fiss_nucs_absolute += np.abs(_P_fiss_nucs)
+                            P_nxn_nucs_absolute += np.abs(_P_nxn_nucs)
+                            L_abs_nucs_absolute += np.abs(_L_abs_nucs)
             
             # Predict concentration change
             bot = L_abs_nucs - P_fiss_nucs/self.target - P_nxn_nucs
@@ -1258,24 +920,46 @@ class CDI:
                 # Fetch absolute concentration cleanly
                 absolute_current_concentration = float(self.f_prev * self.initial_value)
                 
-                # 1. Compute statistical error from Monte Carlo
+                                # 1. Compute statistical error from Monte Carlo
                 rel_err_MC = 1 / np.sqrt(self.model.settings.particles * (self.model.settings.generations_per_batch if self.model.settings.generations_per_batch is not None else 1))
                 prod = P_fiss + P_nxn
                 loss = L_abs + L_leak
                 
-                sig_nucs = rel_err_MC * np.sqrt(prod * (P_fiss_nucs**2 / P_fiss_nucs_absolute if P_fiss_nucs_absolute != 0 else 0) / self.target
-                                                + prod * (P_nxn_nucs**2 / P_nxn_nucs_absolute if P_nxn_nucs_absolute != 0 else 0)
-                                                + loss * (L_abs_nucs**2 / L_abs_nucs_absolute if L_abs_nucs_absolute != 0 else 0))
+                # sig_nucs = rel_err_MC * np.sqrt(prod * (P_fiss_nucs**2 / P_fiss_nucs_absolute if P_fiss_nucs_absolute != 0 else 0) / self.target
+                #                                 + prod * (P_nxn_nucs**2 / P_nxn_nucs_absolute if P_nxn_nucs_absolute != 0 else 0)
+                #                                 + loss * (L_abs_nucs**2 / L_abs_nucs_absolute if L_abs_nucs_absolute != 0 else 0))
+                sig_nucs = rel_err_MC * np.sqrt(
+                    (P_fiss/self.target) * P_fiss_nucs_absolute 
+                    + P_fiss * P_nxn_nucs_absolute 
+                    + loss * L_abs_nucs_absolute
+                )
                 sig_fiss = rel_err_MC * np.sqrt(prod * P_fiss)
                 
-                sig_res = (P_fiss / self.target - 1) / bot * np.sqrt((sig_fiss / (P_fiss / self.target - 1))**2 if (P_fiss / self.target - 1) != 0 else rel_err_MC
-                                                                     + (sig_nucs / bot)**2)
+                # --- NEW CORRELATION AND COVARIANCE PROPAGATION INJECTION ---
+                # 1. Estimate rho based on your theoretical fraction bounds (Page 6 of paper)
+                # We enforce an un-biased nu_bar approximation (typically ~2.5 for PWR profiles)
+                nu_bar_est = 2.5
+                if P_fiss > 0 and bot > 0:
+                    rho_fiss_nucs = -np.sqrt(np.abs(bot / (P_fiss / nu_bar_est)))
+                else:
+                    rho_fiss_nucs = 0.0
+                    
+                # 2. Compute the raw covariance metric explicitly
+                cov_fiss_nucs = rho_fiss_nucs * sig_fiss * sig_nucs
                 
-                # Apply the legacy initial-batch relaxation factor explicitly to our absolute error scale
-                sig_g_est = np.abs(sig_res * (1 + (100 * np.exp(-(M - self.starting_batch) / self.batches * 3 * np.log(100)) - 1
-                                                   if (M - self.starting_batch) < (self.batches / 3) else 0)))
+                # 3. Calculate full correlated multi-variable Taylor expansion (Delta Method)
+                var_term_fiss = (sig_fiss / (self.target * bot)) ** 2
+                var_term_nucs = ((P_fiss / self.target - 1) * sig_nucs / (bot ** 2)) ** 2
                 
-                # 2. Compute absolute measurement properties directly
+                # Cross covariance mapping term
+                var_term_cross = -2.0 * ((P_fiss / self.target - 1) / (self.target * (bot ** 3))) * cov_fiss_nucs
+                
+                # Sum terms securely and enforce a mathematical floor check
+                sig_res_squared = var_term_fiss + var_term_nucs + var_term_cross
+                sig_res = np.sqrt(max(sig_res_squared, 1e-12))
+                
+                sig_g_est = np.abs(sig_res)
+                
                 z_measurement = absolute_current_concentration * float(g_est)
                 sig_absolute_est = absolute_current_concentration * float(sig_g_est)
                 p_measure = float(sig_absolute_est ** 2)
@@ -1289,7 +973,7 @@ class CDI:
                     
                     z_measurement = absolute_current_concentration * float(g_est_bounded)
                     # Inflate measurement uncertainty because the linear step assumption failed
-                    p_measure = p_measure * 100.0 
+                    p_measure = absolute_current_concentration**2 #p_measure * 100.0 
 
                 # Handle tracking bracket bounds constraints in physical units if specified
                 if self.bracket is not None:
@@ -1301,26 +985,36 @@ class CDI:
                 if self.debug is True: 
                     print(f"Propagating absolute uncertainty: R_measure={p_measure}, Measurement Target={z_measurement}")
 
-                # 3. MANUAL EXPLICIT SCALAR UPDATE (Bypasses internal engine bugs)
-                self.kf.update(z=z_measurement, R=[[p_measure]])
-                absolute_filtered_concentration = self.kf.optimal_value
+                # --- 1. EXECUTE THE UPDATE ONLY USING PHYSICAL METRICS ---
+                # Let the filter engine handle the internal transformation and noise scaling
+                z_input = np.array([[z_measurement]])
+                R_input = np.array([[p_measure]])
                 
-                # 4. RE-SYNCHRONIZE MULTIPLIERS FOR MATERIAL BUILDER ENDPOINTS
+                self.kf.update(z=z_input, R=R_input)
+                
+                # --- 2. EXTRACT HEALTHY PHYSICAL CONCENTRATIONS VIA PROPERTIES ---
+                # This uses the Delta Method property to cleanly read the physical value and uncertainty
+                absolute_filtered_concentration, physical_uncertainty = self.kf.optimal_value
+                
+                # --- 3. RE-SYNCHRONIZE MULTIPLIERS FOR MATERIAL BUILDER ENDPOINTS ---
                 self.f = absolute_filtered_concentration / self.initial_value
                 self.g = self.f / self.f_prev
                 self.f_prev = copy.copy(self.f)
 
-                # Append history records safely
+                # --- 4. RECORD RAW PHYSICAL METRICS IN THE HISTORY LOGS ---
+                # Save the physical value and physical uncertainty so curve_fit receives the correct scales
                 self.guesses += [absolute_filtered_concentration]
-                self.guess_unc += [np.sqrt(float(self.kf.P))]
+                self.guess_unc += [physical_uncertainty]
                 self.guess_ks += [(P_fiss - P_nxn) / (L_abs + L_leak - P_nxn)]
 
                 if self.debug is True:
-                    print(f"Batch System Variance P: {float(self.kf.P)}")
+                    # Print the internal transformed variance alongside the true physical uncertainty
+                    print(f"Batch System Transformed Variance P: {float(np.ravel(self.kf.P))}")
                     print(f"Batch values top: {top}, bot: {bot}")
                     print(f"Batch estimated correction - 1: {g_est-1}")
                     print(f"Batch filtered correction - 1: {self.g-1}")
-                    print(f"Batch filtered Absolute Value: {absolute_filtered_concentration} +/- {np.sqrt(self.kf.P)} ppm")
+                    print(f"Batch filtered Absolute Value: {absolute_filtered_concentration} +/- {physical_uncertainty} ppm")
+
 
                 # Rebuild the material with the given function at provided concentration
                 if self.mat_builder is not None:

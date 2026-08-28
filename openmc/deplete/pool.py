@@ -9,12 +9,9 @@ import numpy as np
 from scipy.sparse import hstack, vstack
 
 from openmc.mpi import comm
-<<<<<<< HEAD
-from .._sparse_compat import block_array
-import time
-=======
 from .._sparse_compat import block_array, csc_array
->>>>>>> v16_0_CDI
+import time
+import subprocess
 
 # Configurable switch that enables / disables the use of
 # multiprocessing routines during depletion
@@ -22,7 +19,10 @@ USE_MULTIPROCESSING = True
 
 # Allow user to override the number of worker processes to use for depletion
 # calculations
-NUM_PROCESSES = 32#None
+_result_nproc = subprocess.run(["nproc", "--all"], capture_output=True, text=True)
+
+# Convert the output string into an integer
+NUM_PROCESSES = int(_result_nproc.stdout.strip())
 
 def _distribute(items):
     """Distribute items across MPI communicator
@@ -115,11 +115,8 @@ def deplete(func, chain, n, rates, dt, current_timestep=None, matrix_func=None,
         list contains the number of [atom] of each nuclide.
 
     """
-<<<<<<< HEAD
     t_start = time.time()
     
-=======
->>>>>>> v16_0_CDI
     fission_yields = chain.fission_yields
     if len(fission_yields) == 1:
         fission_yields = repeat(fission_yields[0])
