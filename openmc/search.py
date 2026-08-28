@@ -727,6 +727,9 @@ class CDI:
             print(f"CDI: Estimated reactivity coefficient: {cdi_res[1]:.05e} +/- {cdi_res_sig[1]:.05e} pcm/unit")
         else:
             print("CDI: Not enough tracking history captured for reactivity coefficient fitting.")
+            
+        if not self.force_initial_value:
+            self.initial_value = final_val
         
         return self.model
     
@@ -1013,11 +1016,11 @@ class CDI:
                 self.guess_ks += [(P_fiss - P_nxn) / (L_abs + L_leak - P_nxn)]
 
                 if self.debug is True:
-                    # Print the internal transformed variance alongside the true physical uncertainty
-                    print(f"Batch System Transformed Variance P: {float(np.ravel(self.kf.P))}")
-                    print(f"Batch values top: {top}, bot: {bot}")
-                    print(f"Batch estimated correction - 1: {g_est-1}")
-                    print(f"Batch filtered correction - 1: {self.g-1}")
+                    # Explicitly pull index [0] to protect against multi-element array wrappers
+                    print(f"Batch System Transformed Variance P: {float(np.ravel(self.kf.P)[0])}")
+                    print(f"Batch values top: {float(np.ravel(top)[0])}, bot: {float(np.ravel(bot)[0])}")
+                    print(f"Batch estimated correction - 1: {float(np.ravel(g_est)[0])-1}")
+                    print(f"Batch filtered correction - 1: {float(np.ravel(self.g)[0])-1}")
                     print(f"Batch filtered Absolute Value: {absolute_filtered_concentration} +/- {physical_uncertainty} ppm")
 
 
