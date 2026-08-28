@@ -503,8 +503,13 @@ class GeneralizedKalmanFilter:
     
     @property
     def optimal_value(self):
-        x_scalar = float(self.x)
-        physical_value = float(self.inverse_transform(self.x))
+        # Safely unwrap multi-dimensional arrays or nested matrices down to a single float scalar
+        if isinstance(self.x, np.ndarray):
+            x_scalar = float(self.x.item() if hasattr(self.x, 'item') else self.x.ravel()[0])
+        else:
+            x_scalar = float(self.x)
+            
+        physical_value = float(self.inverse_transform(x_scalar))
         
         if self.transform_type in ['square_root', 'sqrt']:
             dh_dx = 2.0 * x_scalar
@@ -521,7 +526,7 @@ class GeneralizedKalmanFilter:
         else:
             dh_dx = 1.0
             
-        transformed_variance = float(np.ravel(self.P))
+        transformed_variance = float(np.ravel(self.P)[0])
         physical_variance = (dh_dx ** 2) * transformed_variance
         physical_uncertainty = np.sqrt(max(physical_variance, 0.0))
         
