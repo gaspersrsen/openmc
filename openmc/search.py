@@ -686,7 +686,8 @@ class CDI:
             self.prev_leak = 0
             self.skip_steps = False
             self.skip8890 = skip8890
-            
+    
+        
     def _get_model(self):
         return self.model
     
@@ -700,7 +701,7 @@ class CDI:
         
         # Set required tallies to active
         for t_id, _tally in openmc.lib.tallies.items():
-            if t_id == 8888 or t_id == 8889 or t_id == 8890:
+            if t_id == 8888 or t_id == 8889 or (t_id == 8890 and not self.skip8890):
                 _tally.active = True
         if self.activate_all_tallies:
             for t_id, _tally in openmc.lib.tallies.items():
@@ -834,7 +835,9 @@ class CDI:
                 if self.dynamic_sigma_min is not None:
                     q_physical = float(self.dynamic_sigma_min ** 2)
                 else:
-                    q_physical = 0.0
+                    # Even though we are tracking a constant, the fission souce needs to converge to a stable distribution. 
+                    # The filter will allow for a small amount of process noise to account for this.
+                    q_physical = float(np.ravel(self.kf.P)[0]) * 0.01  # 1% of the current variance as a small process noise floor
                 
                 if self.debug is True and q_physical > 0:
                     print(f"Predictive step: Propagating user physical process noise Q = {q_physical:.02f} ppm^2")
@@ -861,62 +864,21 @@ class CDI:
             # It is calculated implicitly by OpenMC as 1 = P_nxn + L_abs + L_leak
             # L_leak = leak if leak > 0 else 0
             L_leak = 1 - (L_abs - P_nxn)
-
-            def parse_flagged_nuclide_tally(tally_results, nuc_fractions):
-                P_fiss_nucs = np.sum((tally_results[...,0::4,1]) * np.array(nuc_fractions))
-                P_nxn_nucs = np.sum((tally_results[...,2::4,1] - tally_results[...,3::4,1]) * np.array(nuc_fractions))
-                L_abs_nucs = np.sum((tally_results[...,1::4,1]) * np.array(nuc_fractions))
-                return P_fiss_nucs, P_nxn_nucs, L_abs_nucs
             
-            # Same as above but summed for all flagged nuclides, weighted by weights if provided by 'mat_builder'
+                        # Process main tally reaction channel parameters (Tally Index 1 -> Tally ID 8889)
+            P_fiss_nucs, P_nxn_nucs, L_abs_nucs, P_fiss_nucs_var, P_nxn_nucs_var, L_abs_nucs_var = \
+                self._accumulate_flagged_rates(1, self.nuc_fractions)
+                
+            # Process replacement tally reaction channel parameters if initialized (Tally Index 2 -> Tally ID 8890)
+            if len(self.curr_res) == 3 and len(self.curr_res[2]) != 0:
+                _P_f, _P_n, _L_a, _P_f_var, _P_n_var, _L_a_var = self._accumulate_flagged_rates(2, self.nuc_fractions_replace)
+                P_fiss_nucs -= _P_f
+                P_nxn_nucs -= _P_n
+                L_abs_nucs -= _L_a
+                P_fiss_nucs_var += _P_f_var
+                P_nxn_nucs_var += _P_n_var
+                L_abs_nucs_var += _L_a_var
 
-            P_fiss_nucs = 0
-            P_fiss_nucs_absolute = 0
-            P_nxn_nucs = 0
-            P_nxn_nucs_absolute = 0
-            L_abs_nucs = 0
-            L_abs_nucs_absolute = 0
-            if self.materials:
-                for index, mat in enumerate(self.materials):
-                    if self.debug: print(f"Tally partial fractions for mat with id={mat.id}:",np.array(self.nuc_fractions[index]))
-                    _P_fiss_nucs, _P_nxn_nucs, _L_abs_nucs = parse_flagged_nuclide_tally(np.array(self.curr_res[1][index]),
-                                                               self.nuc_fractions[index])
-                    P_fiss_nucs += _P_fiss_nucs
-                    P_nxn_nucs += _P_nxn_nucs
-                    L_abs_nucs += _L_abs_nucs
-                    P_fiss_nucs_absolute += np.abs(_P_fiss_nucs)
-                    P_nxn_nucs_absolute += np.abs(_P_nxn_nucs)
-                    L_abs_nucs_absolute += np.abs(_L_abs_nucs)
-                    if len(self.curr_res) == 3:
-                        if len(self.curr_res[2]) != 0:
-                            _P_fiss_nucs, _P_nxn_nucs, _L_abs_nucs = parse_flagged_nuclide_tally(np.array(self.curr_res[2][index]),
-                                                                    self.nuc_fractions_replace[index])
-                            P_fiss_nucs -= _P_fiss_nucs
-                            P_nxn_nucs -= _P_nxn_nucs
-                            L_abs_nucs -= _L_abs_nucs
-                            P_fiss_nucs_absolute += np.abs(_P_fiss_nucs)
-                            P_nxn_nucs_absolute += np.abs(_P_nxn_nucs)
-                            L_abs_nucs_absolute += np.abs(_L_abs_nucs)
-            else:
-                _P_fiss_nucs, _P_nxn_nucs, _L_abs_nucs = parse_flagged_nuclide_tally(np.array(self.curr_res[1]),
-                                                           (self.nuc_fractions if self.nuc_fractions is not None else 1) )
-                P_fiss_nucs += _P_fiss_nucs
-                P_nxn_nucs += _P_nxn_nucs
-                L_abs_nucs += _L_abs_nucs
-                P_fiss_nucs_absolute += np.abs(_P_fiss_nucs)
-                P_nxn_nucs_absolute += np.abs(_P_nxn_nucs)
-                L_abs_nucs_absolute += np.abs(_L_abs_nucs)
-                if len(self.curr_res) == 3:
-                    if len(self.curr_res[2]) != 0:
-                            _P_fiss_nucs, _P_nxn_nucs, _L_abs_nucs = parse_flagged_nuclide_tally(np.array(self.curr_res[2]),
-                                                                    self.nuc_fractions_replace)
-                            P_fiss_nucs -= _P_fiss_nucs
-                            P_nxn_nucs -= _P_nxn_nucs
-                            L_abs_nucs -= _L_abs_nucs
-                            P_fiss_nucs_absolute += np.abs(_P_fiss_nucs)
-                            P_nxn_nucs_absolute += np.abs(_P_nxn_nucs)
-                            L_abs_nucs_absolute += np.abs(_L_abs_nucs)
-            
             # Predict concentration change
             bot = L_abs_nucs - P_fiss_nucs/self.target - P_nxn_nucs
             top = P_fiss/self.target - 1 + bot 
@@ -928,41 +890,39 @@ class CDI:
                 # Fetch absolute concentration cleanly
                 absolute_current_concentration = float(self.f_prev * self.initial_value)
                 
-                                # 1. Compute statistical error from Monte Carlo
-                rel_err_MC = 1 / np.sqrt(self.model.settings.particles * (self.model.settings.generations_per_batch if self.model.settings.generations_per_batch is not None else 1))
-                prod = P_fiss + P_nxn
-                loss = L_abs + L_leak
+                # Total simulated particles per batch (N_M)
+                particles = self.model.settings.particles * (self.model.settings.generations_per_batch if self.model.settings.generations_per_batch is not None else 1)
                 
-                # sig_nucs = rel_err_MC * np.sqrt(prod * (P_fiss_nucs**2 / P_fiss_nucs_absolute if P_fiss_nucs_absolute != 0 else 0) / self.target
-                #                                 + prod * (P_nxn_nucs**2 / P_nxn_nucs_absolute if P_nxn_nucs_absolute != 0 else 0)
-                #                                 + loss * (L_abs_nucs**2 / L_abs_nucs_absolute if L_abs_nucs_absolute != 0 else 0))
-                sig_nucs = rel_err_MC * np.sqrt(
-                    (P_fiss/self.target) * P_fiss_nucs_absolute 
-                    + P_fiss * P_nxn_nucs_absolute 
-                    + loss * L_abs_nucs_absolute
-                )
-                sig_fiss = rel_err_MC * np.sqrt(prod * P_fiss)
+                # Direct variance of the unweighted global core fission channel
+                P_fiss_global_var = self.curr_res[0][0][0][1] / particles
                 
-                # --- NEW CORRELATION AND COVARIANCE PROPAGATION INJECTION ---
-                # 1. Estimate rho based on your theoretical fraction bounds (Page 6 of paper)
-                # We enforce an un-biased nu_bar approximation (typically ~2.5 for PWR profiles)
-                nu_bar_est = 2.5
-                if P_fiss > 0 and bot > 0:
-                    rho_fiss_nucs = -np.sqrt(np.abs(bot / (P_fiss / nu_bar_est)))
-                else:
-                    rho_fiss_nucs = 0.0
-                    
-                # 2. Compute the raw covariance metric explicitly
-                cov_fiss_nucs = rho_fiss_nucs * sig_fiss * sig_nucs
+                # 1. Define average nu-bar for the target (e.g., 2.5 for U-235)
+                nu_bar = 2.5  
+
+                # 2. Compute the exact channel covariance via the shared fission event path
+                cov_L_P = (P_fiss_nucs_var / nu_bar) if P_fiss_nucs_var > 0 else 0.0
+
+                # 3. Direct exact component variances for the top and bot terms
+                # Added the negative covariance coupling term for the denominator
+                var_bot = (L_abs_nucs_var 
+                        + (P_fiss_nucs_var / (self.target**2)) 
+                        - (2.0 * cov_L_P / self.target) 
+                        + P_nxn_nucs_var)
+
+                # Var_top remains unchanged because the non-flagged pool is independent
+                var_top = (((P_fiss_global_var - P_fiss_nucs_var) / (self.target**2)) 
+                        + L_abs_nucs_var 
+                        + P_nxn_nucs_var)
+
+                # 4. Exact analytical covariance isolated from shared tracking terms
+                # Added the covariance adjustment to prevent underpredicting the final step variance
+                cov_top_bot = L_abs_nucs_var - (cov_L_P / self.target) + P_nxn_nucs_var
                 
-                # 3. Calculate full correlated multi-variable Taylor expansion (Delta Method)
-                var_term_fiss = (sig_fiss / (self.target * bot)) ** 2
-                var_term_nucs = ((P_fiss / self.target - 1) * sig_nucs / (bot ** 2)) ** 2
+                # Direct Delta Method Taylor Expansion (No empirical approximations)
+                var_term_fiss = var_top / (bot ** 2)
+                var_term_nucs = (top ** 2) * var_bot / (bot ** 4)
+                var_term_cross = -2.0 * top * cov_top_bot / (bot ** 3)
                 
-                # Cross covariance mapping term
-                var_term_cross = -2.0 * ((P_fiss / self.target - 1) / (self.target * (bot ** 3))) * cov_fiss_nucs
-                
-                # Sum terms securely and enforce a mathematical floor check
                 sig_res_squared = var_term_fiss + var_term_nucs + var_term_cross
                 sig_res = np.sqrt(max(sig_res_squared, 1e-12))
                 
@@ -971,6 +931,7 @@ class CDI:
                 z_measurement = absolute_current_concentration * float(g_est)
                 sig_absolute_est = absolute_current_concentration * float(sig_g_est)
                 p_measure = float(sig_absolute_est ** 2)
+
                 
                 # Enforce step limits on the absolute target value if out of safe bounds
                 if (g_est < 1 / (self.max_step_change - 0.5)) or (g_est > self.max_step_change):
@@ -994,7 +955,7 @@ class CDI:
                     print(f"Propagating absolute uncertainty: R_measure={p_measure}, Measurement Target={z_measurement}")
 
                 # --- 1. EXECUTE THE UPDATE ONLY USING PHYSICAL METRICS ---
-                # Let the filter engine handle the internal transformation and noise scaling
+                # Let the filter engine handle the internal transformation and noise scaling                
                 z_input = np.array([[z_measurement]])
                 R_input = np.array([[p_measure]])
                 
@@ -1089,5 +1050,49 @@ class CDI:
         
         return 0
     
+    
     def run(self):
         return self()
+    
+    
+    def _accumulate_flagged_rates(self, tally_index, nuc_fractions_list):
+        """Centralized helper to extract material blocks and compute flagged reaction rates and direct variances."""
+        P_fiss = 0.0
+        P_nxn = 0.0
+        L_abs = 0.0
+        
+        P_fiss_var = 0.0
+        P_nxn_var = 0.0
+        L_abs_var = 0.0
+        
+        particles = self.model.settings.particles * (self.model.settings.generations_per_batch if self.model.settings.generations_per_batch is not None else 1)
+        tally_data = np.array(self.curr_res[tally_index])
+        
+        if self.materials:
+            for index, mat in enumerate(self.materials):
+                tally_block = tally_data[index]
+                fractions = np.array(nuc_fractions_list[index])
+                
+                _P_fiss = np.sum((tally_block[..., 0::4, 1]) * fractions)
+                _P_nxn = np.sum((tally_block[..., 2::4, 1] - tally_block[..., 3::4, 1]) * fractions)
+                _L_abs = np.sum((tally_block[..., 1::4, 1]) * fractions)
+                
+                P_fiss += _P_fiss
+                P_nxn += _P_nxn
+                L_abs += _L_abs
+                
+                # Direct per-particle variance: \sigma^2 = (tally * w^2) / N_particles
+                P_fiss_var += np.sum((tally_block[..., 0::4, 1]) * (fractions**2)) / particles
+                P_nxn_var += np.sum((tally_block[..., 2::4, 1] + tally_block[..., 3::4, 1]) * (fractions**2)) / particles
+                L_abs_var += np.sum((tally_block[..., 1::4, 1]) * (fractions**2)) / particles
+        else:
+            fractions = np.array(nuc_fractions_list if nuc_fractions_list is not None else 1.0)
+            P_fiss = np.sum((tally_data[..., 0::4, 1]) * fractions)
+            P_nxn = np.sum((tally_data[..., 2::4, 1] - tally_data[..., 3::4, 1]) * fractions)
+            L_abs = np.sum((tally_data[..., 1::4, 1]) * fractions)
+            
+            P_fiss_var = np.sum((tally_data[..., 0::4, 1]) * (fractions**2)) / particles
+            P_nxn_var = np.sum((tally_data[..., 2::4, 1] + tally_data[..., 3::4, 1]) * (fractions**2)) / particles
+            L_abs_var = np.sum((tally_data[..., 1::4, 1]) * (fractions**2)) / particles
+            
+        return P_fiss, P_nxn, L_abs, P_fiss_var, P_nxn_var, L_abs_var
