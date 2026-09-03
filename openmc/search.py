@@ -691,10 +691,7 @@ class CDI:
     def _get_model(self):
         return self.model
     
-    def __call__(self, particles=None, threads=None, geometry_debug=False,
-        restart_file=None, tracks=False, output=True, cwd='.',
-        openmc_exec='openmc', mpi_args=None, event_based=False,
-        path_input=None, **kwargs):
+    def __call__(self):
         comm.barrier()
         if not openmc.lib.is_initialized:
             if self.debug is True: print("Initializing OpenMC library for CDI...")
@@ -1054,8 +1051,8 @@ class CDI:
         return 0
     
     
-    def run(self, **kwargs):
-        return self(**kwargs)
+    def run(self):
+        return self()
     
     
     def _accumulate_flagged_rates(self, tally_index, nuc_fractions_list):
