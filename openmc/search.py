@@ -657,10 +657,11 @@ class CDI:
                         raise ValueError(f"Provided execution function {exec_func} is not callable")
                     self.other_exec.append([exec_func, [exec_start, exec_end], exec_strategy])
             
-            kf_kwargs.setdefault('n_states', 1)
-            kf_kwargs.setdefault('n_measurements', 1)
-            kf_kwargs.setdefault('transform_type', 'identity')
-            self.kf = GeneralizedKalmanFilter(**kf_kwargs)
+            self.kf_kwargs = kf_kwargs
+            self.kf_kwargs.setdefault('n_states', 1)
+            self.kf_kwargs.setdefault('n_measurements', 1)
+            self.kf_kwargs.setdefault('transform_type', 'identity')
+            self.kf = GeneralizedKalmanFilter(**self.kf_kwargs)
             
             self.model = model
             self.iso = iso
@@ -731,6 +732,9 @@ class CDI:
             
         if not self.force_initial_value:
             self.initial_value = final_val
+            # Reset the Kalman filter for the next CDI call
+            self.kf = GeneralizedKalmanFilter(**self.kf_kwargs)
+            
         
         return self.model
     
