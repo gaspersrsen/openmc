@@ -517,7 +517,6 @@ class CoupledOperator(OpenMCOperator):
                                       f'{mat} is negative (density = {val}'
                                       ' atom/b-cm)')
                                 number_i[mat, nuc] = 0.0
-                
                 # Update densities on C API side
                 mat_internal = openmc.lib.materials[int(mat)]
                 mat_internal.set_densities(nuclides, densities)

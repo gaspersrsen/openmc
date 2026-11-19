@@ -2,6 +2,9 @@ from __future__ import annotations
 from collections import defaultdict, namedtuple, Counter
 from collections.abc import Iterable
 from copy import deepcopy
+from functools import cache, reduce
+from importlib import resources
+import json
 from numbers import Real
 from pathlib import Path
 import re
@@ -38,7 +41,67 @@ _SMALLEST_NORMAL = sys.float_info.min
 
 _BECQUEREL_PER_CURIE = 3.7e10
 
+# Minimum mass fraction of nuclides without photon attenuation data that
+# results in a warning from Material.get_photon_contact_dose_rate()
+_MIN_ATTENUATION_MASS_FRACTION = 1e-6
+
+_MATERIAL_LIBRARIES = {
+    'pnnl_v2': 'material_libraries/pnnl_v2.json',
+}
+
 NuclideTuple = namedtuple('NuclideTuple', ['name', 'percent', 'percent_type'])
+
+
+def _normalize_material_name(name):
+    """Normalize whitespace for material-library name lookup."""
+    return ' '.join(name.split())
+
+
+@cache
+def _load_material_library(library):
+    """Load a registered material library."""
+    try:
+        location = _MATERIAL_LIBRARIES[library]
+    except KeyError:
+        available = ', '.join(sorted(_MATERIAL_LIBRARIES))
+        raise ValueError(
+            f"Unknown material library '{library}'. Available libraries: "
+            f"{available}"
+        ) from None
+
+    if isinstance(location, Path):
+        path = location
+    else:
+        path = resources.files('openmc.data').joinpath(location)
+    return _read_material_library(library, path)
+
+
+def _read_material_library(library, path):
+    """Read and validate material library data from a path."""
+    try:
+        data = json.loads(path.read_text(encoding='utf-8'))
+    except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise RuntimeError(
+            f"Could not load material library '{library}'"
+        ) from exc
+
+    if not isinstance(data, dict):
+        raise RuntimeError(
+            f"Material library '{library}' does not contain a JSON object"
+        )
+    if data.get('schema_version') != 1:
+        raise RuntimeError(
+            f"Material library '{library}' has an unsupported schema version"
+        )
+    if not isinstance(data.get('materials'), dict):
+        raise RuntimeError(
+            f"Material library '{library}' does not contain valid materials"
+        )
+    data['materials'] = {
+        _normalize_material_name(name): material
+        for name, material in data['materials'].items()
+    }
+    return data
 
 
 class Material(IDManagerMixin):
@@ -416,6 +479,224 @@ class Material(IDManagerMixin):
 
         return combined
 
+    def get_photon_contact_dose_rate(
+        self,
+        dose_quantity: str = "absorbed-air",
+        build_up: float = 2.0,
+        by_nuclide: bool = False
+    ) -> float | dict[str, float]:
+        """Compute the photon contact dose rate (CDR) produced by radioactive decay
+        of the material.
+
+        The contact dose rate is calculated from decay photon energy spectra for
+        each nuclide in the material, combined with photon mass attenuation data
+        for the material and the appropriate response function for the dose quantity.
+        A slab-geometry approximation and a photon build-up factor are used.
+
+        Absorbed-air dose:
+            The approach follows the FISPACT-II manual (UKAEA-CCFE-RE(21)02 - May 2021).
+            Appendix C.7.1.
+            This method integrates over the photon energy:
+
+                (B/2) * (mu_en_air(E) / mu_material(E)) * E * S(E)
+
+        Effective dose:
+            The approach uses ICRP-116 effective dose coefficients to convert the photon
+            fluence due to decay photons to effective dose.
+            This method integrates over the photon energy:
+
+                (B/2) * (h_e(E) / mu_material(E)) * S(E)
+
+        where:
+            - mu_en_air(E) is the air mass energy-absorption coefficient,
+            - mu_material(E) is the photon mass attenuation coefficient of the material,
+            - S(E) is the photon emission spectrum per atom,
+            - h_e(E) is the ICRP-116 effective dose coefficient,
+            - B is the build-up factor,
+            - E is the photon energy.
+
+        Parameters
+        ----------
+        dose_quantity : {'absorbed-air', 'effective'}, optional
+            Specifies the dose quantity to be calculated.
+            The only supported options are 'absorbed-air' which implements the methodology
+            from FISPACT-II, and 'effective' which uses ICRP-116 effective dose coefficients.
+        build_up : float, optional. The default value is 2.0 as suggested in the FISPACT-II
+            manual.
+        by_nuclide : bool, optional
+            Specifies if the cdr should be returned for the material as a
+            whole or per nuclide. Default is False.
+
+        Limitations
+        ----------
+        This method does not implement correction from Bremsstrahlung particles which can be
+        relevant at close distances.
+        In addition, it computes the gamma contact dose rate only for the unstable nuclides
+        for which the radiation source specification is present in the chain file.
+        Photon attenuation data is only tabulated up to Z=100; nuclides with a
+        higher atomic number are neglected when building the material
+        attenuation coefficient.
+
+        Returns
+        -------
+        cdr : float or dict[str, float]
+            Contact Dose Rate due to decay photons.
+            'absorbed-air': returns the absorbed dose in air [Gy/hr].
+            'effective': returns the effective dose [Sv/hr].
+        """
+
+        cv.check_type("by_nuclide", by_nuclide, bool)
+        cv.check_type("dose_quantity", dose_quantity, str)
+        cv.check_value("dose_quantity", dose_quantity, {'absorbed-air', 'effective'})
+        cv.check_type("build_up", build_up, Real)
+        cv.check_greater_than("build_up", build_up, 0.0)
+
+        nuc_densities = self.get_nuclide_atom_densities()
+        if not nuc_densities:
+            raise ValueError("Material has no nuclides; cannot compute mass attenuation")
+
+        # Collect partial mass densities ρ_i [g/cm³] and elemental mass
+        # attenuation coefficients µ_i/ρ_i [cm²/g] per nuclide. Attenuation
+        # data is only tabulated up to Z=100, so nuclides beyond that -- which
+        # show up in trace quantities after depletion -- are left out of
+        # µ_material(E) instead of aborting the calculation.
+        nuc_attenuation = []
+        missing_data = {}
+        total_rho = 0.0
+        for nuc, atom_density_bcm in nuc_densities.items():
+            rho_i = (
+                atom_density_bcm * 1.0e24
+                * openmc.data.atomic_mass(nuc) / openmc.data.AVOGADRO
+            )
+            total_rho += rho_i
+
+            Z = openmc.data.zam(nuc)[0]
+            try:
+                mu_over_rho = openmc.data.mass_attenuation_coefficient(Z)
+            except ValueError:
+                missing_data[nuc] = rho_i
+                continue
+
+            nuc_attenuation.append((rho_i, mu_over_rho))
+
+        if not nuc_attenuation:
+            raise ValueError(
+                "No photon attenuation data is available for any nuclide in "
+                f"material ID={self.id}; cannot compute the contact dose rate."
+            )
+
+        # Only warn about neglected nuclides if they are more than a trace
+        if missing_data and total_rho > 0.0:
+            missing_frac = sum(missing_data.values()) / total_rho
+            if missing_frac > _MIN_ATTENUATION_MASS_FRACTION:
+                warnings.warn(
+                    'No photon attenuation data available for '
+                    f'{", ".join(sorted(missing_data))} in material '
+                    f'ID={self.id}. These nuclides make up a mass fraction of '
+                    f'{missing_frac:.3e} and are neglected in the material '
+                    'attenuation coefficient.',
+                    stacklevel=2,
+                )
+
+        # Build union energy grid across all nuclides
+        mu_e_vals = reduce(np.union1d, [t.x for _, t in nuc_attenuation])
+
+        # Build the material linear attenuation coefficient µ_material(E) [cm⁻¹]
+        # as the sum of ρ_i * (µ_i/ρ_i)(E) over all nuclides
+        mu_material_vals = np.zeros(len(mu_e_vals))
+        for rho_i, mu_over_rho in nuc_attenuation:
+            mu_material_vals += rho_i * mu_over_rho(mu_e_vals)
+        mu_material = Tabulated1D(
+            mu_e_vals, mu_material_vals, breakpoints=[len(mu_e_vals)], interpolation=[5])
+
+        # CDR computation
+        cdr = {}
+
+        geometry_factor_slab = 0.5
+
+        # ancillary conversion factors for clarity
+        seconds_per_hour = 3600.0
+        grams_per_kg = 1000.0
+        sv_per_psv = 1e-12
+
+        if dose_quantity == 'absorbed-air':
+            # mu_en/rho for air [cm²/g] as a function of energy [eV]
+            response_f = mass_energy_absorption_coefficient("air", data_source="nist126")
+
+            # Factor to convert [eV cm²/(b g s)] to [Gy/h]
+            multiplier = (build_up * geometry_factor_slab * seconds_per_hour
+                          * grams_per_kg * 1e24 * JOULE_PER_EV)
+
+        elif dose_quantity == 'effective':
+            # effective dose as a function of photon fluence [pSv cm²]
+            response_f_x, response_f_y = dose_coefficients(
+                "photon", geometry='AP', data_source='icrp116')
+            response_f = Tabulated1D(response_f_x, response_f_y, breakpoints=[
+                len(response_f_x)], interpolation=[5])
+
+            # Convert [pSv cm²/(b-s)] to [Sv/h]
+            multiplier = (build_up * geometry_factor_slab * seconds_per_hour
+                          * sv_per_psv * 1e24)
+
+        for nuc, nuc_atoms_per_bcm in self.get_nuclide_atom_densities().items():
+            photon_source_per_atom = openmc.data.decay_photon_energy(nuc)
+
+            # nuclides with no contribution
+            if photon_source_per_atom is None or nuc_atoms_per_bcm <= 0.0:
+                cdr[nuc] = 0.0
+                continue
+
+            if not isinstance(photon_source_per_atom, (Discrete, Tabular)):
+                raise ValueError(
+                    f"Unknown decay photon energy data type for nuclide {nuc}"
+                    f"value returned: {type(photon_source_per_atom)}"
+                )
+
+            e_vals = photon_source_per_atom.x
+            p_vals = photon_source_per_atom.p
+
+            # Construct list of energies from (photon source, response function,
+            # mu_en_air) for clipping to common energy range
+            e_lists = [e_vals, response_f.x, mu_e_vals]
+
+            # clip distributions for values outside the tabulated values
+            left_bound = max(a.min() for a in e_lists)
+            right_bound = min(a.max() for a in e_lists)
+
+            mask = (e_vals >= left_bound) & (e_vals <= right_bound)
+            e_vals = e_vals[mask]
+            p_vals = p_vals[mask]
+
+            if isinstance(photon_source_per_atom, Tabular):
+                # limit the computation to the tabulated mu_en_air range
+                e_union = reduce(np.union1d, e_lists)
+                e_union = e_union[(e_union >= left_bound) & (e_union <= right_bound)]
+                if len(e_union) < 2:
+                    raise ValueError("Not enough overlapping energy points to compute CDR")
+
+                # Histogram interpolation: each new point inherits the value of
+                # the nearest original point to its left
+                p_vals = p_vals[np.searchsorted(e_vals, e_union, side='right') - 1]
+                e_vals = e_union
+
+            mu_vals = mu_material(e_vals)
+            if dose_quantity == 'absorbed-air':
+                # Compute (µ_en_air(E) / µ_material(E)) * E * S(E)
+                integrand = (response_f(e_vals) / mu_vals) * p_vals * e_vals
+            elif dose_quantity == 'effective':
+                # Compute (h_e(E) / µ_material(E)) * S(E)
+                integrand = (response_f(e_vals) / mu_vals) * p_vals
+
+            if isinstance(photon_source_per_atom, Discrete):
+                cdr_nuc = np.sum(integrand)
+            elif isinstance(photon_source_per_atom, Tabular):
+                cdr_nuc = np.trapezoid(integrand, e_vals)
+
+            # Compute air-absorbed dose [Gy/h] or effective dose [Sv/h]
+            cdr[nuc] = float(cdr_nuc * nuc_atoms_per_bcm * multiplier)
+
+        return cdr if by_nuclide else sum(cdr.values())
+
     @classmethod
     def from_hdf5(cls, group: h5py.Group) -> Material:
         """Create material from HDF5 group
@@ -470,6 +751,142 @@ class Material(IDManagerMixin):
                 material.add_macroscopic(name)
 
         return material
+
+    @staticmethod
+    def get_library_material_names(
+        library: str = 'pnnl_v2'
+    ) -> tuple[str, ...]:
+        """Return the material names available in a registered library.
+
+        .. versionadded:: 0.16.1
+
+        Parameters
+        ----------
+        library : str, optional
+            Name of the material library. Defaults to ``'pnnl_v2'``.
+
+        Returns
+        -------
+        tuple of str
+            Material names in alphabetical order.
+
+        Raises
+        ------
+        ValueError
+            If `library` is not registered.
+
+        """
+        cv.check_type('material library', library, str)
+        library_data = _load_material_library(library)
+        return tuple(sorted(library_data['materials']))
+
+    @staticmethod
+    def register_library(library: str, path: PathLike):
+        """Register a material library from a JSON file.
+
+        The registration applies to the current Python process. The file and
+        its top-level schema are validated before the library is registered.
+
+        .. versionadded:: 0.16.1
+
+        Parameters
+        ----------
+        library : str
+            Name used to identify the material library.
+        path : path-like
+            Path to a material library JSON file.
+
+        Raises
+        ------
+        ValueError
+            If `library` is empty or already registered.
+        RuntimeError
+            If the file cannot be read or has an unsupported schema.
+
+        """
+        cv.check_type('material library', library, str)
+        cv.check_type('material library path', path, PathLike)
+        if not library.strip():
+            raise ValueError('Material library name cannot be empty')
+        if library in _MATERIAL_LIBRARIES:
+            raise ValueError(
+                f"Material library '{library}' is already registered"
+            )
+
+        path = Path(path).resolve()
+        _read_material_library(library, path)
+        _MATERIAL_LIBRARIES[library] = path
+        _load_material_library.cache_clear()
+
+    @classmethod
+    def from_library(
+        cls, material_name: str, library: str = 'pnnl_v2', **kwargs
+    ) -> Material:
+        """Create a material from a registered material library.
+
+        Natural elements in a library are expanded according to the nuclides
+        available in the cross section library indicated by
+        :data:`openmc.config`. Compositions that are explicitly isotopic in the
+        source library retain their specified nuclides.
+
+        .. versionadded:: 0.16.1
+
+        Parameters
+        ----------
+        material_name : str
+            Name of the material in the library. Names are case sensitive, but
+            whitespace is normalized for lookup.
+        library : str, optional
+            Name of the material library. Defaults to ``'pnnl_v2'``, the `PNNL
+            Compendium of Material Composition Data for Radiation Transport
+            Modeling <https://doi.org/10.2172/1782721>`_.
+        **kwargs
+            Keyword arguments passed to :class:`openmc.Material`. The material
+            name, composition, density, density units, and percent type from the
+            library are used as defaults.
+
+        Returns
+        -------
+        openmc.Material
+            Material with the library composition and density.
+
+        Raises
+        ------
+        ValueError
+            If `library` or `material_name` is not found.
+
+        Notes
+        -----
+        For the 'pnnl_v2' library, the bundled values are taken from the
+        machine-readable JSON download provided by the PNNL Materials Compendium
+        website. The one exception is Lutetium Yttrium OxyorthoSilicate (LYSO),
+        whose density and elemental composition are taken from the published
+        Revision 2 PDF so that the material includes its cerium dopant.
+
+        """
+        cv.check_type('material name', material_name, str)
+        cv.check_type('material library', library, str)
+
+        library_data = _load_material_library(library)
+        requested_name = material_name
+        normalized_name = _normalize_material_name(material_name)
+        try:
+            material_data = library_data['materials'][normalized_name]
+        except KeyError:
+            raise ValueError(
+                f"Material '{requested_name}' not found in library '{library}'"
+            ) from None
+
+        components = {
+            **material_data.get('elements', {}),
+            **material_data.get('nuclides', {}),
+        }
+        kwargs.setdefault('name', requested_name)
+        kwargs.setdefault('components', components)
+        kwargs.setdefault('percent_type', library_data['percent_type'])
+        kwargs.setdefault('density', material_data['density'])
+        kwargs.setdefault('density_units', library_data['density_units'])
+        return cls(**kwargs)
 
     @classmethod
     def from_ncrystal(cls, cfg, **kwargs) -> Material:
