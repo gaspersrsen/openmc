@@ -104,6 +104,8 @@ class Lattice(IDManagerMixin, ABC):
             return openmc.RectLattice.from_hdf5(group, universes)
         elif lattice_type == 'hexagonal':
             return openmc.HexLattice.from_hdf5(group, universes)
+        elif lattice_type == 'cylindrical':
+            return openmc.CylLattice.from_hdf5(group, universes)
         else:
             raise ValueError(f'Unknown lattice type: {lattice_type}')
 

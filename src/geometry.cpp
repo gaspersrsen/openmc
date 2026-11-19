@@ -265,6 +265,10 @@ bool find_cell_inner(
           p.mark_as_lost(fmt::format(
             "Particle {} left lattice {}, but it has no outer definition.",
             p.id(), lat.id_));
+          // A lost particle may continue through this routine when the
+          // Particle override of mark_as_lost returns. Do not search using
+          // the stale universe from the coordinate level above this lattice.
+          return false;
         }
       }
     }
@@ -455,7 +459,7 @@ BoundaryInfo distance_to_boundary(GeometryState& p)
       case LatticeType::rect:
         lattice_distance = lat.distance(r, u, coord.lattice_index());
         break;
-      case LatticeType::hex:
+      case LatticeType::hex: {
         auto& cell_above {model::cells[p.coord(i - 1).cell()]};
         Position r_hex {p.coord(i - 1).r()};
         r_hex -= cell_above->translation_;
@@ -465,6 +469,15 @@ BoundaryInfo distance_to_boundary(GeometryState& p)
         r_hex.z = coord.r().z;
         lattice_distance = lat.distance(r_hex, u, coord.lattice_index());
         break;
+      }
+      case LatticeType::cylindrical: {
+        auto& parent {model::cells[p.coord(i - 1).cell()]};
+        Position r_cyl {p.coord(i - 1).r()};
+        r_cyl -= parent->translation_;
+        if (coord.rotated()) r_cyl = r_cyl.rotate(parent->rotation_);
+        lattice_distance = lat.distance(r_cyl, u, coord.lattice_index());
+        break;
+      }
       }
       d_lat = lattice_distance.first;
       level_lat_trans = lattice_distance.second;

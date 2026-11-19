@@ -1,6 +1,8 @@
 #include "openmc/lattice.h"
 
 #include <cmath>
+#include <algorithm>
+#include <limits>
 #include <string>
 
 #include <fmt/core.h>
@@ -1203,6 +1205,451 @@ void HexLattice::to_hdf5_inner(hid_t lat_group) const
 // Non-method functions
 //==============================================================================
 
+CylLattice::CylLattice(pugi::xml_node node) : Lattice {node}
+{
+  type_ = LatticeType::cylindrical;
+  regular_ = check_for_node(node, "regular") && get_node_value_bool(node, "regular");
+  auto center = get_node_array<double>(node, "center");
+  radial_edges_ = get_node_array<double>(node, "radial_edges");
+  sector_counts_ = get_node_array<int>(node, "sector_counts");
+  azimuthal_offsets_ = get_node_array<double>(node, "azimuthal_offsets");
+  is_3d_ = check_for_node(node, "z_edges");
+  if (is_3d_) z_edges_ = get_node_array<double>(node, "z_edges");
+  auto strictly_increasing = [](const vector<double>& a) {
+    return a.size() >= 2 && std::all_of(a.begin(), a.end(), [](double x) { return std::isfinite(x); }) &&
+           std::adjacent_find(a.begin(), a.end(), std::greater_equal<double>()) == a.end();
+  };
+  if (center.size() != 2 || !std::isfinite(center[0]) || !std::isfinite(center[1]) ||
+      !strictly_increasing(radial_edges_) || radial_edges_.front() < 0. ||
+      sector_counts_.size()+1 != radial_edges_.size() ||
+      azimuthal_offsets_.size() != sector_counts_.size() ||
+      (is_3d_ && !strictly_increasing(z_edges_))) {
+    fatal_error("Invalid cylindrical lattice boundaries or dimensions");
+  }
+  center_.x = center[0];
+  center_.y = center[1];
+  n_axial_ = is_3d_ ? static_cast<int>(z_edges_.size())-1 : 1;
+  if (regular_) {
+    auto spacing = check_for_node(node, "radial_spacing") ?
+      get_node_value(node, "radial_spacing") : "radius";
+    if (spacing != "radius" && spacing != "equal_area")
+      fatal_error("Invalid regular cylindrical lattice radial spacing");
+    equal_area_ = spacing == "equal_area";
+    double start = equal_area_ ? radial_edges_.front()*radial_edges_.front() : radial_edges_.front();
+    double end = equal_area_ ? radial_edges_.back()*radial_edges_.back() : radial_edges_.back();
+    double pitch = (end-start)/sector_counts_.size();
+    radial_inverse_pitch_ = 1./pitch;
+    for (int i = 0; i < radial_edges_.size(); ++i) {
+      double value = equal_area_ ? radial_edges_[i]*radial_edges_[i] : radial_edges_[i];
+      if (std::abs(value-(start+i*pitch)) > 1.e-10*std::max(1., std::abs(end)) ||
+          (i < sector_counts_.size() &&
+           (sector_counts_[i] != sector_counts_[0] ||
+            std::abs(azimuthal_offsets_[i]-azimuthal_offsets_[0]) > 1.e-12)))
+        fatal_error("Regular cylindrical lattice has nonuniform boundaries or sectors");
+    }
+    if (is_3d_) {
+      double pitch_z = (z_edges_.back()-z_edges_.front())/n_axial_;
+      axial_inverse_pitch_ = 1./pitch_z;
+      for (int i = 0; i < z_edges_.size(); ++i)
+        if (std::abs(z_edges_[i]-(z_edges_.front()+i*pitch_z)) >
+            1.e-10*std::max(1., std::abs(z_edges_.back()-z_edges_.front())))
+          fatal_error("Regular cylindrical lattice has nonuniform axial boundaries");
+    }
+  }
+  tiles_per_layer_ = 0;
+  for (int i = 0; i < sector_counts_.size(); ++i) {
+    if (sector_counts_[i] < 1 || !std::isfinite(azimuthal_offsets_[i]))
+      fatal_error("Invalid cylindrical lattice sectors or offsets");
+    ring_offsets_.push_back(tiles_per_layer_);
+    tiles_per_layer_ += sector_counts_[i];
+  }
+  auto words = get_node_array<int>(node, "universes");
+  if (words.size() != static_cast<size_t>(n_axial_ * tiles_per_layer_))
+    fatal_error("Incorrect number of cylindrical lattice universes");
+  universes_ = words;
+}
+
+const int32_t& CylLattice::operator[](const array<int, 3>& index)
+{
+  return universes_[get_flat_index(index)];
+}
+
+bool CylLattice::are_valid_indices(const array<int, 3>& i) const
+{
+  return i[0] >= 0 && i[0] < sector_counts_.size() && i[1] >= 0 &&
+    i[1] < sector_counts_[i[0]] && i[2] >= 0 && i[2] < n_axial_;
+}
+
+int CylLattice::get_flat_index(const array<int, 3>& i) const
+{
+  return i[2]*tiles_per_layer_ + ring_offsets_[i[0]] + i[1];
+}
+
+void CylLattice::get_indices(Position r, Direction u, array<int, 3>& out) const
+{
+  const double x = r.x-center_.x, y = r.y-center_.y;
+  const double rad = std::hypot(x, y);
+  int ring;
+  if (regular_) {
+    if (rad < radial_edges_.front()) ring = -1;
+    else if (rad >= radial_edges_.back()) ring = sector_counts_.size();
+    else {
+      double value = equal_area_ ? rad*rad : rad;
+      double start = equal_area_ ? radial_edges_.front()*radial_edges_.front() : radial_edges_.front();
+      ring = std::min(static_cast<int>((value-start)*radial_inverse_pitch_),
+                      static_cast<int>(sector_counts_.size())-1);
+    }
+  } else ring = std::upper_bound(radial_edges_.begin(), radial_edges_.end(), rad)-radial_edges_.begin()-1;
+  int r_lo = regular_ ? std::max(0, ring) : 0;
+  int r_hi = regular_ ? std::min(static_cast<int>(radial_edges_.size())-1, ring+1) : radial_edges_.size()-1;
+  for (int i = r_lo; i <= r_hi; ++i) {
+    double radial_tolerance =
+      64.0*FP_COINCIDENT*std::max(1., radial_edges_[i]);
+    if (i > 0) {
+      radial_tolerance = std::min(
+        radial_tolerance, 0.25*(radial_edges_[i]-radial_edges_[i-1]));
+    }
+    if (i+1 < radial_edges_.size()) {
+      radial_tolerance = std::min(
+        radial_tolerance, 0.25*(radial_edges_[i+1]-radial_edges_[i]));
+    }
+    // Coordinate roundoff during a surface crossing can put an inward-going
+    // particle slightly beyond the radial edge. Allow a modest multiple of
+    // the base coincidence tolerance so it still selects the adjacent ring.
+    // Cap it by neighboring ring widths to keep the boundary bands disjoint.
+    if (std::abs(rad-radial_edges_[i]) <= radial_tolerance) {
+      const double dr = x*u.x+y*u.y;
+      ring = dr < 0. ? i-1 : i;
+      break;
+    }
+  }
+  out[0] = ring;
+  out[1] = 0;
+  if (ring >= 0 && ring < sector_counts_.size() && sector_counts_[ring] > 1) {
+    double angle = rad <= FP_COINCIDENT ? std::atan2(u.y, u.x) : std::atan2(y, x);
+    double turn = std::fmod(angle-azimuthal_offsets_[ring], 2*M_PI);
+    if (turn < 0.) turn += 2*M_PI;
+    double sector = turn*sector_counts_[ring]/(2*M_PI);
+    double nearest = std::round(sector);
+    int phi = std::floor(sector);
+    if (std::abs(sector-nearest) < FP_COINCIDENT) {
+      double angular_direction = x*u.y-y*u.x;
+      phi = static_cast<int>(nearest) - (angular_direction < 0. ? 1 : 0);
+    }
+    int n = sector_counts_[ring];
+    out[1] = ((phi % n)+n)%n;
+  }
+  out[2] = 0;
+  if (is_3d_) {
+    int axial;
+    if (regular_) {
+      if (r.z < z_edges_.front()) axial = -1;
+      else if (r.z >= z_edges_.back()) axial = n_axial_;
+      else axial = std::min(static_cast<int>((r.z-z_edges_.front())*axial_inverse_pitch_), n_axial_-1);
+    } else axial = std::upper_bound(z_edges_.begin(), z_edges_.end(), r.z)-z_edges_.begin()-1;
+    int z_lo = regular_ ? std::max(0, axial) : 0;
+    int z_hi = regular_ ? std::min(static_cast<int>(z_edges_.size())-1, axial+1) : z_edges_.size()-1;
+    for (int i = z_lo; i <= z_hi; ++i) {
+      if (std::abs(r.z-z_edges_[i]) <= FP_COINCIDENT*std::max(1., std::abs(z_edges_[i]))) {
+        axial = u.z < 0. ? i-1 : i;
+        break;
+      }
+    }
+    out[2] = axial;
+  }
+}
+
+Position CylLattice::get_local_position(Position r, const array<int, 3>& i) const
+{
+  if (!are_valid_indices(i)) return r;
+  if (i[0] >= 0 && i[0] < sector_counts_.size() && i[1] >= 0 && i[1] < sector_counts_[i[0]]) {
+    int n = sector_counts_[i[0]];
+    double radius = n == 1 ? 0. : (radial_edges_[i[0]]+radial_edges_[i[0]+1])/2;
+    double phi = azimuthal_offsets_[i[0]] + (i[1]+.5)*2*M_PI/n;
+    r.x -= center_.x+radius*std::cos(phi);
+    r.y -= center_.y+radius*std::sin(phi);
+  }
+  if (is_3d_ && i[2] >= 0 && i[2] < n_axial_)
+    r.z -= (z_edges_[i[2]]+z_edges_[i[2]+1])/2;
+  return r;
+}
+
+std::pair<double, array<int, 3>> CylLattice::distance(
+  Position r, Direction u, const array<int, 3>& index) const
+{
+  const double x = r.x-center_.x, y = r.y-center_.y;
+  const double angular_rate = x*u.y-y*u.x;
+  double best_distance = INFTY;
+  array<int, 3> best_delta {};
+
+  // A sector crossing can use its known +/-1 tile transition directly unless
+  // it is coincident with a radial or axial boundary. In that corner case,
+  // retain the full lookup so all crossed indices are resolved together.
+  auto on_radial_boundary = [&](double radius) {
+    const int n_rings = sector_counts_.size();
+    int first_edge;
+    int last_edge;
+    if (index[0] < 0) {
+      first_edge = last_edge = 0;
+    } else if (index[0] >= n_rings) {
+      first_edge = last_edge = n_rings;
+    } else {
+      first_edge = index[0];
+      last_edge = index[0] + 1;
+    }
+
+    for (int i = first_edge; i <= last_edge; ++i) {
+      double tolerance = 64.0*FP_COINCIDENT*
+                         std::max(1., radial_edges_[i]);
+      if (i > 0) {
+        tolerance = std::min(
+          tolerance, 0.25*(radial_edges_[i]-radial_edges_[i-1]));
+      }
+      if (i+1 < radial_edges_.size()) {
+        tolerance = std::min(
+          tolerance, 0.25*(radial_edges_[i+1]-radial_edges_[i]));
+      }
+      if (std::abs(radius-radial_edges_[i]) <= tolerance) return true;
+    }
+    return false;
+  };
+
+  auto on_axial_boundary = [&](double z) {
+    if (!is_3d_) return false;
+    int first_edge;
+    int last_edge;
+    if (index[2] < 0) {
+      first_edge = last_edge = 0;
+    } else if (index[2] >= n_axial_) {
+      first_edge = last_edge = n_axial_;
+    } else {
+      first_edge = index[2];
+      last_edge = index[2] + 1;
+    }
+    for (int i = first_edge; i <= last_edge; ++i) {
+      const double tolerance = FP_COINCIDENT*
+                              std::max(1., std::abs(z_edges_[i]));
+      if (std::abs(z-z_edges_[i]) <= tolerance) return true;
+    }
+    return false;
+  };
+
+  // Only evaluate crossings that lie ahead and that actually change tile.
+  // Radial and axial candidates still use get_indices to preserve variable
+  // sector layouts and exact corner handling. An isolated sector crossing
+  // already identifies its adjacent tile, so avoid a complete point lookup.
+  auto consider = [&](double d, int azimuthal_step) {
+    if (!std::isfinite(d) || d <= FP_COINCIDENT || d >= best_distance) return;
+    array<int, 3> delta {};
+    const Position hit = r + d*u;
+    const double hit_x = hit.x-center_.x;
+    const double hit_y = hit.y-center_.y;
+    if (azimuthal_step != 0 &&
+        !on_radial_boundary(std::hypot(hit_x, hit_y)) &&
+        !on_axial_boundary(hit.z)) {
+      delta[1] = azimuthal_step;
+    } else {
+      array<int, 3> next;
+      get_indices(hit, u, next);
+      delta = {{next[0]-index[0], next[1]-index[1], next[2]-index[2]}};
+    }
+    // Sector indices wrap, but lattice translations must move by one adjacent
+    // tile rather than by the raw difference between 0 and n-1.
+    if (delta[0] == 0 && delta[1] != 0 && angular_rate != 0.)
+      delta[1] = angular_rate > 0. ? 1 : -1;
+    if (delta[0] || delta[1] || delta[2]) {
+      best_distance = d;
+      best_delta = delta;
+    }
+  };
+
+  // Along a straight flight x*u_y-y*u_x is constant, so its sign selects
+  // which of this sector's two azimuthal faces can be reached next.
+  if (index[0] >= 0 && index[0] < static_cast<int>(sector_counts_.size())) {
+    const int n = sector_counts_[index[0]];
+    if (n > 1 && index[1] >= 0 && index[1] < n && angular_rate != 0.) {
+      const int side = angular_rate > 0. ? 1 : 0;
+      const double phi = azimuthal_offsets_[index[0]] +
+                         (index[1]+side)*2.*M_PI/n;
+      const double cx = std::cos(phi), cy = std::sin(phi);
+      const double denominator = cx*u.y-cy*u.x;
+      if (std::abs(denominator) >= FP_COINCIDENT) {
+        const double d = -(cx*y-cy*x)/denominator;
+        if (d > FP_COINCIDENT && d < best_distance &&
+            cx*(x+d*u.x)+cy*(y+d*u.y) >= -FP_COINCIDENT) {
+          consider(d, angular_rate > 0. ? 1 : -1);
+        }
+      }
+    }
+  }
+
+  // Test both radial faces of the current band (or the single exterior
+  // interface). Keep only roots crossing in the direction that leaves this
+  // radial index; the other root is either a tangency or a later return.
+  const double a = u.x*u.x + u.y*u.y;
+  if (a > 0.) {
+    auto circle = [&](double radius, double crossing_direction) {
+      if (radius <= 0.) return;
+      const double b = x*u.x + y*u.y;
+      const double c = x*x + y*y - radius*radius;
+      const double discriminant = b*b - a*c;
+      if (discriminant < 0.) return;
+      const double root = std::sqrt(std::max(0., discriminant));
+      const double roots[2] = {(-b-root)/a, (-b+root)/a};
+      for (double d : roots) {
+        if (!std::isfinite(d) || d <= FP_COINCIDENT || d >= best_distance) continue;
+        const double radial_rate = (x+d*u.x)*u.x + (y+d*u.y)*u.y;
+        if (crossing_direction*radial_rate > 0.) consider(d, 0);
+      }
+    };
+
+    if (index[0] < 0) {
+      circle(radial_edges_.front(), +1.);
+    } else if (index[0] >= static_cast<int>(sector_counts_.size())) {
+      circle(radial_edges_.back(), -1.);
+    } else {
+      circle(radial_edges_[index[0]], -1.);
+      circle(radial_edges_[index[0]+1], +1.);
+    }
+  }
+
+  // For an in-lattice axial index, motion selects exactly one of its two
+  // planes. Outside the stack, only the entry plane in the flight direction
+  // can be reached.
+  if (is_3d_ && u.z != 0.) {
+    double z_boundary = 0.;
+    bool has_boundary = true;
+    if (index[2] < 0) {
+      if (u.z > 0.) z_boundary = z_edges_.front();
+      else has_boundary = false;
+    } else if (index[2] >= n_axial_) {
+      if (u.z < 0.) z_boundary = z_edges_.back();
+      else has_boundary = false;
+    } else if (u.z < 0.) {
+      z_boundary = z_edges_[index[2]];
+    } else {
+      z_boundary = z_edges_[index[2]+1];
+    }
+    if (has_boundary) consider((z_boundary-r.z)/u.z, 0);
+  }
+
+  return {best_distance, best_delta};
+}
+
+Direction CylLattice::get_normal(const array<int, 3>& index, bool& is_valid) const
+{
+  // Curved/azimuthal normals depend on position. Current lattice-normal API
+  // has no position; do not claim a wrong surface-current normal.
+  is_valid = index[0] == 0 && index[1] == 0 && std::abs(index[2]) == 1;
+  return {0., 0., is_valid ? std::copysign(1., index[2]) : 0.};
+}
+
+Direction CylLattice::get_normal(Position r, Direction u,
+  const array<int, 3>& index,
+  const array<int, 3>& delta, bool& is_valid) const
+{
+  // Orient the normal from the old tile toward the tile selected by delta.
+  // Radial and azimuthal faces need the crossing position to define their
+  // normal; axial faces retain the ordinary Cartesian normal. As for
+  // rectangular/hexagonal lattices, a crossing that changes two independent
+  // geometric coordinates is a corner and has no unique face normal.
+  if ((delta[0] != 0 && delta[2] != 0) ||
+      (delta[0] == 0 && delta[1] != 0 && delta[2] != 0)) {
+    is_valid = false;
+    return {};
+  }
+  is_valid = true;
+  if (delta[0] != 0) {
+    double x = r.x - center_.x;
+    double y = r.y - center_.y;
+    double radius = std::hypot(x, y);
+    if (radius <= FP_COINCIDENT) {
+      is_valid = false;
+      return {};
+    }
+    // A ring transition can also change the sector index solely because the
+    // destination ring uses a different offset/count. Treat it as a true
+    // radial/azimuthal corner only when the hit lies on an old-ring sector
+    // ray and the trajectory has a tangential component.
+    int ring = index[0];
+    if (delta[1] != 0 && ring >= 0 &&
+        ring < static_cast<int>(sector_counts_.size()) &&
+        sector_counts_[ring] > 1) {
+      int n = sector_counts_[ring];
+      double angle = std::atan2(y, x);
+      double step = 2. * M_PI / n;
+      double lo = azimuthal_offsets_[ring] + index[1] * step;
+      double hi = lo + step;
+      double tol = FP_COINCIDENT * std::max(1., radius);
+      bool on_sector_ray = std::abs(std::remainder(angle-lo, 2.*M_PI)) < tol ||
+        std::abs(std::remainder(angle-hi, 2.*M_PI)) < tol;
+      double tangential = -y*u.x + x*u.y;
+      if (on_sector_ray && std::abs(tangential) > FP_COINCIDENT) {
+        is_valid = false;
+        return {};
+      }
+    }
+    double sign = delta[0] > 0 ? 1. : -1.;
+    return {sign*x/radius, sign*y/radius, 0.};
+  }
+  if (delta[1] != 0) {
+    int ring = index[0];
+    if (ring < 0 || ring >= static_cast<int>(sector_counts_.size()) ||
+        sector_counts_[ring] <= 1) {
+      is_valid = false;
+      return {};
+    }
+    int n = sector_counts_[ring];
+    double angle = std::atan2(r.y-center_.y, r.x-center_.x);
+    double lo = azimuthal_offsets_[ring] + index[1]*2.*M_PI/n;
+    double hi = lo + 2.*M_PI/n;
+    double phi = std::abs(std::remainder(angle-lo, 2.*M_PI)) <
+        std::abs(std::remainder(angle-hi, 2.*M_PI)) ? lo : hi;
+    double nx = -std::sin(phi), ny = std::cos(phi);
+    // The normal points toward the destination sector. This also resolves
+    // the n=2 case, where either modular index difference is ambiguous.
+    double sign = u.x*nx + u.y*ny >= 0. ? 1. : -1.;
+    return {sign*nx, sign*ny, 0.};
+  }
+  if (delta[2] != 0) return {0., 0., std::copysign(1., delta[2])};
+  is_valid = false;
+  return {};
+}
+
+int32_t& CylLattice::offset(int map, const array<int, 3>& index)
+{
+  return offsets_[map*universes_.size()+get_flat_index(index)];
+}
+
+int32_t CylLattice::offset(int map, int indx) const
+{
+  return offsets_[map*universes_.size()+indx];
+}
+
+std::string CylLattice::index_to_string(int indx) const
+{
+  int z = indx/tiles_per_layer_;
+  int tile = indx%tiles_per_layer_;
+  int ring = std::upper_bound(ring_offsets_.begin(), ring_offsets_.end(), tile)-ring_offsets_.begin()-1;
+  return fmt::format("{},{},{}", ring, tile-ring_offsets_[ring], z);
+}
+
+void CylLattice::to_hdf5_inner(hid_t group) const
+{
+  write_string(group, "type", "cylindrical", false);
+  write_dataset(group, "regular", static_cast<int>(regular_));
+  if (regular_) write_string(group, "radial_spacing", equal_area_ ? "equal_area" : "radius", false);
+  array<double, 2> center {{center_.x, center_.y}};
+  write_dataset(group, "center", center);
+  write_dataset(group, "radial_edges", radial_edges_);
+  write_dataset(group, "sector_counts", sector_counts_);
+  write_dataset(group, "azimuthal_offsets", azimuthal_offsets_);
+  if (is_3d_) write_dataset(group, "z_edges", z_edges_);
+  vector<int> values;
+  for (auto universe : universes_) values.push_back(model::universes[universe]->id_);
+  write_dataset(group, "universes", values);
+}
+
 void read_lattices(pugi::xml_node node)
 {
   for (pugi::xml_node lat_node : node.children("lattice")) {
@@ -1210,6 +1657,9 @@ void read_lattices(pugi::xml_node node)
   }
   for (pugi::xml_node lat_node : node.children("hex_lattice")) {
     model::lattices.push_back(make_unique<HexLattice>(lat_node));
+  }
+  for (pugi::xml_node lat_node : node.children("cylindrical_lattice")) {
+    model::lattices.push_back(make_unique<CylLattice>(lat_node));
   }
 
   // Fill the lattice map.

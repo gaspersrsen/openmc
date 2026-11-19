@@ -328,6 +328,10 @@ class UniverseBase(ABC, IDManagerMixin):
                         p[:] = cell.rotation_matrix.dot(p)
                     return [self, cell] + cell.fill.find(p)
                 else:
+                    if cell.translation is not None:
+                        p -= cell.translation
+                    if cell.rotation is not None:
+                        p[:] = cell.rotation_matrix.dot(p)
                     return [self, cell] + cell.fill.find(p)
         return []
 

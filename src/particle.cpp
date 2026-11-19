@@ -416,19 +416,45 @@ void Particle::event_cross_surface()
   if (boundary().lattice_translation()[0] != 0 ||
       boundary().lattice_translation()[1] != 0 ||
       boundary().lattice_translation()[2] != 0) {
+    Direction lattice_normal;
+    bool have_lattice_normal = false;
+    int i_lattice = coord(boundary().coord_level() - 1).lattice();
+    auto& lat {*model::lattices[i_lattice]};
+    if (lat.type_ == LatticeType::cylindrical &&
+        !model::active_surface_tallies.empty()) {
+      const auto& upper = coord(boundary().coord_level() - 2);
+      const auto& parent = model::cells[upper.cell()];
+      Position r_hit = upper.r();
+      r_hit -= parent->translation_;
+      Direction u_hit = upper.u();
+      if (!parent->rotation_.empty()) {
+        r_hit = r_hit.rotate(parent->rotation_);
+        u_hit = u_hit.rotate(parent->rotation_);
+      }
+      lattice_normal = static_cast<CylLattice&>(lat).get_normal(
+        r_hit, u_hit, coord(boundary().coord_level() - 1).lattice_index(),
+        boundary().lattice_translation(), have_lattice_normal);
+      // Convert through every rotated ancestor, as for a surface normal in a
+      // nested universe (the lattice frame can be rotated several levels deep).
+      for (int lev = boundary().coord_level() - 2; lev >= 0; --lev) {
+        if (coord(lev + 1).rotated()) {
+          const auto& ancestor = model::cells[coord(lev).cell()];
+          lattice_normal = lattice_normal.inverse_rotate(ancestor->rotation_);
+        }
+      }
+    }
     // Particle crosses lattice boundary
 
-    int i_lattice = coord(boundary().coord_level() - 1).lattice();
     bool verbose = settings::verbosity >= 10 || trace();
     cross_lattice(*this, boundary(), verbose);
     event() = TallyEvent::LATTICE;
 
     // Score cell to cell partial currents
     if (!model::active_surface_tallies.empty()) {
-      auto& lat {*model::lattices[i_lattice]};
-      bool is_valid;
-      Direction normal =
-        lat.get_normal(boundary().lattice_translation(), is_valid);
+      bool is_valid = have_lattice_normal;
+      Direction normal = lattice_normal;
+      if (lat.type_ != LatticeType::cylindrical)
+        normal = lat.get_normal(boundary().lattice_translation(), is_valid);
       if (is_valid) {
         normal /= normal.norm();
         score_surface_tally(*this, model::active_surface_tallies, normal);
@@ -775,6 +801,11 @@ void Particle::cross_surface(const Surface& surf)
   if (neighbor_list_find_cell(*this, verbose)) {
     return;
   }
+
+  // Geometry lookup can mark the particle lost (e.g. a lattice with no outer
+  // universe). Do not retry from the root with that particle's stale coords.
+  if (!alive())
+    return;
 
   // ==========================================================================
   // COULDN'T FIND PARTICLE IN NEIGHBORING CELLS, SEARCH ALL CELLS

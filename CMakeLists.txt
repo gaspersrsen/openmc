@@ -517,7 +517,6 @@ if (OPENMC_USE_MPI)
   if (OPENMC_HAVE_MPI_LARGE_COUNT)
     target_compile_definitions(libopenmc_objects PRIVATE -DOPENMC_HAVE_MPI_LARGE_COUNT)
   endif()
-  endif()
 endif()
 
 # target_link_libraries treats any arguments starting with - but not -l as

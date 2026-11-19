@@ -22,7 +22,7 @@ namespace openmc {
 
 constexpr int32_t NO_OUTER_UNIVERSE {-1};
 
-enum class LatticeType { rect, hex };
+enum class LatticeType { rect, hex, cylindrical };
 
 //==============================================================================
 // Global variables
@@ -309,6 +309,40 @@ private:
   Orientation orientation_; //!< Orientation of lattice
   Position center_;         //!< Global center of lattice
   array<double, 2> pitch_;  //!< Lattice tile width and height
+};
+
+//! Cylindrical lattice with per-ring sectors and nonuniform z and r edges.
+class CylLattice : public Lattice {
+public:
+  explicit CylLattice(pugi::xml_node lat_node);
+  const int32_t& operator[](const array<int, 3>& index) override;
+  bool are_valid_indices(const array<int, 3>& index) const override;
+  std::pair<double, array<int, 3>> distance(
+    Position r, Direction u, const array<int, 3>& index) const override;
+  void get_indices(Position r, Direction u, array<int, 3>& index) const override;
+  int get_flat_index(const array<int, 3>& index) const override;
+  Position get_local_position(Position r, const array<int, 3>& index) const override;
+  Direction get_normal(const array<int, 3>& index, bool& is_valid) const override;
+  Direction get_normal(Position r, Direction u, const array<int, 3>& index,
+    const array<int, 3>& delta, bool& is_valid) const;
+  int32_t& offset(int map, const array<int, 3>& index) override;
+  int32_t offset(int map, int indx) const override;
+  std::string index_to_string(int indx) const override;
+  void to_hdf5_inner(hid_t group_id) const override;
+
+private:
+  Position center_;
+  vector<double> radial_edges_;
+  vector<double> z_edges_;
+  vector<double> azimuthal_offsets_;
+  vector<int> sector_counts_;
+  vector<int> ring_offsets_;
+  int tiles_per_layer_;
+  int n_axial_;
+  bool regular_;
+  bool equal_area_ {false};
+  double radial_inverse_pitch_ {0.};
+  double axial_inverse_pitch_ {0.};
 };
 
 //==============================================================================

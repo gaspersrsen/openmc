@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
+set -Eeuo pipefail
 
-cd "$(dirname "${BASH_SOURCE[0]}")"
-mkdir build
-cd build
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+build_dir="$script_dir/build"
 
-cmake -DHDF5_PREFER_PARALLEL=on -DOPENMC_USE_MPI=on ..
-make -j32
-sudo make install -j32
+cmake -S "$script_dir" -B "$build_dir" \
+  -DHDF5_PREFER_PARALLEL=ON \
+  -DOPENMC_USE_MPI=ON
+
+cmake --build "$build_dir" --parallel 32
+sudo cmake --install "$build_dir"
+
 echo "Successfully installed OpenMC"

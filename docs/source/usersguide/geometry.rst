@@ -329,7 +329,27 @@ Many particle transport models involve repeated structures that occur in a
 regular pattern such as a rectangular or hexagonal lattice. In such a case, it
 would be cumbersome to have to define the boundaries of each of the cells to be
 filled with a universe. OpenMC provides a means to define lattice structures
-through the :class:`openmc.RectLattice` and :class:`openmc.HexLattice` classes.
+through the :class:`openmc.RectLattice`, :class:`openmc.HexLattice`,
+:class:`openmc.CylLattice`, and :class:`openmc.RegularCylLattice` classes.
+
+Cylindrical lattices partition space into annular rings, azimuthal sectors,
+and optionally axial layers. ``CylLattice`` permits nonuniform edges and a
+different sector count and angular offset for each ring. ``RegularCylLattice``
+uses uniform spacing, with ``radial_spacing='equal_area'`` available for
+equal-volume annuli. The optional ``outer`` universe fills space outside the
+specified radial and axial bounds, including an inner hole. Tile universes
+are translated to their polar midpoint; full annuli use the lattice center.
+
+For example, if ``fuel_universes`` contains three rings of four universes::
+
+  lattice = openmc.RegularCylLattice(
+      r_min=0.3, r_max=1.8, n_rings=3, n_sectors=4,
+      radial_spacing='equal_area', universes=fuel_universes, outer=helium)
+
+For a three-dimensional lattice, universes are ordered by axial layer, ring,
+and sector. The lattice may be filled into a cell, whose translation and
+rotation control its placement. ``lattice.place(...)`` is a convenience for
+creating such a cell.
 
 Rectangular Lattices
 --------------------

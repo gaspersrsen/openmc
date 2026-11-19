@@ -3,6 +3,7 @@
 #include "openmc/cell.h"
 #include "openmc/geometry.h"
 #include "openmc/memory.h"
+#include "openmc/lattice.h"
 #include "openmc/particle_data.h"
 #include "openmc/surface.h"
 #include "openmc/universe.h"
@@ -142,4 +143,27 @@ TEST_CASE("Reconcile a particle after a collision near a surface")
   REQUIRE(p.n_coord() == 2);
   REQUIRE(p.coord(0).cell() == 0);
   REQUIRE(p.coord(1).cell() == 1);
+}
+
+TEST_CASE("Cylindrical lattice resolves a radial edge by travel direction")
+{
+  pugi::xml_document doc;
+  auto node = doc.append_child("cylindrical_lattice");
+  node.append_attribute("id") = 1;
+  node.append_child("center").text().set("0 0");
+  node.append_child("radial_edges").text().set("0 22.0599");
+  node.append_child("sector_counts").text().set("1");
+  node.append_child("azimuthal_offsets").text().set("0");
+  node.append_child("universes").text().set("1");
+  openmc::CylLattice lattice {node};
+
+  const double edge {22.0599};
+  openmc::array<int, 3> index {};
+  lattice.get_indices(
+    {edge + 9.06e-11, 0.0, 0.0}, {-1.0, 0.0, 0.0}, index);
+  REQUIRE(index[0] == 0);
+
+  lattice.get_indices(
+    {edge + 9.06e-11, 0.0, 0.0}, {1.0, 0.0, 0.0}, index);
+  REQUIRE(index[0] == 1);
 }

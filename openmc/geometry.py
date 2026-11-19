@@ -248,6 +248,12 @@ class Geometry:
                         for u in ring:
                             child_of[u].append(lat)
 
+        for e in elem.findall('cylindrical_lattice'):
+            lat = openmc.CylLattice.from_xml_element(e, get_universe)
+            universes[lat.id] = lat
+            for u in lat.get_unique_universes().values():
+                child_of[u].append(lat)
+
         for e in elem.findall('cell'):
             c = openmc.Cell.from_xml_element(e, surfaces, mats, get_universe)
             if c.fill_type in ('universe', 'lattice'):

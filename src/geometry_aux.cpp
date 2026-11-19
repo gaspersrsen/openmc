@@ -1,8 +1,10 @@
 #include "openmc/geometry_aux.h"
 
 #include <algorithm> // for std::max
+#include <cstdint>
 #include <sstream>
 #include <unordered_set>
+#include <vector>
 
 #include <fmt/core.h>
 #include <pugixml.hpp>
@@ -483,10 +485,71 @@ void prepare_distribcell(const std::vector<int32_t>* user_distribcells)
 
 void count_universe_instances()
 {
+  // The recursive count for one target universe is memoized, but repeating it
+  // for every universe makes this operation quadratic in the number of
+  // universes. Instead, traverse the reachable universe graph once, then
+  // propagate instance counts from parents to children in topological order.
+  const int32_t n_universes = model::universes.size();
+  std::vector<std::uint8_t> state(n_universes, 0);
+  std::vector<int32_t> postorder;
+  postorder.reserve(n_universes);
+
+  auto visit = [&](auto&& self, int32_t univ_index) -> void {
+    if (univ_index < 0 || univ_index >= n_universes) {
+      fatal_error("Invalid universe index while counting instances.");
+    }
+
+    if (state[univ_index] == 2) {
+      return;
+    }
+    if (state[univ_index] == 1) {
+      fatal_error(fmt::format(
+        "Circular universe dependency encountered at universe {}.",
+        model::universes[univ_index]->id_));
+    }
+
+    state[univ_index] = 1;
+    const Universe& univ {*model::universes[univ_index]};
+    for (int32_t cell_index : univ.cells_) {
+      const Cell& cell {*model::cells[cell_index]};
+      if (cell.type_ == Fill::UNIVERSE) {
+        self(self, cell.fill_);
+      } else if (cell.type_ == Fill::LATTICE) {
+        Lattice& lattice {*model::lattices[cell.fill_]};
+        for (auto it = lattice.begin(); it != lattice.end(); ++it) {
+          self(self, *it);
+        }
+      }
+    }
+
+    state[univ_index] = 2;
+    postorder.push_back(univ_index);
+  };
+
   for (auto& univ : model::universes) {
-    std::unordered_map<int32_t, int32_t> univ_count_memo;
-    univ->n_instances_ = count_universe_instances(
-      model::root_universe, univ->id_, univ_count_memo);
+    univ->n_instances_ = 0;
+  }
+  visit(visit, model::root_universe);
+  model::universes[model::root_universe]->n_instances_ = 1;
+
+  // DFS postorder places every parent after its children. Reverse it so each
+  // universe's instance count is known before its child counts are updated.
+  for (auto it = postorder.rbegin(); it != postorder.rend(); ++it) {
+    const int32_t univ_index {*it};
+    const int32_t n_instances = model::universes[univ_index]->n_instances_;
+    const Universe& univ {*model::universes[univ_index]};
+
+    for (int32_t cell_index : univ.cells_) {
+      const Cell& cell {*model::cells[cell_index]};
+      if (cell.type_ == Fill::UNIVERSE) {
+        model::universes[cell.fill_]->n_instances_ += n_instances;
+      } else if (cell.type_ == Fill::LATTICE) {
+        Lattice& lattice {*model::lattices[cell.fill_]};
+        for (auto tile = lattice.begin(); tile != lattice.end(); ++tile) {
+          model::universes[*tile]->n_instances_ += n_instances;
+        }
+      }
+    }
   }
 }
 

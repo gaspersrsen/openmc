@@ -47,3 +47,30 @@ def test_max_write_lost_particles(model: openmc.Model, run_in_tmpdir):
     n_procs = int(config['mpi_np']) if config['mpi'] else 1
     assert len(lost_particle_files) == model.settings.max_write_lost_particles * n_procs
 
+
+def test_particle_leaving_cylindrical_lattice_without_outer(run_in_tmpdir, capfd):
+    """A lost particle must not continue geometry lookup with stale coords."""
+    mat = openmc.Material()
+    mat.add_nuclide('N14', 1.0)
+    mat.set_density('g/cm3', 1e-5)
+    tile = openmc.Universe(cells=[openmc.Cell(fill=mat)])
+    lattice = openmc.CylLattice(
+        radial_edges=(0.0, 1.0), sector_counts=(1,), universes=[[tile]])
+    boundary = openmc.Sphere(r=2.0, boundary_type='vacuum')
+    model = openmc.Model(
+        geometry=openmc.Geometry([openmc.Cell(fill=lattice, region=-boundary)]))
+
+    model.settings.run_mode = 'fixed source'
+    model.settings.batches = 1
+    model.settings.particles = 1
+    model.settings.max_lost_particles = 10
+    model.settings.source = openmc.IndependentSource(
+        space=openmc.stats.Point((0.5, 0.0, 0.0)),
+        angle=openmc.stats.Monodirectional((1.0, 0.0, 0.0)))
+
+    kwargs = {'openmc_exec': config['exe']}
+    if config['mpi']:
+        kwargs['mpi_args'] = [config['mpiexec'], '-n', config['mpi_np']]
+    model.run(threads=1, **kwargs)
+    output = capfd.readouterr()
+    assert 'left lattice' in output.out + output.err

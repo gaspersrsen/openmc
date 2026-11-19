@@ -96,6 +96,8 @@ Building geometry
    openmc.DAGMCUniverse
    openmc.RectLattice
    openmc.HexLattice
+   openmc.CylLattice
+   openmc.RegularCylLattice
    openmc.Geometry
 
 Many of the above classes are derived from several abstract classes:
